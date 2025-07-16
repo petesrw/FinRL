@@ -146,7 +146,15 @@ class ConfigurableForexBot:
         # Create environment
         env = self.create_training_environment()
         
-        # Create model based on config
+        # Check device availability and log
+        import torch
+        device = "cuda" if torch.cuda.is_available() else "cpu"
+        self.logger.info(f"Using device: {device}")
+        if torch.cuda.is_available():
+            self.logger.info(f"GPU Device: {torch.cuda.get_device_name(0)}")
+            self.logger.info(f"GPU Memory: {torch.cuda.get_device_properties(0).total_memory / 1024**3:.1f} GB")
+        
+        # Create model based on config with GPU support
         if self.config.model.model_type == "PPO":
             self.model = PPO(
                 "MlpPolicy", 
@@ -155,6 +163,7 @@ class ConfigurableForexBot:
                 n_steps=2048,
                 batch_size=64,
                 verbose=1,
+                device=device,
                 tensorboard_log="./forex_tensorboard/"
             )
         elif self.config.model.model_type == "SAC":
@@ -165,6 +174,7 @@ class ConfigurableForexBot:
                 buffer_size=100000,
                 batch_size=256,
                 verbose=1,
+                device=device,
                 tensorboard_log="./forex_tensorboard/"
             )
         elif self.config.model.model_type == "A2C":
@@ -174,6 +184,7 @@ class ConfigurableForexBot:
                 learning_rate=7e-4,
                 n_steps=5,
                 verbose=1,
+                device=device,
                 tensorboard_log="./forex_tensorboard/"
             )
         

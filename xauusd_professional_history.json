@@ -1,0 +1,60 @@
+[
+  {
+    "attempt": 1,
+    "timestamp": "2025-07-16T20:09:19.490670",
+    "hyperparameters": {
+      "algorithm": "PPO",
+      "learning_rate": 0.0001,
+      "n_steps": 2048,
+      "batch_size": 64,
+      "gamma": 0.99,
+      "timesteps": 150000
+    },
+    "metrics": {
+      "balance": 9705.808205998017,
+      "equity": 9706.615225998017,
+      "total_return": -0.02933847740019828,
+      "win_rate": 0.3893805309734513,
+      "profit_factor": 0.75777476847116,
+      "max_drawdown": 0.03070684571528322,
+      "total_trades": 452,
+      "profitable_trades": 176,
+      "sharpe_ratio": -0.6616024275946971,
+      "sortino_ratio": -1.0554008938914263,
+      "calmar_ratio": -240.77029511273508,
+      "max_consecutive_losses": 10
+    },
+    "score": -9458.296783961508,
+    "tier": "none",
+    "training_time": 342.81398701667786
+  },
+  {
+    "attempt": 2,
+    "timestamp": "2025-07-16T20:16:56.862567",
+    "hyperparameters": {
+      "algorithm": "PPO",
+      "learning_rate": 0.0003,
+      "n_steps": 4096,
+      "batch_size": 128,
+      "gamma": 0.995,
+      "timesteps": 200000
+    },
+    "metrics": {
+      "balance": 9629.243310178003,
+      "equity": 9629.243310178003,
+      "total_return": -0.03707566898219975,
+      "win_rate": 0.4305555555555556,
+      "profit_factor": 0.6808028286180919,
+      "max_drawdown": 0.037617961124094976,
+      "total_trades": 504,
+      "profitable_trades": 217,
+      "sharpe_ratio": -0.8461261482954372,
+      "sortino_ratio": -1.3566481096350196,
+      "calmar_ratio": -248.36722417499485,
+      "max_consecutive_losses": 10
+    },
+    "score": -10017.457429411841,
+    "tier": "none",
+    "training_time": 440.819078207016
+  }
+]

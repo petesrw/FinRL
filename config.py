@@ -181,6 +181,7 @@ class ModelConfig:
     initial_balance: float
     model_save_path: str
     model_name_prefix: str
+    timeframe: str
     
     @classmethod
     def from_env(cls):
@@ -190,7 +191,8 @@ class ModelConfig:
             lookback_window=int(os.getenv('LOOKBACK_WINDOW', 100)),
             initial_balance=float(os.getenv('INITIAL_BALANCE', 10000.0)),
             model_save_path=os.getenv('MODEL_SAVE_PATH', './models/'),
-            model_name_prefix=os.getenv('MODEL_NAME_PREFIX', 'forex_model')
+            model_name_prefix=os.getenv('MODEL_NAME_PREFIX', 'forex_model'),
+            timeframe=os.getenv('TIMEFRAME', '5m')
         )
 
 @dataclass

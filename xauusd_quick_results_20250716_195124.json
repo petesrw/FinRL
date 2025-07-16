@@ -1,0 +1,107 @@
+[
+  {
+    "attempt": 1,
+    "config": {
+      "learning_rate": 0.0003,
+      "n_steps": 1024,
+      "batch_size": 64,
+      "timesteps": 20000
+    },
+    "metrics": {
+      "balance": 10124.433000000074,
+      "total_return": 0.012443300000007367,
+      "win_rate": 0.5165562913907285,
+      "profit_factor": 1.0159684688413273,
+      "max_drawdown": 0.1046697908386873,
+      "total_trades": 151,
+      "profitable_trades": 78
+    },
+    "score": 56.63514471049492,
+    "tier": "none",
+    "training_time": 18.758320569992065
+  },
+  {
+    "attempt": 2,
+    "config": {
+      "learning_rate": 0.001,
+      "n_steps": 2048,
+      "batch_size": 32,
+      "timesteps": 30000
+    },
+    "metrics": {
+      "balance": 7131.834999999991,
+      "total_return": -0.2868165000000009,
+      "win_rate": 0.45643153526970953,
+      "profit_factor": 0.7323130267859176,
+      "max_drawdown": 0.3538749722562418,
+      "total_trades": 241,
+      "profitable_trades": 110
+    },
+    "score": 31.425392788397886,
+    "tier": "none",
+    "training_time": 36.354111433029175
+  },
+  {
+    "attempt": 3,
+    "config": {
+      "learning_rate": 0.0001,
+      "n_steps": 1024,
+      "batch_size": 128,
+      "timesteps": 25000
+    },
+    "metrics": {
+      "balance": 10907.688999999988,
+      "total_return": 0.09076889999999875,
+      "win_rate": 0.5,
+      "profit_factor": 1.306657283612599,
+      "max_drawdown": 0.07590282163206243,
+      "total_trades": 72,
+      "profitable_trades": 36
+    },
+    "score": 60.03045997084349,
+    "tier": "none",
+    "training_time": 18.19804859161377
+  },
+  {
+    "attempt": 4,
+    "config": {
+      "learning_rate": 0.003,
+      "n_steps": 512,
+      "batch_size": 64,
+      "timesteps": 15000
+    },
+    "metrics": {
+      "balance": 11289.97299999989,
+      "total_return": 0.12899729999998907,
+      "win_rate": 0.5253164556962026,
+      "profit_factor": 1.1786959494044233,
+      "max_drawdown": 0.18507284745805075,
+      "total_trades": 158,
+      "profitable_trades": 83
+    },
+    "score": 55.396703823570306,
+    "tier": "none",
+    "training_time": 13.383064031600952
+  },
+  {
+    "attempt": 5,
+    "config": {
+      "learning_rate": 0.0003,
+      "n_steps": 2048,
+      "batch_size": 64,
+      "timesteps": 40000
+    },
+    "metrics": {
+      "balance": 9589.316000000013,
+      "total_return": -0.04106839999999866,
+      "win_rate": 0.4533333333333333,
+      "profit_factor": 0.9492322170784934,
+      "max_drawdown": 0.15687829178733742,
+      "total_trades": 225,
+      "profitable_trades": 102
+    },
+    "score": 41.35052383262477,
+    "tier": "none",
+    "training_time": 34.020673990249634
+  }
+]

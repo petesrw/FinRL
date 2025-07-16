@@ -1,0 +1,6 @@
+XAUUSD Simple Training Results
+Date: 2025-07-16 19:17:37.833664
+Data rows: 49,951
+Final balance: $9,291.94
+Total return: -7.08%
+Total trades: 776
