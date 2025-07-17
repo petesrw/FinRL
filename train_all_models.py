@@ -17,6 +17,7 @@ import warnings
 import time
 import random
 import torch
+from simple_gpu_boost import apply_maximum_gpu_utilization, get_high_utilization_model_config
 warnings.filterwarnings('ignore')
 
 # GPU Detection and Setup
@@ -39,7 +40,7 @@ def detect_and_setup_gpu():
                 # Set environment variables for sm_90 compatibility
                 import os
                 os.environ['TORCH_CUDA_ARCH_LIST'] = '9.0'
-                os.environ['CUDA_LAUNCH_BLOCKING'] = '1'  # Enable synchronous execution for debugging
+                os.environ['CUDA_LAUNCH_BLOCKING'] = '0'  # Disable synchronous execution for maximum speed
                 
                 try:
                     # Force PyTorch to use sm_90 kernels
@@ -250,6 +251,9 @@ if torch.cuda.is_available():
     gpu_name = torch.cuda.get_device_name(0)
     if "RTX 5060" in gpu_name or "RTX 50" in gpu_name:
         DEVICE = apply_rtx_5060_ti_boost()
+        # Apply simple GPU utilization boost
+        print("🚀 Applying simple GPU utilization boost...")
+        apply_maximum_gpu_utilization()
 
 class AdvancedForexEnv(gym.Env):
     """
@@ -846,7 +850,10 @@ class AdaptiveTrainer:
         # Create model based on algorithm with GPU support - RTX 5060 TI Optimized
         model_kwargs = {
             "device": DEVICE,
-            "verbose": 0
+            "verbose": 0,
+            # Force larger buffer sizes for higher GPU utilization
+            "buffer_size": 2000000,  # Very large buffer
+            "train_freq": (1, "step"),  # Train every step for maximum GPU usage
         }
         
         # Apply GPU optimizations if available
@@ -855,33 +862,37 @@ class AdaptiveTrainer:
             
             # Get GPU-optimized configuration
             if "RTX 5060" in gpu_name or "RTX 50" in gpu_name:
-                # Ultra performance config for RTX 5060 TI
-                gpu_optimized_config = get_gpu_optimized_model_config()
+                # Ultra performance config for RTX 5060 TI with HIGH GPU UTILIZATION
+                high_util_config = get_high_utilization_model_config()
                 
-                # Override with ultra performance settings
+                # Override with MAXIMUM performance settings for high GPU utilization
                 gpu_config = {
                     "tensorboard_log": None,
-                    "policy_kwargs": gpu_optimized_config["policy_kwargs"],
-                    "batch_size": max(hyperparameters['batch_size'], gpu_optimized_config["batch_size"]),
+                    "policy_kwargs": high_util_config["policy_kwargs"],
+                    "batch_size": max(hyperparameters['batch_size'], high_util_config["batch_size"]),
+                    "buffer_size": high_util_config["buffer_size"],
+                    "train_freq": high_util_config["train_freq"],
+                    "gradient_steps": high_util_config["gradient_steps"],
                 }
                 
-                # For PPO, add specific settings
+                # For PPO, add specific settings for MAXIMUM GPU utilization
                 if hyperparameters['algorithm'] == 'PPO':
                     gpu_config.update({
-                        "n_steps": max(hyperparameters.get('n_steps', 8192), gpu_optimized_config["n_steps"]),
-                        "gae_lambda": gpu_optimized_config["gae_lambda"],
-                        "clip_range": gpu_optimized_config["clip_range"],
-                        "ent_coef": gpu_optimized_config["ent_coef"],
-                        "vf_coef": gpu_optimized_config["vf_coef"],
-                        "max_grad_norm": gpu_optimized_config["max_grad_norm"],
-                        "target_kl": gpu_optimized_config["target_kl"]
+                        "n_steps": max(hyperparameters.get('n_steps', 8192), high_util_config["n_steps"]),
+                        "gae_lambda": 0.95,
+                        "clip_range": 0.2,
+                        "ent_coef": 0.01,
+                        "vf_coef": 0.5,
+                        "max_grad_norm": 0.5,
+                        "target_kl": 0.01
                     })
                 
-                print(f"   🔥 RTX 5060 TI ULTRA Performance Mode:")
-                print(f"   📈 Neural Networks: {gpu_config['policy_kwargs']['net_arch']}")
+                print(f"   🔥 RTX 5060 TI MAXIMUM GPU UTILIZATION Mode:")
+                print(f"   � Neuiral Networks: {gpu_config['policy_kwargs']['net_arch']}")
                 print(f"   🎯 Batch Size: {gpu_config['batch_size']}")
                 print(f"   ⚡ Steps: {gpu_config.get('n_steps', 'N/A')}")
-                print(f"   🚀 Maximum GPU Utilization: 90%+")
+                print(f"   🚀 Buffer Size: {gpu_config['buffer_size']:,}")
+                print(f"   🎯 Target GPU Utilization: 80-95%")
             else:
                 # Standard GPU optimization for other cards
                 gpu_config = {
