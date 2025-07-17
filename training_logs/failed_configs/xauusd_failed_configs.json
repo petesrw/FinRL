@@ -4478,5 +4478,21 @@
     },
     "error": "PPO.__init__() got an unexpected keyword argument 'buffer_size'",
     "symbol": "XAUUSD"
+  },
+  {
+    "attempt": 1,
+    "timestamp": "2025-07-17T14:04:58.434624",
+    "config": {
+      "algorithm": "PPO",
+      "learning_rate": 0.0003,
+      "n_steps": 8192,
+      "batch_size": 1024,
+      "gamma": 0.99,
+      "lookback_window": 200,
+      "transaction_cost": 0.0001,
+      "timesteps": 500000
+    },
+    "error": "No module named 'torch.utils.serialization'",
+    "symbol": "XAUUSD"
   }
 ]

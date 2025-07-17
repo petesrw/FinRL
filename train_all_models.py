@@ -816,20 +816,19 @@ class AdaptiveTrainer:
     
     def generate_hyperparameters(self):
         """Generate hyperparameters optimized for RTX 5060 TI 16GB - Enhanced with smart config avoidance"""
-        # Get all failed configurations from multiple sources
+        # Simplified config generation - avoid too many failed configs
         failed_configs = []
         
-        # 1. From training history (low score or error)
-        for h in self.training_history:
-            if h.get('score', 0) < 50 or h.get('tier') == 'failed' or 'error' in h:
-                failed_configs.append(h['hyperparameters'])
+        # Only avoid recent failed configs (last 50)
+        recent_failed = []
+        for h in self.training_history[-50:]:  # Only last 50 attempts
+            if h.get('score', 0) < 30 or h.get('tier') == 'failed':  # Lower threshold
+                recent_failed.append(h['hyperparameters'])
         
-        # 2. From dedicated failed configs file
-        failed_configs.extend(self.load_failed_configs())
+        failed_configs = recent_failed
+        print(f"   🚫 Avoiding {len(failed_configs)} recent failed configurations")
         
-        print(f"   🚫 Avoiding {len(failed_configs)} previously failed configurations")
-        
-        max_attempts = 200  # Increased attempts to find good config
+        max_attempts = 50  # Reduced attempts
         for attempt in range(max_attempts):
             algorithm = random.choice(['PPO', 'A2C'])
             

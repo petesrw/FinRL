@@ -5484,5 +5484,253 @@
     "error": "PPO.__init__() got an unexpected keyword argument 'buffer_size'",
     "score": 0,
     "tier": "failed"
+  },
+  {
+    "attempt": 1,
+    "timestamp": "2025-07-17T14:04:58.426555",
+    "hyperparameters": {
+      "algorithm": "PPO",
+      "learning_rate": 0.0003,
+      "n_steps": 8192,
+      "batch_size": 1024,
+      "gamma": 0.99,
+      "lookback_window": 200,
+      "transaction_cost": 0.0001,
+      "timesteps": 500000
+    },
+    "metrics": {
+      "balance": 9999.804298325,
+      "equity": 10031.507178325,
+      "total_return": 0,
+      "win_rate": 0,
+      "profit_factor": 0,
+      "max_drawdown": 0.006444561367339679,
+      "total_trades": 0,
+      "sharpe_ratio": 0
+    },
+    "score": 1974.2217545306414,
+    "tier": "none",
+    "training_time": 1903.9208631515503
+  },
+  {
+    "attempt": 1,
+    "timestamp": "2025-07-17T14:04:58.438624",
+    "hyperparameters": {
+      "algorithm": "PPO",
+      "learning_rate": 0.0003,
+      "n_steps": 8192,
+      "batch_size": 1024,
+      "gamma": 0.99,
+      "lookback_window": 200,
+      "transaction_cost": 0.0001,
+      "timesteps": 500000
+    },
+    "error": "No module named 'torch.utils.serialization'",
+    "score": 0,
+    "tier": "failed"
+  },
+  {
+    "attempt": 1,
+    "timestamp": "2025-07-17T15:21:58.111778",
+    "hyperparameters": {
+      "algorithm": "PPO",
+      "learning_rate": 0.001,
+      "n_steps": 8192,
+      "batch_size": 2048,
+      "gamma": 0.995,
+      "lookback_window": 300,
+      "transaction_cost": 0.0002,
+      "timesteps": 500000
+    },
+    "error": "CUDA error: no kernel image is available for execution on the device\nCUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.\nFor debugging consider passing CUDA_LAUNCH_BLOCKING=1\nCompile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.\n",
+    "score": 0,
+    "tier": "failed"
+  },
+  {
+    "attempt": 2,
+    "timestamp": "2025-07-17T15:21:58.376679",
+    "hyperparameters": {
+      "algorithm": "PPO",
+      "learning_rate": 0.0003,
+      "n_steps": 8192,
+      "batch_size": 2048,
+      "gamma": 0.995,
+      "lookback_window": 300,
+      "transaction_cost": 0.0005,
+      "timesteps": 500000
+    },
+    "error": "CUDA error: no kernel image is available for execution on the device\nCUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.\nFor debugging consider passing CUDA_LAUNCH_BLOCKING=1\nCompile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.\n",
+    "score": 0,
+    "tier": "failed"
+  },
+  {
+    "attempt": 3,
+    "timestamp": "2025-07-17T15:21:58.604793",
+    "hyperparameters": {
+      "algorithm": "PPO",
+      "learning_rate": 0.001,
+      "n_steps": 16384,
+      "batch_size": 1024,
+      "gamma": 0.995,
+      "lookback_window": 100,
+      "transaction_cost": 0.0001,
+      "timesteps": 500000
+    },
+    "error": "CUDA error: no kernel image is available for execution on the device\nCUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.\nFor debugging consider passing CUDA_LAUNCH_BLOCKING=1\nCompile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.\n",
+    "score": 0,
+    "tier": "failed"
+  },
+  {
+    "attempt": 4,
+    "timestamp": "2025-07-17T15:21:58.886302",
+    "hyperparameters": {
+      "algorithm": "PPO",
+      "learning_rate": 0.0003,
+      "n_steps": 16384,
+      "batch_size": 2048,
+      "gamma": 0.99,
+      "lookback_window": 300,
+      "transaction_cost": 0.0001,
+      "timesteps": 500000
+    },
+    "error": "CUDA error: no kernel image is available for execution on the device\nCUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.\nFor debugging consider passing CUDA_LAUNCH_BLOCKING=1\nCompile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.\n",
+    "score": 0,
+    "tier": "failed"
+  },
+  {
+    "attempt": 5,
+    "timestamp": "2025-07-17T15:21:59.134897",
+    "hyperparameters": {
+      "algorithm": "A2C",
+      "learning_rate": 0.0003,
+      "n_steps": null,
+      "batch_size": 2048,
+      "gamma": 0.995,
+      "lookback_window": 200,
+      "transaction_cost": 0.0001,
+      "timesteps": 500000
+    },
+    "error": "CUDA error: no kernel image is available for execution on the device\nCUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.\nFor debugging consider passing CUDA_LAUNCH_BLOCKING=1\nCompile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.\n",
+    "score": 0,
+    "tier": "failed"
+  },
+  {
+    "attempt": 6,
+    "timestamp": "2025-07-17T15:21:59.350322",
+    "hyperparameters": {
+      "algorithm": "PPO",
+      "learning_rate": 0.0003,
+      "n_steps": 8192,
+      "batch_size": 1024,
+      "gamma": 0.995,
+      "lookback_window": 100,
+      "transaction_cost": 0.0001,
+      "timesteps": 500000
+    },
+    "error": "CUDA error: no kernel image is available for execution on the device\nCUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.\nFor debugging consider passing CUDA_LAUNCH_BLOCKING=1\nCompile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.\n",
+    "score": 0,
+    "tier": "failed"
+  },
+  {
+    "attempt": 7,
+    "timestamp": "2025-07-17T15:21:59.625342",
+    "hyperparameters": {
+      "algorithm": "A2C",
+      "learning_rate": 0.0001,
+      "n_steps": null,
+      "batch_size": 2048,
+      "gamma": 0.995,
+      "lookback_window": 300,
+      "transaction_cost": 0.0002,
+      "timesteps": 500000
+    },
+    "error": "CUDA error: no kernel image is available for execution on the device\nCUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.\nFor debugging consider passing CUDA_LAUNCH_BLOCKING=1\nCompile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.\n",
+    "score": 0,
+    "tier": "failed"
+  },
+  {
+    "attempt": 8,
+    "timestamp": "2025-07-17T15:21:59.844322",
+    "hyperparameters": {
+      "algorithm": "A2C",
+      "learning_rate": 0.0003,
+      "n_steps": null,
+      "batch_size": 1024,
+      "gamma": 0.95,
+      "lookback_window": 100,
+      "transaction_cost": 0.0002,
+      "timesteps": 500000
+    },
+    "error": "CUDA error: no kernel image is available for execution on the device\nCUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.\nFor debugging consider passing CUDA_LAUNCH_BLOCKING=1\nCompile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.\n",
+    "score": 0,
+    "tier": "failed"
+  },
+  {
+    "attempt": 9,
+    "timestamp": "2025-07-17T15:22:00.131014",
+    "hyperparameters": {
+      "algorithm": "PPO",
+      "learning_rate": 0.0001,
+      "n_steps": 16384,
+      "batch_size": 2048,
+      "gamma": 0.99,
+      "lookback_window": 300,
+      "transaction_cost": 0.0002,
+      "timesteps": 500000
+    },
+    "error": "CUDA error: no kernel image is available for execution on the device\nCUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.\nFor debugging consider passing CUDA_LAUNCH_BLOCKING=1\nCompile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.\n",
+    "score": 0,
+    "tier": "failed"
+  },
+  {
+    "attempt": 10,
+    "timestamp": "2025-07-17T15:22:00.420056",
+    "hyperparameters": {
+      "algorithm": "PPO",
+      "learning_rate": 0.0001,
+      "n_steps": 8192,
+      "batch_size": 2048,
+      "gamma": 0.95,
+      "lookback_window": 300,
+      "transaction_cost": 0.0005,
+      "timesteps": 500000
+    },
+    "error": "CUDA error: no kernel image is available for execution on the device\nCUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.\nFor debugging consider passing CUDA_LAUNCH_BLOCKING=1\nCompile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.\n",
+    "score": 0,
+    "tier": "failed"
+  },
+  {
+    "attempt": 11,
+    "timestamp": "2025-07-17T15:22:00.671929",
+    "hyperparameters": {
+      "algorithm": "A2C",
+      "learning_rate": 0.0003,
+      "n_steps": null,
+      "batch_size": 1024,
+      "gamma": 0.99,
+      "lookback_window": 200,
+      "transaction_cost": 0.0002,
+      "timesteps": 500000
+    },
+    "error": "CUDA error: no kernel image is available for execution on the device\nCUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.\nFor debugging consider passing CUDA_LAUNCH_BLOCKING=1\nCompile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.\n",
+    "score": 0,
+    "tier": "failed"
+  },
+  {
+    "attempt": 12,
+    "timestamp": "2025-07-17T15:22:00.914350",
+    "hyperparameters": {
+      "algorithm": "PPO",
+      "learning_rate": 0.0001,
+      "n_steps": 16384,
+      "batch_size": 2048,
+      "gamma": 0.99,
+      "lookback_window": 200,
+      "transaction_cost": 0.0005,
+      "timesteps": 500000
+    },
+    "error": "CUDA error: no kernel image is available for execution on the device\nCUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.\nFor debugging consider passing CUDA_LAUNCH_BLOCKING=1\nCompile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.\n",
+    "score": 0,
+    "tier": "failed"
   }
 ]

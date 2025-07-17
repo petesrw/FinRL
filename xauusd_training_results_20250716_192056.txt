@@ -1,9 +1,0 @@
-XAUUSD RL Training Results
-Date: 2025-07-16 19:20:56.208313
-Training timesteps: 100,000
-Training time: 0:01:21.466163
-Model path: models/xauusd_ppo_20250716_192054.zip
-Final balance: $8,804.06
-Total return: -11.96%
-Total trades: 317
-Win rate: 58.0%
