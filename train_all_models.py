@@ -17,7 +17,86 @@ import warnings
 import time
 import random
 import torch
-from simple_gpu_boost import apply_maximum_gpu_utilization, get_high_utilization_model_config
+# Integrated GPU Boost Functions
+def apply_maximum_gpu_utilization():
+    """Apply simple but effective GPU utilization boost"""
+    if not torch.cuda.is_available():
+        return False
+    
+    print("🚀 Applying Simple GPU Utilization Boost...")
+    
+    # Environment variables for maximum performance
+    os.environ['CUDA_LAUNCH_BLOCKING'] = '0'  # Async execution
+    os.environ['PYTORCH_CUDA_ALLOC_CONF'] = 'max_split_size_mb:128'
+    
+    # PyTorch optimizations
+    torch.backends.cuda.matmul.allow_tf32 = True
+    torch.backends.cudnn.allow_tf32 = True
+    torch.backends.cudnn.benchmark = True
+    torch.backends.cudnn.deterministic = False
+    torch.backends.cuda.enable_flash_sdp(True)
+    
+    # Memory settings for maximum utilization
+    torch.cuda.set_per_process_memory_fraction(0.95)  # Use 95% of GPU memory
+    
+    # CPU settings to feed GPU better (only if not already set)
+    try:
+        torch.set_num_threads(32)  # More CPU threads
+    except:
+        pass  # Already set
+    
+    try:
+        torch.set_num_interop_threads(16)
+    except:
+        pass  # Already set
+    
+    # Pre-allocate GPU memory to keep it busy
+    device = torch.device('cuda')
+    
+    try:
+        # Allocate large chunks of GPU memory
+        dummy_tensors = []
+        for i in range(8):  # 8 large tensors
+            size = 2048 - (i * 128)  # Decreasing sizes
+            tensor = torch.randn(size, size, device=device, dtype=torch.float16)
+            dummy_tensors.append(tensor)
+        
+        # Perform some operations to warm up GPU
+        for i in range(len(dummy_tensors) - 1):
+            _ = torch.matmul(dummy_tensors[i][:1024, :1024], dummy_tensors[i+1][:1024, :1024])
+        
+        # Keep tensors in memory but clear references
+        del dummy_tensors
+        
+        print("✅ GPU memory pre-allocated and warmed up")
+        
+    except Exception as e:
+        print(f"⚠️ GPU warmup failed: {e}")
+    
+    print("✅ Simple GPU Utilization Boost Applied!")
+    print("🎯 Expected GPU Utilization: 70-90%")
+    
+    return True
+
+def get_high_utilization_model_config():
+    """Get model configuration for high GPU utilization"""
+    return {
+        # Very large neural networks
+        "policy_kwargs": {
+            "net_arch": [4096, 4096, 2048, 1024, 512],  # Even larger networks
+            "activation_fn": torch.nn.ReLU,
+            "ortho_init": False,
+        },
+        # Large batch sizes
+        "batch_size": 4096,  # Very large batch
+        "n_steps": 32768,    # Very large n_steps
+        
+        # Other settings
+        "learning_rate": 0.0003,
+        "gamma": 0.99,
+        "tensorboard_log": None,
+        "verbose": 0
+    }
 warnings.filterwarnings('ignore')
 
 # GPU Detection and Setup
@@ -251,8 +330,8 @@ if torch.cuda.is_available():
     gpu_name = torch.cuda.get_device_name(0)
     if "RTX 5060" in gpu_name or "RTX 50" in gpu_name:
         DEVICE = apply_rtx_5060_ti_boost()
-        # Apply simple GPU utilization boost
-        print("🚀 Applying simple GPU utilization boost...")
+        # Apply integrated GPU utilization boost
+        print("🚀 Applying integrated GPU utilization boost...")
         apply_maximum_gpu_utilization()
 
 class AdvancedForexEnv(gym.Env):
@@ -850,10 +929,7 @@ class AdaptiveTrainer:
         # Create model based on algorithm with GPU support - RTX 5060 TI Optimized
         model_kwargs = {
             "device": DEVICE,
-            "verbose": 0,
-            # Force larger buffer sizes for higher GPU utilization
-            "buffer_size": 2000000,  # Very large buffer
-            "train_freq": (1, "step"),  # Train every step for maximum GPU usage
+            "verbose": 0
         }
         
         # Apply GPU optimizations if available
@@ -870,9 +946,6 @@ class AdaptiveTrainer:
                     "tensorboard_log": None,
                     "policy_kwargs": high_util_config["policy_kwargs"],
                     "batch_size": max(hyperparameters['batch_size'], high_util_config["batch_size"]),
-                    "buffer_size": high_util_config["buffer_size"],
-                    "train_freq": high_util_config["train_freq"],
-                    "gradient_steps": high_util_config["gradient_steps"],
                 }
                 
                 # For PPO, add specific settings for MAXIMUM GPU utilization
@@ -891,7 +964,7 @@ class AdaptiveTrainer:
                 print(f"   � Neuiral Networks: {gpu_config['policy_kwargs']['net_arch']}")
                 print(f"   🎯 Batch Size: {gpu_config['batch_size']}")
                 print(f"   ⚡ Steps: {gpu_config.get('n_steps', 'N/A')}")
-                print(f"   🚀 Buffer Size: {gpu_config['buffer_size']:,}")
+
                 print(f"   🎯 Target GPU Utilization: 80-95%")
             else:
                 # Standard GPU optimization for other cards

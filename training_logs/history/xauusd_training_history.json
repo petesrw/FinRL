@@ -2084,5 +2084,3405 @@
     "score": 4015.5261840302605,
     "tier": "none",
     "training_time": 2199.353474855423
+  },
+  {
+    "attempt": 1,
+    "timestamp": "2025-07-17T11:33:27.394029",
+    "hyperparameters": {
+      "algorithm": "A2C",
+      "learning_rate": 0.003,
+      "n_steps": null,
+      "batch_size": 1024,
+      "gamma": 0.995,
+      "lookback_window": 200,
+      "transaction_cost": 0.0002,
+      "timesteps": 500000
+    },
+    "error": "A2C.__init__() got an unexpected keyword argument 'buffer_size'",
+    "score": 0,
+    "tier": "failed"
+  },
+  {
+    "attempt": 2,
+    "timestamp": "2025-07-17T11:33:27.430539",
+    "hyperparameters": {
+      "algorithm": "PPO",
+      "learning_rate": 0.0001,
+      "n_steps": 8192,
+      "batch_size": 1024,
+      "gamma": 0.95,
+      "lookback_window": 300,
+      "transaction_cost": 0.0002,
+      "timesteps": 500000
+    },
+    "error": "PPO.__init__() got an unexpected keyword argument 'buffer_size'",
+    "score": 0,
+    "tier": "failed"
+  },
+  {
+    "attempt": 3,
+    "timestamp": "2025-07-17T11:33:27.465142",
+    "hyperparameters": {
+      "algorithm": "A2C",
+      "learning_rate": 0.003,
+      "n_steps": null,
+      "batch_size": 1024,
+      "gamma": 0.99,
+      "lookback_window": 400,
+      "transaction_cost": 0.0001,
+      "timesteps": 500000
+    },
+    "error": "A2C.__init__() got an unexpected keyword argument 'buffer_size'",
+    "score": 0,
+    "tier": "failed"
+  },
+  {
+    "attempt": 4,
+    "timestamp": "2025-07-17T11:33:27.506170",
+    "hyperparameters": {
+      "algorithm": "PPO",
+      "learning_rate": 0.003,
+      "n_steps": 8192,
+      "batch_size": 1024,
+      "gamma": 0.995,
+      "lookback_window": 400,
+      "transaction_cost": 0.0005,
+      "timesteps": 500000
+    },
+    "error": "PPO.__init__() got an unexpected keyword argument 'buffer_size'",
+    "score": 0,
+    "tier": "failed"
+  },
+  {
+    "attempt": 5,
+    "timestamp": "2025-07-17T11:33:27.541194",
+    "hyperparameters": {
+      "algorithm": "PPO",
+      "learning_rate": 0.001,
+      "n_steps": 8192,
+      "batch_size": 1024,
+      "gamma": 0.99,
+      "lookback_window": 400,
+      "transaction_cost": 0.0005,
+      "timesteps": 500000
+    },
+    "error": "PPO.__init__() got an unexpected keyword argument 'buffer_size'",
+    "score": 0,
+    "tier": "failed"
+  },
+  {
+    "attempt": 6,
+    "timestamp": "2025-07-17T11:33:27.574711",
+    "hyperparameters": {
+      "algorithm": "A2C",
+      "learning_rate": 0.003,
+      "n_steps": null,
+      "batch_size": 1024,
+      "gamma": 0.95,
+      "lookback_window": 100,
+      "transaction_cost": 0.0005,
+      "timesteps": 500000
+    },
+    "error": "A2C.__init__() got an unexpected keyword argument 'buffer_size'",
+    "score": 0,
+    "tier": "failed"
+  },
+  {
+    "attempt": 7,
+    "timestamp": "2025-07-17T11:33:27.612225",
+    "hyperparameters": {
+      "algorithm": "PPO",
+      "learning_rate": 0.0001,
+      "n_steps": 8192,
+      "batch_size": 1024,
+      "gamma": 0.995,
+      "lookback_window": 300,
+      "transaction_cost": 0.0001,
+      "timesteps": 500000
+    },
+    "error": "PPO.__init__() got an unexpected keyword argument 'buffer_size'",
+    "score": 0,
+    "tier": "failed"
+  },
+  {
+    "attempt": 8,
+    "timestamp": "2025-07-17T11:33:27.647351",
+    "hyperparameters": {
+      "algorithm": "A2C",
+      "learning_rate": 0.001,
+      "n_steps": null,
+      "batch_size": 1024,
+      "gamma": 0.99,
+      "lookback_window": 100,
+      "transaction_cost": 0.0002,
+      "timesteps": 500000
+    },
+    "error": "A2C.__init__() got an unexpected keyword argument 'buffer_size'",
+    "score": 0,
+    "tier": "failed"
+  },
+  {
+    "attempt": 9,
+    "timestamp": "2025-07-17T11:33:27.680472",
+    "hyperparameters": {
+      "algorithm": "PPO",
+      "learning_rate": 0.001,
+      "n_steps": 16384,
+      "batch_size": 1024,
+      "gamma": 0.95,
+      "lookback_window": 200,
+      "transaction_cost": 0.0001,
+      "timesteps": 500000
+    },
+    "error": "PPO.__init__() got an unexpected keyword argument 'buffer_size'",
+    "score": 0,
+    "tier": "failed"
+  },
+  {
+    "attempt": 10,
+    "timestamp": "2025-07-17T11:33:27.719663",
+    "hyperparameters": {
+      "algorithm": "A2C",
+      "learning_rate": 0.0003,
+      "n_steps": null,
+      "batch_size": 1024,
+      "gamma": 0.995,
+      "lookback_window": 100,
+      "transaction_cost": 0.0001,
+      "timesteps": 500000
+    },
+    "error": "A2C.__init__() got an unexpected keyword argument 'buffer_size'",
+    "score": 0,
+    "tier": "failed"
+  },
+  {
+    "attempt": 11,
+    "timestamp": "2025-07-17T11:33:27.755179",
+    "hyperparameters": {
+      "algorithm": "PPO",
+      "learning_rate": 0.0001,
+      "n_steps": 4096,
+      "batch_size": 1024,
+      "gamma": 0.995,
+      "lookback_window": 100,
+      "transaction_cost": 0.0002,
+      "timesteps": 500000
+    },
+    "error": "PPO.__init__() got an unexpected keyword argument 'buffer_size'",
+    "score": 0,
+    "tier": "failed"
+  },
+  {
+    "attempt": 12,
+    "timestamp": "2025-07-17T11:33:27.792207",
+    "hyperparameters": {
+      "algorithm": "A2C",
+      "learning_rate": 0.0001,
+      "n_steps": null,
+      "batch_size": 1024,
+      "gamma": 0.95,
+      "lookback_window": 100,
+      "transaction_cost": 0.0002,
+      "timesteps": 500000
+    },
+    "error": "A2C.__init__() got an unexpected keyword argument 'buffer_size'",
+    "score": 0,
+    "tier": "failed"
+  },
+  {
+    "attempt": 13,
+    "timestamp": "2025-07-17T11:33:27.827726",
+    "hyperparameters": {
+      "algorithm": "PPO",
+      "learning_rate": 0.0003,
+      "n_steps": 8192,
+      "batch_size": 1024,
+      "gamma": 0.95,
+      "lookback_window": 400,
+      "transaction_cost": 0.0001,
+      "timesteps": 500000
+    },
+    "error": "PPO.__init__() got an unexpected keyword argument 'buffer_size'",
+    "score": 0,
+    "tier": "failed"
+  },
+  {
+    "attempt": 14,
+    "timestamp": "2025-07-17T11:33:27.864818",
+    "hyperparameters": {
+      "algorithm": "A2C",
+      "learning_rate": 0.0003,
+      "n_steps": null,
+      "batch_size": 1024,
+      "gamma": 0.995,
+      "lookback_window": 300,
+      "transaction_cost": 0.0002,
+      "timesteps": 500000
+    },
+    "error": "A2C.__init__() got an unexpected keyword argument 'buffer_size'",
+    "score": 0,
+    "tier": "failed"
+  },
+  {
+    "attempt": 15,
+    "timestamp": "2025-07-17T11:33:27.901466",
+    "hyperparameters": {
+      "algorithm": "PPO",
+      "learning_rate": 0.0001,
+      "n_steps": 4096,
+      "batch_size": 1024,
+      "gamma": 0.995,
+      "lookback_window": 200,
+      "transaction_cost": 0.0005,
+      "timesteps": 500000
+    },
+    "error": "PPO.__init__() got an unexpected keyword argument 'buffer_size'",
+    "score": 0,
+    "tier": "failed"
+  },
+  {
+    "attempt": 16,
+    "timestamp": "2025-07-17T11:33:27.937983",
+    "hyperparameters": {
+      "algorithm": "PPO",
+      "learning_rate": 0.0001,
+      "n_steps": 4096,
+      "batch_size": 1024,
+      "gamma": 0.99,
+      "lookback_window": 200,
+      "transaction_cost": 0.0002,
+      "timesteps": 500000
+    },
+    "error": "PPO.__init__() got an unexpected keyword argument 'buffer_size'",
+    "score": 0,
+    "tier": "failed"
+  },
+  {
+    "attempt": 17,
+    "timestamp": "2025-07-17T11:33:28.059369",
+    "hyperparameters": {
+      "algorithm": "A2C",
+      "learning_rate": 0.003,
+      "n_steps": null,
+      "batch_size": 1024,
+      "gamma": 0.99,
+      "lookback_window": 300,
+      "transaction_cost": 0.0005,
+      "timesteps": 500000
+    },
+    "error": "A2C.__init__() got an unexpected keyword argument 'buffer_size'",
+    "score": 0,
+    "tier": "failed"
+  },
+  {
+    "attempt": 18,
+    "timestamp": "2025-07-17T11:33:28.094882",
+    "hyperparameters": {
+      "algorithm": "PPO",
+      "learning_rate": 0.0001,
+      "n_steps": 4096,
+      "batch_size": 1024,
+      "gamma": 0.99,
+      "lookback_window": 100,
+      "transaction_cost": 0.0005,
+      "timesteps": 500000
+    },
+    "error": "PPO.__init__() got an unexpected keyword argument 'buffer_size'",
+    "score": 0,
+    "tier": "failed"
+  },
+  {
+    "attempt": 19,
+    "timestamp": "2025-07-17T11:33:28.130911",
+    "hyperparameters": {
+      "algorithm": "A2C",
+      "learning_rate": 0.003,
+      "n_steps": null,
+      "batch_size": 1024,
+      "gamma": 0.95,
+      "lookback_window": 300,
+      "transaction_cost": 0.0001,
+      "timesteps": 500000
+    },
+    "error": "A2C.__init__() got an unexpected keyword argument 'buffer_size'",
+    "score": 0,
+    "tier": "failed"
+  },
+  {
+    "attempt": 20,
+    "timestamp": "2025-07-17T11:33:28.167428",
+    "hyperparameters": {
+      "algorithm": "A2C",
+      "learning_rate": 0.0003,
+      "n_steps": null,
+      "batch_size": 1024,
+      "gamma": 0.995,
+      "lookback_window": 400,
+      "transaction_cost": 0.0002,
+      "timesteps": 500000
+    },
+    "error": "A2C.__init__() got an unexpected keyword argument 'buffer_size'",
+    "score": 0,
+    "tier": "failed"
+  },
+  {
+    "attempt": 21,
+    "timestamp": "2025-07-17T11:33:28.201456",
+    "hyperparameters": {
+      "algorithm": "A2C",
+      "learning_rate": 0.001,
+      "n_steps": null,
+      "batch_size": 1024,
+      "gamma": 0.95,
+      "lookback_window": 400,
+      "transaction_cost": 0.0005,
+      "timesteps": 500000
+    },
+    "error": "A2C.__init__() got an unexpected keyword argument 'buffer_size'",
+    "score": 0,
+    "tier": "failed"
+  },
+  {
+    "attempt": 22,
+    "timestamp": "2025-07-17T11:33:28.235973",
+    "hyperparameters": {
+      "algorithm": "A2C",
+      "learning_rate": 0.0001,
+      "n_steps": null,
+      "batch_size": 1024,
+      "gamma": 0.995,
+      "lookback_window": 400,
+      "transaction_cost": 0.0001,
+      "timesteps": 500000
+    },
+    "error": "A2C.__init__() got an unexpected keyword argument 'buffer_size'",
+    "score": 0,
+    "tier": "failed"
+  },
+  {
+    "attempt": 23,
+    "timestamp": "2025-07-17T11:33:28.272530",
+    "hyperparameters": {
+      "algorithm": "PPO",
+      "learning_rate": 0.0003,
+      "n_steps": 16384,
+      "batch_size": 1024,
+      "gamma": 0.995,
+      "lookback_window": 200,
+      "transaction_cost": 0.0005,
+      "timesteps": 500000
+    },
+    "error": "PPO.__init__() got an unexpected keyword argument 'buffer_size'",
+    "score": 0,
+    "tier": "failed"
+  },
+  {
+    "attempt": 24,
+    "timestamp": "2025-07-17T11:33:28.308549",
+    "hyperparameters": {
+      "algorithm": "A2C",
+      "learning_rate": 0.001,
+      "n_steps": null,
+      "batch_size": 1024,
+      "gamma": 0.99,
+      "lookback_window": 100,
+      "transaction_cost": 0.0005,
+      "timesteps": 500000
+    },
+    "error": "A2C.__init__() got an unexpected keyword argument 'buffer_size'",
+    "score": 0,
+    "tier": "failed"
+  },
+  {
+    "attempt": 25,
+    "timestamp": "2025-07-17T11:33:28.342576",
+    "hyperparameters": {
+      "algorithm": "PPO",
+      "learning_rate": 0.003,
+      "n_steps": 16384,
+      "batch_size": 1024,
+      "gamma": 0.99,
+      "lookback_window": 300,
+      "transaction_cost": 0.0005,
+      "timesteps": 500000
+    },
+    "error": "PPO.__init__() got an unexpected keyword argument 'buffer_size'",
+    "score": 0,
+    "tier": "failed"
+  },
+  {
+    "attempt": 26,
+    "timestamp": "2025-07-17T11:33:28.382091",
+    "hyperparameters": {
+      "algorithm": "PPO",
+      "learning_rate": 0.0001,
+      "n_steps": 4096,
+      "batch_size": 1024,
+      "gamma": 0.995,
+      "lookback_window": 400,
+      "transaction_cost": 0.0005,
+      "timesteps": 500000
+    },
+    "error": "PPO.__init__() got an unexpected keyword argument 'buffer_size'",
+    "score": 0,
+    "tier": "failed"
+  },
+  {
+    "attempt": 27,
+    "timestamp": "2025-07-17T11:33:28.417551",
+    "hyperparameters": {
+      "algorithm": "A2C",
+      "learning_rate": 0.001,
+      "n_steps": null,
+      "batch_size": 1024,
+      "gamma": 0.99,
+      "lookback_window": 200,
+      "transaction_cost": 0.0002,
+      "timesteps": 500000
+    },
+    "error": "A2C.__init__() got an unexpected keyword argument 'buffer_size'",
+    "score": 0,
+    "tier": "failed"
+  },
+  {
+    "attempt": 28,
+    "timestamp": "2025-07-17T11:33:28.457615",
+    "hyperparameters": {
+      "algorithm": "PPO",
+      "learning_rate": 0.0003,
+      "n_steps": 16384,
+      "batch_size": 1024,
+      "gamma": 0.95,
+      "lookback_window": 400,
+      "transaction_cost": 0.0002,
+      "timesteps": 500000
+    },
+    "error": "PPO.__init__() got an unexpected keyword argument 'buffer_size'",
+    "score": 0,
+    "tier": "failed"
+  },
+  {
+    "attempt": 29,
+    "timestamp": "2025-07-17T11:33:28.492644",
+    "hyperparameters": {
+      "algorithm": "A2C",
+      "learning_rate": 0.0001,
+      "n_steps": null,
+      "batch_size": 1024,
+      "gamma": 0.95,
+      "lookback_window": 400,
+      "transaction_cost": 0.0005,
+      "timesteps": 500000
+    },
+    "error": "A2C.__init__() got an unexpected keyword argument 'buffer_size'",
+    "score": 0,
+    "tier": "failed"
+  },
+  {
+    "attempt": 30,
+    "timestamp": "2025-07-17T11:33:28.529307",
+    "hyperparameters": {
+      "algorithm": "PPO",
+      "learning_rate": 0.001,
+      "n_steps": 16384,
+      "batch_size": 1024,
+      "gamma": 0.95,
+      "lookback_window": 400,
+      "transaction_cost": 0.0002,
+      "timesteps": 500000
+    },
+    "error": "PPO.__init__() got an unexpected keyword argument 'buffer_size'",
+    "score": 0,
+    "tier": "failed"
+  },
+  {
+    "attempt": 31,
+    "timestamp": "2025-07-17T11:33:28.565571",
+    "hyperparameters": {
+      "algorithm": "PPO",
+      "learning_rate": 0.0003,
+      "n_steps": 4096,
+      "batch_size": 1024,
+      "gamma": 0.995,
+      "lookback_window": 400,
+      "transaction_cost": 0.0001,
+      "timesteps": 500000
+    },
+    "error": "PPO.__init__() got an unexpected keyword argument 'buffer_size'",
+    "score": 0,
+    "tier": "failed"
+  },
+  {
+    "attempt": 32,
+    "timestamp": "2025-07-17T11:33:28.601809",
+    "hyperparameters": {
+      "algorithm": "A2C",
+      "learning_rate": 0.001,
+      "n_steps": null,
+      "batch_size": 1024,
+      "gamma": 0.95,
+      "lookback_window": 200,
+      "transaction_cost": 0.0001,
+      "timesteps": 500000
+    },
+    "error": "A2C.__init__() got an unexpected keyword argument 'buffer_size'",
+    "score": 0,
+    "tier": "failed"
+  },
+  {
+    "attempt": 33,
+    "timestamp": "2025-07-17T11:33:28.638844",
+    "hyperparameters": {
+      "algorithm": "PPO",
+      "learning_rate": 0.0003,
+      "n_steps": 4096,
+      "batch_size": 1024,
+      "gamma": 0.99,
+      "lookback_window": 200,
+      "transaction_cost": 0.0001,
+      "timesteps": 500000
+    },
+    "error": "PPO.__init__() got an unexpected keyword argument 'buffer_size'",
+    "score": 0,
+    "tier": "failed"
+  },
+  {
+    "attempt": 34,
+    "timestamp": "2025-07-17T11:33:28.675358",
+    "hyperparameters": {
+      "algorithm": "PPO",
+      "learning_rate": 0.0003,
+      "n_steps": 4096,
+      "batch_size": 1024,
+      "gamma": 0.95,
+      "lookback_window": 100,
+      "transaction_cost": 0.0001,
+      "timesteps": 500000
+    },
+    "error": "PPO.__init__() got an unexpected keyword argument 'buffer_size'",
+    "score": 0,
+    "tier": "failed"
+  },
+  {
+    "attempt": 35,
+    "timestamp": "2025-07-17T11:33:28.711408",
+    "hyperparameters": {
+      "algorithm": "PPO",
+      "learning_rate": 0.001,
+      "n_steps": 8192,
+      "batch_size": 1024,
+      "gamma": 0.995,
+      "lookback_window": 300,
+      "transaction_cost": 0.0005,
+      "timesteps": 500000
+    },
+    "error": "PPO.__init__() got an unexpected keyword argument 'buffer_size'",
+    "score": 0,
+    "tier": "failed"
+  },
+  {
+    "attempt": 36,
+    "timestamp": "2025-07-17T11:33:28.746996",
+    "hyperparameters": {
+      "algorithm": "PPO",
+      "learning_rate": 0.003,
+      "n_steps": 16384,
+      "batch_size": 1024,
+      "gamma": 0.995,
+      "lookback_window": 100,
+      "transaction_cost": 0.0005,
+      "timesteps": 500000
+    },
+    "error": "PPO.__init__() got an unexpected keyword argument 'buffer_size'",
+    "score": 0,
+    "tier": "failed"
+  },
+  {
+    "attempt": 37,
+    "timestamp": "2025-07-17T11:33:28.784515",
+    "hyperparameters": {
+      "algorithm": "PPO",
+      "learning_rate": 0.001,
+      "n_steps": 4096,
+      "batch_size": 1024,
+      "gamma": 0.99,
+      "lookback_window": 100,
+      "transaction_cost": 0.0005,
+      "timesteps": 500000
+    },
+    "error": "PPO.__init__() got an unexpected keyword argument 'buffer_size'",
+    "score": 0,
+    "tier": "failed"
+  },
+  {
+    "attempt": 38,
+    "timestamp": "2025-07-17T11:33:28.821735",
+    "hyperparameters": {
+      "algorithm": "PPO",
+      "learning_rate": 0.001,
+      "n_steps": 8192,
+      "batch_size": 1024,
+      "gamma": 0.95,
+      "lookback_window": 400,
+      "transaction_cost": 0.0001,
+      "timesteps": 500000
+    },
+    "error": "PPO.__init__() got an unexpected keyword argument 'buffer_size'",
+    "score": 0,
+    "tier": "failed"
+  },
+  {
+    "attempt": 39,
+    "timestamp": "2025-07-17T11:33:28.859788",
+    "hyperparameters": {
+      "algorithm": "PPO",
+      "learning_rate": 0.0003,
+      "n_steps": 4096,
+      "batch_size": 1024,
+      "gamma": 0.95,
+      "lookback_window": 400,
+      "transaction_cost": 0.0005,
+      "timesteps": 500000
+    },
+    "error": "PPO.__init__() got an unexpected keyword argument 'buffer_size'",
+    "score": 0,
+    "tier": "failed"
+  },
+  {
+    "attempt": 40,
+    "timestamp": "2025-07-17T11:33:28.899826",
+    "hyperparameters": {
+      "algorithm": "PPO",
+      "learning_rate": 0.0003,
+      "n_steps": 4096,
+      "batch_size": 1024,
+      "gamma": 0.95,
+      "lookback_window": 300,
+      "transaction_cost": 0.0002,
+      "timesteps": 500000
+    },
+    "error": "PPO.__init__() got an unexpected keyword argument 'buffer_size'",
+    "score": 0,
+    "tier": "failed"
+  },
+  {
+    "attempt": 41,
+    "timestamp": "2025-07-17T11:33:28.948859",
+    "hyperparameters": {
+      "algorithm": "PPO",
+      "learning_rate": 0.003,
+      "n_steps": 8192,
+      "batch_size": 1024,
+      "gamma": 0.995,
+      "lookback_window": 100,
+      "transaction_cost": 0.0005,
+      "timesteps": 500000
+    },
+    "error": "PPO.__init__() got an unexpected keyword argument 'buffer_size'",
+    "score": 0,
+    "tier": "failed"
+  },
+  {
+    "attempt": 42,
+    "timestamp": "2025-07-17T11:33:28.986893",
+    "hyperparameters": {
+      "algorithm": "PPO",
+      "learning_rate": 0.0001,
+      "n_steps": 4096,
+      "batch_size": 1024,
+      "gamma": 0.95,
+      "lookback_window": 400,
+      "transaction_cost": 0.0001,
+      "timesteps": 500000
+    },
+    "error": "PPO.__init__() got an unexpected keyword argument 'buffer_size'",
+    "score": 0,
+    "tier": "failed"
+  },
+  {
+    "attempt": 43,
+    "timestamp": "2025-07-17T11:33:29.024919",
+    "hyperparameters": {
+      "algorithm": "PPO",
+      "learning_rate": 0.001,
+      "n_steps": 8192,
+      "batch_size": 1024,
+      "gamma": 0.99,
+      "lookback_window": 300,
+      "transaction_cost": 0.0001,
+      "timesteps": 500000
+    },
+    "error": "PPO.__init__() got an unexpected keyword argument 'buffer_size'",
+    "score": 0,
+    "tier": "failed"
+  },
+  {
+    "attempt": 44,
+    "timestamp": "2025-07-17T11:33:29.066496",
+    "hyperparameters": {
+      "algorithm": "PPO",
+      "learning_rate": 0.003,
+      "n_steps": 16384,
+      "batch_size": 1024,
+      "gamma": 0.95,
+      "lookback_window": 100,
+      "transaction_cost": 0.0002,
+      "timesteps": 500000
+    },
+    "error": "PPO.__init__() got an unexpected keyword argument 'buffer_size'",
+    "score": 0,
+    "tier": "failed"
+  },
+  {
+    "attempt": 45,
+    "timestamp": "2025-07-17T11:33:29.102010",
+    "hyperparameters": {
+      "algorithm": "A2C",
+      "learning_rate": 0.0001,
+      "n_steps": null,
+      "batch_size": 1024,
+      "gamma": 0.99,
+      "lookback_window": 300,
+      "transaction_cost": 0.0005,
+      "timesteps": 500000
+    },
+    "error": "A2C.__init__() got an unexpected keyword argument 'buffer_size'",
+    "score": 0,
+    "tier": "failed"
+  },
+  {
+    "attempt": 46,
+    "timestamp": "2025-07-17T11:33:29.147248",
+    "hyperparameters": {
+      "algorithm": "A2C",
+      "learning_rate": 0.0001,
+      "n_steps": null,
+      "batch_size": 1024,
+      "gamma": 0.95,
+      "lookback_window": 200,
+      "transaction_cost": 0.0002,
+      "timesteps": 500000
+    },
+    "error": "A2C.__init__() got an unexpected keyword argument 'buffer_size'",
+    "score": 0,
+    "tier": "failed"
+  },
+  {
+    "attempt": 47,
+    "timestamp": "2025-07-17T11:33:29.197994",
+    "hyperparameters": {
+      "algorithm": "A2C",
+      "learning_rate": 0.003,
+      "n_steps": null,
+      "batch_size": 1024,
+      "gamma": 0.95,
+      "lookback_window": 300,
+      "transaction_cost": 0.0002,
+      "timesteps": 500000
+    },
+    "error": "A2C.__init__() got an unexpected keyword argument 'buffer_size'",
+    "score": 0,
+    "tier": "failed"
+  },
+  {
+    "attempt": 48,
+    "timestamp": "2025-07-17T11:33:29.239512",
+    "hyperparameters": {
+      "algorithm": "PPO",
+      "learning_rate": 0.003,
+      "n_steps": 8192,
+      "batch_size": 1024,
+      "gamma": 0.99,
+      "lookback_window": 400,
+      "transaction_cost": 0.0002,
+      "timesteps": 500000
+    },
+    "error": "PPO.__init__() got an unexpected keyword argument 'buffer_size'",
+    "score": 0,
+    "tier": "failed"
+  },
+  {
+    "attempt": 49,
+    "timestamp": "2025-07-17T11:33:29.279115",
+    "hyperparameters": {
+      "algorithm": "PPO",
+      "learning_rate": 0.003,
+      "n_steps": 4096,
+      "batch_size": 1024,
+      "gamma": 0.99,
+      "lookback_window": 400,
+      "transaction_cost": 0.0005,
+      "timesteps": 500000
+    },
+    "error": "PPO.__init__() got an unexpected keyword argument 'buffer_size'",
+    "score": 0,
+    "tier": "failed"
+  },
+  {
+    "attempt": 50,
+    "timestamp": "2025-07-17T11:33:29.317633",
+    "hyperparameters": {
+      "algorithm": "PPO",
+      "learning_rate": 0.0001,
+      "n_steps": 16384,
+      "batch_size": 1024,
+      "gamma": 0.95,
+      "lookback_window": 200,
+      "transaction_cost": 0.0005,
+      "timesteps": 500000
+    },
+    "error": "PPO.__init__() got an unexpected keyword argument 'buffer_size'",
+    "score": 0,
+    "tier": "failed"
+  },
+  {
+    "attempt": 51,
+    "timestamp": "2025-07-17T11:33:29.355144",
+    "hyperparameters": {
+      "algorithm": "PPO",
+      "learning_rate": 0.003,
+      "n_steps": 16384,
+      "batch_size": 1024,
+      "gamma": 0.995,
+      "lookback_window": 300,
+      "transaction_cost": 0.0002,
+      "timesteps": 500000
+    },
+    "error": "PPO.__init__() got an unexpected keyword argument 'buffer_size'",
+    "score": 0,
+    "tier": "failed"
+  },
+  {
+    "attempt": 52,
+    "timestamp": "2025-07-17T11:33:29.392317",
+    "hyperparameters": {
+      "algorithm": "PPO",
+      "learning_rate": 0.003,
+      "n_steps": 8192,
+      "batch_size": 1024,
+      "gamma": 0.95,
+      "lookback_window": 300,
+      "transaction_cost": 0.0001,
+      "timesteps": 500000
+    },
+    "error": "PPO.__init__() got an unexpected keyword argument 'buffer_size'",
+    "score": 0,
+    "tier": "failed"
+  },
+  {
+    "attempt": 53,
+    "timestamp": "2025-07-17T11:33:29.429362",
+    "hyperparameters": {
+      "algorithm": "PPO",
+      "learning_rate": 0.003,
+      "n_steps": 8192,
+      "batch_size": 1024,
+      "gamma": 0.99,
+      "lookback_window": 300,
+      "transaction_cost": 0.0005,
+      "timesteps": 500000
+    },
+    "error": "PPO.__init__() got an unexpected keyword argument 'buffer_size'",
+    "score": 0,
+    "tier": "failed"
+  },
+  {
+    "attempt": 54,
+    "timestamp": "2025-07-17T11:33:29.468992",
+    "hyperparameters": {
+      "algorithm": "PPO",
+      "learning_rate": 0.001,
+      "n_steps": 16384,
+      "batch_size": 1024,
+      "gamma": 0.995,
+      "lookback_window": 300,
+      "transaction_cost": 0.0002,
+      "timesteps": 500000
+    },
+    "error": "PPO.__init__() got an unexpected keyword argument 'buffer_size'",
+    "score": 0,
+    "tier": "failed"
+  },
+  {
+    "attempt": 55,
+    "timestamp": "2025-07-17T11:33:29.507506",
+    "hyperparameters": {
+      "algorithm": "PPO",
+      "learning_rate": 0.0003,
+      "n_steps": 16384,
+      "batch_size": 1024,
+      "gamma": 0.995,
+      "lookback_window": 100,
+      "transaction_cost": 0.0001,
+      "timesteps": 500000
+    },
+    "error": "PPO.__init__() got an unexpected keyword argument 'buffer_size'",
+    "score": 0,
+    "tier": "failed"
+  },
+  {
+    "attempt": 56,
+    "timestamp": "2025-07-17T11:33:29.547027",
+    "hyperparameters": {
+      "algorithm": "PPO",
+      "learning_rate": 0.0003,
+      "n_steps": 8192,
+      "batch_size": 1024,
+      "gamma": 0.99,
+      "lookback_window": 400,
+      "transaction_cost": 0.0002,
+      "timesteps": 500000
+    },
+    "error": "PPO.__init__() got an unexpected keyword argument 'buffer_size'",
+    "score": 0,
+    "tier": "failed"
+  },
+  {
+    "attempt": 57,
+    "timestamp": "2025-07-17T11:33:29.586544",
+    "hyperparameters": {
+      "algorithm": "PPO",
+      "learning_rate": 0.0003,
+      "n_steps": 8192,
+      "batch_size": 1024,
+      "gamma": 0.99,
+      "lookback_window": 100,
+      "transaction_cost": 0.0001,
+      "timesteps": 500000
+    },
+    "error": "PPO.__init__() got an unexpected keyword argument 'buffer_size'",
+    "score": 0,
+    "tier": "failed"
+  },
+  {
+    "attempt": 58,
+    "timestamp": "2025-07-17T11:33:29.623451",
+    "hyperparameters": {
+      "algorithm": "PPO",
+      "learning_rate": 0.0001,
+      "n_steps": 8192,
+      "batch_size": 1024,
+      "gamma": 0.995,
+      "lookback_window": 200,
+      "transaction_cost": 0.0002,
+      "timesteps": 500000
+    },
+    "error": "PPO.__init__() got an unexpected keyword argument 'buffer_size'",
+    "score": 0,
+    "tier": "failed"
+  },
+  {
+    "attempt": 59,
+    "timestamp": "2025-07-17T11:33:29.661963",
+    "hyperparameters": {
+      "algorithm": "A2C",
+      "learning_rate": 0.003,
+      "n_steps": null,
+      "batch_size": 1024,
+      "gamma": 0.995,
+      "lookback_window": 400,
+      "transaction_cost": 0.0005,
+      "timesteps": 500000
+    },
+    "error": "A2C.__init__() got an unexpected keyword argument 'buffer_size'",
+    "score": 0,
+    "tier": "failed"
+  },
+  {
+    "attempt": 60,
+    "timestamp": "2025-07-17T11:33:29.700481",
+    "hyperparameters": {
+      "algorithm": "A2C",
+      "learning_rate": 0.0003,
+      "n_steps": null,
+      "batch_size": 1024,
+      "gamma": 0.99,
+      "lookback_window": 400,
+      "transaction_cost": 0.0005,
+      "timesteps": 500000
+    },
+    "error": "A2C.__init__() got an unexpected keyword argument 'buffer_size'",
+    "score": 0,
+    "tier": "failed"
+  },
+  {
+    "attempt": 61,
+    "timestamp": "2025-07-17T11:33:29.736996",
+    "hyperparameters": {
+      "algorithm": "PPO",
+      "learning_rate": 0.001,
+      "n_steps": 16384,
+      "batch_size": 1024,
+      "gamma": 0.995,
+      "lookback_window": 400,
+      "transaction_cost": 0.0005,
+      "timesteps": 500000
+    },
+    "error": "PPO.__init__() got an unexpected keyword argument 'buffer_size'",
+    "score": 0,
+    "tier": "failed"
+  },
+  {
+    "attempt": 62,
+    "timestamp": "2025-07-17T11:33:29.776508",
+    "hyperparameters": {
+      "algorithm": "PPO",
+      "learning_rate": 0.0001,
+      "n_steps": 16384,
+      "batch_size": 1024,
+      "gamma": 0.99,
+      "lookback_window": 300,
+      "transaction_cost": 0.0005,
+      "timesteps": 500000
+    },
+    "error": "PPO.__init__() got an unexpected keyword argument 'buffer_size'",
+    "score": 0,
+    "tier": "failed"
+  },
+  {
+    "attempt": 63,
+    "timestamp": "2025-07-17T11:33:29.812601",
+    "hyperparameters": {
+      "algorithm": "A2C",
+      "learning_rate": 0.0003,
+      "n_steps": null,
+      "batch_size": 1024,
+      "gamma": 0.95,
+      "lookback_window": 300,
+      "transaction_cost": 0.0001,
+      "timesteps": 500000
+    },
+    "error": "A2C.__init__() got an unexpected keyword argument 'buffer_size'",
+    "score": 0,
+    "tier": "failed"
+  },
+  {
+    "attempt": 64,
+    "timestamp": "2025-07-17T11:33:29.851700",
+    "hyperparameters": {
+      "algorithm": "PPO",
+      "learning_rate": 0.003,
+      "n_steps": 4096,
+      "batch_size": 1024,
+      "gamma": 0.99,
+      "lookback_window": 200,
+      "transaction_cost": 0.0005,
+      "timesteps": 500000
+    },
+    "error": "PPO.__init__() got an unexpected keyword argument 'buffer_size'",
+    "score": 0,
+    "tier": "failed"
+  },
+  {
+    "attempt": 65,
+    "timestamp": "2025-07-17T11:33:29.889227",
+    "hyperparameters": {
+      "algorithm": "A2C",
+      "learning_rate": 0.003,
+      "n_steps": null,
+      "batch_size": 1024,
+      "gamma": 0.995,
+      "lookback_window": 100,
+      "transaction_cost": 0.0002,
+      "timesteps": 500000
+    },
+    "error": "A2C.__init__() got an unexpected keyword argument 'buffer_size'",
+    "score": 0,
+    "tier": "failed"
+  },
+  {
+    "attempt": 66,
+    "timestamp": "2025-07-17T11:33:29.927271",
+    "hyperparameters": {
+      "algorithm": "A2C",
+      "learning_rate": 0.001,
+      "n_steps": null,
+      "batch_size": 1024,
+      "gamma": 0.99,
+      "lookback_window": 400,
+      "transaction_cost": 0.0002,
+      "timesteps": 500000
+    },
+    "error": "A2C.__init__() got an unexpected keyword argument 'buffer_size'",
+    "score": 0,
+    "tier": "failed"
+  },
+  {
+    "attempt": 67,
+    "timestamp": "2025-07-17T11:33:29.963788",
+    "hyperparameters": {
+      "algorithm": "PPO",
+      "learning_rate": 0.003,
+      "n_steps": 8192,
+      "batch_size": 1024,
+      "gamma": 0.99,
+      "lookback_window": 200,
+      "transaction_cost": 0.0002,
+      "timesteps": 500000
+    },
+    "error": "PPO.__init__() got an unexpected keyword argument 'buffer_size'",
+    "score": 0,
+    "tier": "failed"
+  },
+  {
+    "attempt": 68,
+    "timestamp": "2025-07-17T11:33:30.001884",
+    "hyperparameters": {
+      "algorithm": "PPO",
+      "learning_rate": 0.003,
+      "n_steps": 16384,
+      "batch_size": 1024,
+      "gamma": 0.995,
+      "lookback_window": 200,
+      "transaction_cost": 0.0002,
+      "timesteps": 500000
+    },
+    "error": "PPO.__init__() got an unexpected keyword argument 'buffer_size'",
+    "score": 0,
+    "tier": "failed"
+  },
+  {
+    "attempt": 69,
+    "timestamp": "2025-07-17T11:33:30.042398",
+    "hyperparameters": {
+      "algorithm": "A2C",
+      "learning_rate": 0.003,
+      "n_steps": null,
+      "batch_size": 1024,
+      "gamma": 0.995,
+      "lookback_window": 200,
+      "transaction_cost": 0.0001,
+      "timesteps": 500000
+    },
+    "error": "A2C.__init__() got an unexpected keyword argument 'buffer_size'",
+    "score": 0,
+    "tier": "failed"
+  },
+  {
+    "attempt": 70,
+    "timestamp": "2025-07-17T11:33:30.079701",
+    "hyperparameters": {
+      "algorithm": "PPO",
+      "learning_rate": 0.0003,
+      "n_steps": 16384,
+      "batch_size": 1024,
+      "gamma": 0.99,
+      "lookback_window": 200,
+      "transaction_cost": 0.0002,
+      "timesteps": 500000
+    },
+    "error": "PPO.__init__() got an unexpected keyword argument 'buffer_size'",
+    "score": 0,
+    "tier": "failed"
+  },
+  {
+    "attempt": 71,
+    "timestamp": "2025-07-17T11:33:30.117723",
+    "hyperparameters": {
+      "algorithm": "A2C",
+      "learning_rate": 0.001,
+      "n_steps": null,
+      "batch_size": 1024,
+      "gamma": 0.995,
+      "lookback_window": 400,
+      "transaction_cost": 0.0001,
+      "timesteps": 500000
+    },
+    "error": "A2C.__init__() got an unexpected keyword argument 'buffer_size'",
+    "score": 0,
+    "tier": "failed"
+  },
+  {
+    "attempt": 72,
+    "timestamp": "2025-07-17T11:33:30.154741",
+    "hyperparameters": {
+      "algorithm": "A2C",
+      "learning_rate": 0.0003,
+      "n_steps": null,
+      "batch_size": 1024,
+      "gamma": 0.95,
+      "lookback_window": 100,
+      "transaction_cost": 0.0005,
+      "timesteps": 500000
+    },
+    "error": "A2C.__init__() got an unexpected keyword argument 'buffer_size'",
+    "score": 0,
+    "tier": "failed"
+  },
+  {
+    "attempt": 73,
+    "timestamp": "2025-07-17T11:33:30.190774",
+    "hyperparameters": {
+      "algorithm": "PPO",
+      "learning_rate": 0.0001,
+      "n_steps": 4096,
+      "batch_size": 1024,
+      "gamma": 0.95,
+      "lookback_window": 300,
+      "transaction_cost": 0.0002,
+      "timesteps": 500000
+    },
+    "error": "PPO.__init__() got an unexpected keyword argument 'buffer_size'",
+    "score": 0,
+    "tier": "failed"
+  },
+  {
+    "attempt": 74,
+    "timestamp": "2025-07-17T11:33:30.227296",
+    "hyperparameters": {
+      "algorithm": "PPO",
+      "learning_rate": 0.0003,
+      "n_steps": 16384,
+      "batch_size": 1024,
+      "gamma": 0.99,
+      "lookback_window": 400,
+      "transaction_cost": 0.0005,
+      "timesteps": 500000
+    },
+    "error": "PPO.__init__() got an unexpected keyword argument 'buffer_size'",
+    "score": 0,
+    "tier": "failed"
+  },
+  {
+    "attempt": 75,
+    "timestamp": "2025-07-17T11:33:30.262890",
+    "hyperparameters": {
+      "algorithm": "A2C",
+      "learning_rate": 0.0001,
+      "n_steps": null,
+      "batch_size": 1024,
+      "gamma": 0.99,
+      "lookback_window": 300,
+      "transaction_cost": 0.0002,
+      "timesteps": 500000
+    },
+    "error": "A2C.__init__() got an unexpected keyword argument 'buffer_size'",
+    "score": 0,
+    "tier": "failed"
+  },
+  {
+    "attempt": 76,
+    "timestamp": "2025-07-17T11:33:30.298402",
+    "hyperparameters": {
+      "algorithm": "PPO",
+      "learning_rate": 0.0003,
+      "n_steps": 8192,
+      "batch_size": 1024,
+      "gamma": 0.95,
+      "lookback_window": 100,
+      "transaction_cost": 0.0005,
+      "timesteps": 500000
+    },
+    "error": "PPO.__init__() got an unexpected keyword argument 'buffer_size'",
+    "score": 0,
+    "tier": "failed"
+  },
+  {
+    "attempt": 77,
+    "timestamp": "2025-07-17T11:33:30.336455",
+    "hyperparameters": {
+      "algorithm": "PPO",
+      "learning_rate": 0.0001,
+      "n_steps": 16384,
+      "batch_size": 1024,
+      "gamma": 0.99,
+      "lookback_window": 200,
+      "transaction_cost": 0.0002,
+      "timesteps": 500000
+    },
+    "error": "PPO.__init__() got an unexpected keyword argument 'buffer_size'",
+    "score": 0,
+    "tier": "failed"
+  },
+  {
+    "attempt": 78,
+    "timestamp": "2025-07-17T11:33:30.371014",
+    "hyperparameters": {
+      "algorithm": "PPO",
+      "learning_rate": 0.0003,
+      "n_steps": 16384,
+      "batch_size": 1024,
+      "gamma": 0.99,
+      "lookback_window": 300,
+      "transaction_cost": 0.0005,
+      "timesteps": 500000
+    },
+    "error": "PPO.__init__() got an unexpected keyword argument 'buffer_size'",
+    "score": 0,
+    "tier": "failed"
+  },
+  {
+    "attempt": 79,
+    "timestamp": "2025-07-17T11:33:30.408532",
+    "hyperparameters": {
+      "algorithm": "PPO",
+      "learning_rate": 0.0001,
+      "n_steps": 8192,
+      "batch_size": 1024,
+      "gamma": 0.99,
+      "lookback_window": 100,
+      "transaction_cost": 0.0002,
+      "timesteps": 500000
+    },
+    "error": "PPO.__init__() got an unexpected keyword argument 'buffer_size'",
+    "score": 0,
+    "tier": "failed"
+  },
+  {
+    "attempt": 80,
+    "timestamp": "2025-07-17T11:33:30.444634",
+    "hyperparameters": {
+      "algorithm": "PPO",
+      "learning_rate": 0.0001,
+      "n_steps": 8192,
+      "batch_size": 1024,
+      "gamma": 0.995,
+      "lookback_window": 400,
+      "transaction_cost": 0.0005,
+      "timesteps": 500000
+    },
+    "error": "PPO.__init__() got an unexpected keyword argument 'buffer_size'",
+    "score": 0,
+    "tier": "failed"
+  },
+  {
+    "attempt": 81,
+    "timestamp": "2025-07-17T11:33:30.482682",
+    "hyperparameters": {
+      "algorithm": "PPO",
+      "learning_rate": 0.001,
+      "n_steps": 8192,
+      "batch_size": 1024,
+      "gamma": 0.95,
+      "lookback_window": 200,
+      "transaction_cost": 0.0005,
+      "timesteps": 500000
+    },
+    "error": "PPO.__init__() got an unexpected keyword argument 'buffer_size'",
+    "score": 0,
+    "tier": "failed"
+  },
+  {
+    "attempt": 82,
+    "timestamp": "2025-07-17T11:33:30.519199",
+    "hyperparameters": {
+      "algorithm": "PPO",
+      "learning_rate": 0.0003,
+      "n_steps": 16384,
+      "batch_size": 1024,
+      "gamma": 0.99,
+      "lookback_window": 300,
+      "transaction_cost": 0.0002,
+      "timesteps": 500000
+    },
+    "error": "PPO.__init__() got an unexpected keyword argument 'buffer_size'",
+    "score": 0,
+    "tier": "failed"
+  },
+  {
+    "attempt": 83,
+    "timestamp": "2025-07-17T11:33:30.555719",
+    "hyperparameters": {
+      "algorithm": "PPO",
+      "learning_rate": 0.001,
+      "n_steps": 16384,
+      "batch_size": 1024,
+      "gamma": 0.995,
+      "lookback_window": 100,
+      "transaction_cost": 0.0001,
+      "timesteps": 500000
+    },
+    "error": "PPO.__init__() got an unexpected keyword argument 'buffer_size'",
+    "score": 0,
+    "tier": "failed"
+  },
+  {
+    "attempt": 84,
+    "timestamp": "2025-07-17T11:33:30.592777",
+    "hyperparameters": {
+      "algorithm": "PPO",
+      "learning_rate": 0.001,
+      "n_steps": 16384,
+      "batch_size": 1024,
+      "gamma": 0.95,
+      "lookback_window": 300,
+      "transaction_cost": 0.0005,
+      "timesteps": 500000
+    },
+    "error": "PPO.__init__() got an unexpected keyword argument 'buffer_size'",
+    "score": 0,
+    "tier": "failed"
+  },
+  {
+    "attempt": 85,
+    "timestamp": "2025-07-17T11:33:30.628002",
+    "hyperparameters": {
+      "algorithm": "PPO",
+      "learning_rate": 0.003,
+      "n_steps": 8192,
+      "batch_size": 1024,
+      "gamma": 0.95,
+      "lookback_window": 200,
+      "transaction_cost": 0.0001,
+      "timesteps": 500000
+    },
+    "error": "PPO.__init__() got an unexpected keyword argument 'buffer_size'",
+    "score": 0,
+    "tier": "failed"
+  },
+  {
+    "attempt": 86,
+    "timestamp": "2025-07-17T11:33:30.667896",
+    "hyperparameters": {
+      "algorithm": "PPO",
+      "learning_rate": 0.0001,
+      "n_steps": 16384,
+      "batch_size": 1024,
+      "gamma": 0.995,
+      "lookback_window": 400,
+      "transaction_cost": 0.0005,
+      "timesteps": 500000
+    },
+    "error": "PPO.__init__() got an unexpected keyword argument 'buffer_size'",
+    "score": 0,
+    "tier": "failed"
+  },
+  {
+    "attempt": 87,
+    "timestamp": "2025-07-17T11:33:30.705620",
+    "hyperparameters": {
+      "algorithm": "PPO",
+      "learning_rate": 0.003,
+      "n_steps": 16384,
+      "batch_size": 1024,
+      "gamma": 0.995,
+      "lookback_window": 400,
+      "transaction_cost": 0.0002,
+      "timesteps": 500000
+    },
+    "error": "PPO.__init__() got an unexpected keyword argument 'buffer_size'",
+    "score": 0,
+    "tier": "failed"
+  },
+  {
+    "attempt": 88,
+    "timestamp": "2025-07-17T11:33:30.745637",
+    "hyperparameters": {
+      "algorithm": "PPO",
+      "learning_rate": 0.0003,
+      "n_steps": 4096,
+      "batch_size": 1024,
+      "gamma": 0.99,
+      "lookback_window": 200,
+      "transaction_cost": 0.0005,
+      "timesteps": 500000
+    },
+    "error": "PPO.__init__() got an unexpected keyword argument 'buffer_size'",
+    "score": 0,
+    "tier": "failed"
+  },
+  {
+    "attempt": 89,
+    "timestamp": "2025-07-17T11:33:30.783163",
+    "hyperparameters": {
+      "algorithm": "A2C",
+      "learning_rate": 0.0003,
+      "n_steps": null,
+      "batch_size": 1024,
+      "gamma": 0.995,
+      "lookback_window": 300,
+      "transaction_cost": 0.0005,
+      "timesteps": 500000
+    },
+    "error": "A2C.__init__() got an unexpected keyword argument 'buffer_size'",
+    "score": 0,
+    "tier": "failed"
+  },
+  {
+    "attempt": 90,
+    "timestamp": "2025-07-17T11:33:30.820675",
+    "hyperparameters": {
+      "algorithm": "A2C",
+      "learning_rate": 0.001,
+      "n_steps": null,
+      "batch_size": 1024,
+      "gamma": 0.99,
+      "lookback_window": 300,
+      "transaction_cost": 0.0005,
+      "timesteps": 500000
+    },
+    "error": "A2C.__init__() got an unexpected keyword argument 'buffer_size'",
+    "score": 0,
+    "tier": "failed"
+  },
+  {
+    "attempt": 91,
+    "timestamp": "2025-07-17T11:33:30.857739",
+    "hyperparameters": {
+      "algorithm": "PPO",
+      "learning_rate": 0.003,
+      "n_steps": 4096,
+      "batch_size": 1024,
+      "gamma": 0.99,
+      "lookback_window": 200,
+      "transaction_cost": 0.0001,
+      "timesteps": 500000
+    },
+    "error": "PPO.__init__() got an unexpected keyword argument 'buffer_size'",
+    "score": 0,
+    "tier": "failed"
+  },
+  {
+    "attempt": 92,
+    "timestamp": "2025-07-17T11:33:30.894248",
+    "hyperparameters": {
+      "algorithm": "PPO",
+      "learning_rate": 0.0003,
+      "n_steps": 4096,
+      "batch_size": 1024,
+      "gamma": 0.95,
+      "lookback_window": 400,
+      "transaction_cost": 0.0002,
+      "timesteps": 500000
+    },
+    "error": "PPO.__init__() got an unexpected keyword argument 'buffer_size'",
+    "score": 0,
+    "tier": "failed"
+  },
+  {
+    "attempt": 93,
+    "timestamp": "2025-07-17T11:33:30.929451",
+    "hyperparameters": {
+      "algorithm": "PPO",
+      "learning_rate": 0.0001,
+      "n_steps": 16384,
+      "batch_size": 1024,
+      "gamma": 0.99,
+      "lookback_window": 100,
+      "transaction_cost": 0.0005,
+      "timesteps": 500000
+    },
+    "error": "PPO.__init__() got an unexpected keyword argument 'buffer_size'",
+    "score": 0,
+    "tier": "failed"
+  },
+  {
+    "attempt": 94,
+    "timestamp": "2025-07-17T11:33:30.966277",
+    "hyperparameters": {
+      "algorithm": "PPO",
+      "learning_rate": 0.001,
+      "n_steps": 4096,
+      "batch_size": 1024,
+      "gamma": 0.99,
+      "lookback_window": 400,
+      "transaction_cost": 0.0002,
+      "timesteps": 500000
+    },
+    "error": "PPO.__init__() got an unexpected keyword argument 'buffer_size'",
+    "score": 0,
+    "tier": "failed"
+  },
+  {
+    "attempt": 95,
+    "timestamp": "2025-07-17T11:33:31.005794",
+    "hyperparameters": {
+      "algorithm": "PPO",
+      "learning_rate": 0.001,
+      "n_steps": 4096,
+      "batch_size": 1024,
+      "gamma": 0.995,
+      "lookback_window": 400,
+      "transaction_cost": 0.0001,
+      "timesteps": 500000
+    },
+    "error": "PPO.__init__() got an unexpected keyword argument 'buffer_size'",
+    "score": 0,
+    "tier": "failed"
+  },
+  {
+    "attempt": 96,
+    "timestamp": "2025-07-17T11:33:31.048320",
+    "hyperparameters": {
+      "algorithm": "PPO",
+      "learning_rate": 0.001,
+      "n_steps": 4096,
+      "batch_size": 1024,
+      "gamma": 0.995,
+      "lookback_window": 100,
+      "transaction_cost": 0.0002,
+      "timesteps": 500000
+    },
+    "error": "PPO.__init__() got an unexpected keyword argument 'buffer_size'",
+    "score": 0,
+    "tier": "failed"
+  },
+  {
+    "attempt": 97,
+    "timestamp": "2025-07-17T11:33:31.096863",
+    "hyperparameters": {
+      "algorithm": "PPO",
+      "learning_rate": 0.0003,
+      "n_steps": 8192,
+      "batch_size": 1024,
+      "gamma": 0.95,
+      "lookback_window": 200,
+      "transaction_cost": 0.0005,
+      "timesteps": 500000
+    },
+    "error": "PPO.__init__() got an unexpected keyword argument 'buffer_size'",
+    "score": 0,
+    "tier": "failed"
+  },
+  {
+    "attempt": 98,
+    "timestamp": "2025-07-17T11:33:31.143900",
+    "hyperparameters": {
+      "algorithm": "A2C",
+      "learning_rate": 0.003,
+      "n_steps": null,
+      "batch_size": 1024,
+      "gamma": 0.99,
+      "lookback_window": 400,
+      "transaction_cost": 0.0002,
+      "timesteps": 500000
+    },
+    "error": "A2C.__init__() got an unexpected keyword argument 'buffer_size'",
+    "score": 0,
+    "tier": "failed"
+  },
+  {
+    "attempt": 99,
+    "timestamp": "2025-07-17T11:33:31.181422",
+    "hyperparameters": {
+      "algorithm": "PPO",
+      "learning_rate": 0.003,
+      "n_steps": 4096,
+      "batch_size": 1024,
+      "gamma": 0.99,
+      "lookback_window": 200,
+      "transaction_cost": 0.0002,
+      "timesteps": 500000
+    },
+    "error": "PPO.__init__() got an unexpected keyword argument 'buffer_size'",
+    "score": 0,
+    "tier": "failed"
+  },
+  {
+    "attempt": 100,
+    "timestamp": "2025-07-17T11:33:31.219450",
+    "hyperparameters": {
+      "algorithm": "PPO",
+      "learning_rate": 0.001,
+      "n_steps": 8192,
+      "batch_size": 1024,
+      "gamma": 0.995,
+      "lookback_window": 100,
+      "transaction_cost": 0.0005,
+      "timesteps": 500000
+    },
+    "error": "PPO.__init__() got an unexpected keyword argument 'buffer_size'",
+    "score": 0,
+    "tier": "failed"
+  },
+  {
+    "attempt": 1,
+    "timestamp": "2025-07-17T11:36:20.911542",
+    "hyperparameters": {
+      "algorithm": "PPO",
+      "learning_rate": 0.0003,
+      "n_steps": 4096,
+      "batch_size": 1024,
+      "gamma": 0.99,
+      "lookback_window": 300,
+      "transaction_cost": 0.0005,
+      "timesteps": 500000
+    },
+    "error": "PPO.__init__() got an unexpected keyword argument 'buffer_size'",
+    "score": 0,
+    "tier": "failed"
+  },
+  {
+    "attempt": 2,
+    "timestamp": "2025-07-17T11:36:20.951945",
+    "hyperparameters": {
+      "algorithm": "PPO",
+      "learning_rate": 0.0003,
+      "n_steps": 16384,
+      "batch_size": 1024,
+      "gamma": 0.995,
+      "lookback_window": 200,
+      "transaction_cost": 0.0001,
+      "timesteps": 500000
+    },
+    "error": "PPO.__init__() got an unexpected keyword argument 'buffer_size'",
+    "score": 0,
+    "tier": "failed"
+  },
+  {
+    "attempt": 3,
+    "timestamp": "2025-07-17T11:36:20.990038",
+    "hyperparameters": {
+      "algorithm": "PPO",
+      "learning_rate": 0.003,
+      "n_steps": 8192,
+      "batch_size": 1024,
+      "gamma": 0.99,
+      "lookback_window": 300,
+      "transaction_cost": 0.0002,
+      "timesteps": 500000
+    },
+    "error": "PPO.__init__() got an unexpected keyword argument 'buffer_size'",
+    "score": 0,
+    "tier": "failed"
+  },
+  {
+    "attempt": 4,
+    "timestamp": "2025-07-17T11:36:21.030064",
+    "hyperparameters": {
+      "algorithm": "PPO",
+      "learning_rate": 0.001,
+      "n_steps": 4096,
+      "batch_size": 1024,
+      "gamma": 0.99,
+      "lookback_window": 400,
+      "transaction_cost": 0.0005,
+      "timesteps": 500000
+    },
+    "error": "PPO.__init__() got an unexpected keyword argument 'buffer_size'",
+    "score": 0,
+    "tier": "failed"
+  },
+  {
+    "attempt": 5,
+    "timestamp": "2025-07-17T11:36:21.073579",
+    "hyperparameters": {
+      "algorithm": "PPO",
+      "learning_rate": 0.0001,
+      "n_steps": 8192,
+      "batch_size": 1024,
+      "gamma": 0.95,
+      "lookback_window": 400,
+      "transaction_cost": 0.0001,
+      "timesteps": 500000
+    },
+    "error": "PPO.__init__() got an unexpected keyword argument 'buffer_size'",
+    "score": 0,
+    "tier": "failed"
+  },
+  {
+    "attempt": 6,
+    "timestamp": "2025-07-17T11:36:21.114671",
+    "hyperparameters": {
+      "algorithm": "PPO",
+      "learning_rate": 0.001,
+      "n_steps": 4096,
+      "batch_size": 1024,
+      "gamma": 0.99,
+      "lookback_window": 200,
+      "transaction_cost": 0.0005,
+      "timesteps": 500000
+    },
+    "error": "PPO.__init__() got an unexpected keyword argument 'buffer_size'",
+    "score": 0,
+    "tier": "failed"
+  },
+  {
+    "attempt": 7,
+    "timestamp": "2025-07-17T11:36:21.157698",
+    "hyperparameters": {
+      "algorithm": "PPO",
+      "learning_rate": 0.001,
+      "n_steps": 8192,
+      "batch_size": 1024,
+      "gamma": 0.99,
+      "lookback_window": 300,
+      "transaction_cost": 0.0002,
+      "timesteps": 500000
+    },
+    "error": "PPO.__init__() got an unexpected keyword argument 'buffer_size'",
+    "score": 0,
+    "tier": "failed"
+  },
+  {
+    "attempt": 8,
+    "timestamp": "2025-07-17T11:36:21.200847",
+    "hyperparameters": {
+      "algorithm": "PPO",
+      "learning_rate": 0.0001,
+      "n_steps": 16384,
+      "batch_size": 1024,
+      "gamma": 0.995,
+      "lookback_window": 400,
+      "transaction_cost": 0.0002,
+      "timesteps": 500000
+    },
+    "error": "PPO.__init__() got an unexpected keyword argument 'buffer_size'",
+    "score": 0,
+    "tier": "failed"
+  },
+  {
+    "attempt": 9,
+    "timestamp": "2025-07-17T11:36:21.242355",
+    "hyperparameters": {
+      "algorithm": "PPO",
+      "learning_rate": 0.001,
+      "n_steps": 16384,
+      "batch_size": 1024,
+      "gamma": 0.99,
+      "lookback_window": 400,
+      "transaction_cost": 0.0001,
+      "timesteps": 500000
+    },
+    "error": "PPO.__init__() got an unexpected keyword argument 'buffer_size'",
+    "score": 0,
+    "tier": "failed"
+  },
+  {
+    "attempt": 10,
+    "timestamp": "2025-07-17T11:36:21.282375",
+    "hyperparameters": {
+      "algorithm": "PPO",
+      "learning_rate": 0.001,
+      "n_steps": 16384,
+      "batch_size": 1024,
+      "gamma": 0.95,
+      "lookback_window": 200,
+      "transaction_cost": 0.0002,
+      "timesteps": 500000
+    },
+    "error": "PPO.__init__() got an unexpected keyword argument 'buffer_size'",
+    "score": 0,
+    "tier": "failed"
+  },
+  {
+    "attempt": 11,
+    "timestamp": "2025-07-17T11:36:21.322579",
+    "hyperparameters": {
+      "algorithm": "PPO",
+      "learning_rate": 0.003,
+      "n_steps": 4096,
+      "batch_size": 1024,
+      "gamma": 0.99,
+      "lookback_window": 300,
+      "transaction_cost": 0.0002,
+      "timesteps": 500000
+    },
+    "error": "PPO.__init__() got an unexpected keyword argument 'buffer_size'",
+    "score": 0,
+    "tier": "failed"
+  },
+  {
+    "attempt": 12,
+    "timestamp": "2025-07-17T11:36:21.365092",
+    "hyperparameters": {
+      "algorithm": "PPO",
+      "learning_rate": 0.0003,
+      "n_steps": 16384,
+      "batch_size": 1024,
+      "gamma": 0.95,
+      "lookback_window": 100,
+      "transaction_cost": 0.0002,
+      "timesteps": 500000
+    },
+    "error": "PPO.__init__() got an unexpected keyword argument 'buffer_size'",
+    "score": 0,
+    "tier": "failed"
+  },
+  {
+    "attempt": 13,
+    "timestamp": "2025-07-17T11:36:21.405627",
+    "hyperparameters": {
+      "algorithm": "PPO",
+      "learning_rate": 0.0003,
+      "n_steps": 8192,
+      "batch_size": 1024,
+      "gamma": 0.95,
+      "lookback_window": 300,
+      "transaction_cost": 0.0002,
+      "timesteps": 500000
+    },
+    "error": "PPO.__init__() got an unexpected keyword argument 'buffer_size'",
+    "score": 0,
+    "tier": "failed"
+  },
+  {
+    "attempt": 14,
+    "timestamp": "2025-07-17T11:36:21.446144",
+    "hyperparameters": {
+      "algorithm": "PPO",
+      "learning_rate": 0.0003,
+      "n_steps": 4096,
+      "batch_size": 1024,
+      "gamma": 0.99,
+      "lookback_window": 300,
+      "transaction_cost": 0.0001,
+      "timesteps": 500000
+    },
+    "error": "PPO.__init__() got an unexpected keyword argument 'buffer_size'",
+    "score": 0,
+    "tier": "failed"
+  },
+  {
+    "attempt": 15,
+    "timestamp": "2025-07-17T11:36:21.491169",
+    "hyperparameters": {
+      "algorithm": "PPO",
+      "learning_rate": 0.001,
+      "n_steps": 4096,
+      "batch_size": 1024,
+      "gamma": 0.95,
+      "lookback_window": 200,
+      "transaction_cost": 0.0002,
+      "timesteps": 500000
+    },
+    "error": "PPO.__init__() got an unexpected keyword argument 'buffer_size'",
+    "score": 0,
+    "tier": "failed"
+  },
+  {
+    "attempt": 16,
+    "timestamp": "2025-07-17T11:36:21.533805",
+    "hyperparameters": {
+      "algorithm": "PPO",
+      "learning_rate": 0.0001,
+      "n_steps": 8192,
+      "batch_size": 1024,
+      "gamma": 0.95,
+      "lookback_window": 200,
+      "transaction_cost": 0.0005,
+      "timesteps": 500000
+    },
+    "error": "PPO.__init__() got an unexpected keyword argument 'buffer_size'",
+    "score": 0,
+    "tier": "failed"
+  },
+  {
+    "attempt": 17,
+    "timestamp": "2025-07-17T11:36:21.579324",
+    "hyperparameters": {
+      "algorithm": "PPO",
+      "learning_rate": 0.003,
+      "n_steps": 16384,
+      "batch_size": 1024,
+      "gamma": 0.995,
+      "lookback_window": 300,
+      "transaction_cost": 0.0001,
+      "timesteps": 500000
+    },
+    "error": "PPO.__init__() got an unexpected keyword argument 'buffer_size'",
+    "score": 0,
+    "tier": "failed"
+  },
+  {
+    "attempt": 18,
+    "timestamp": "2025-07-17T11:36:21.623350",
+    "hyperparameters": {
+      "algorithm": "PPO",
+      "learning_rate": 0.0003,
+      "n_steps": 8192,
+      "batch_size": 1024,
+      "gamma": 0.995,
+      "lookback_window": 200,
+      "transaction_cost": 0.0001,
+      "timesteps": 500000
+    },
+    "error": "PPO.__init__() got an unexpected keyword argument 'buffer_size'",
+    "score": 0,
+    "tier": "failed"
+  },
+  {
+    "attempt": 19,
+    "timestamp": "2025-07-17T11:36:21.665861",
+    "hyperparameters": {
+      "algorithm": "PPO",
+      "learning_rate": 0.0001,
+      "n_steps": 16384,
+      "batch_size": 1024,
+      "gamma": 0.95,
+      "lookback_window": 300,
+      "transaction_cost": 0.0001,
+      "timesteps": 500000
+    },
+    "error": "PPO.__init__() got an unexpected keyword argument 'buffer_size'",
+    "score": 0,
+    "tier": "failed"
+  },
+  {
+    "attempt": 20,
+    "timestamp": "2025-07-17T11:36:21.708441",
+    "hyperparameters": {
+      "algorithm": "PPO",
+      "learning_rate": 0.001,
+      "n_steps": 16384,
+      "batch_size": 1024,
+      "gamma": 0.995,
+      "lookback_window": 100,
+      "transaction_cost": 0.0005,
+      "timesteps": 500000
+    },
+    "error": "PPO.__init__() got an unexpected keyword argument 'buffer_size'",
+    "score": 0,
+    "tier": "failed"
+  },
+  {
+    "attempt": 21,
+    "timestamp": "2025-07-17T11:36:21.755049",
+    "hyperparameters": {
+      "algorithm": "PPO",
+      "learning_rate": 0.0003,
+      "n_steps": 16384,
+      "batch_size": 1024,
+      "gamma": 0.99,
+      "lookback_window": 100,
+      "transaction_cost": 0.0005,
+      "timesteps": 500000
+    },
+    "error": "PPO.__init__() got an unexpected keyword argument 'buffer_size'",
+    "score": 0,
+    "tier": "failed"
+  },
+  {
+    "attempt": 22,
+    "timestamp": "2025-07-17T11:36:21.797697",
+    "hyperparameters": {
+      "algorithm": "PPO",
+      "learning_rate": 0.003,
+      "n_steps": 4096,
+      "batch_size": 1024,
+      "gamma": 0.99,
+      "lookback_window": 400,
+      "transaction_cost": 0.0001,
+      "timesteps": 500000
+    },
+    "error": "PPO.__init__() got an unexpected keyword argument 'buffer_size'",
+    "score": 0,
+    "tier": "failed"
+  },
+  {
+    "attempt": 23,
+    "timestamp": "2025-07-17T11:36:21.837218",
+    "hyperparameters": {
+      "algorithm": "PPO",
+      "learning_rate": 0.003,
+      "n_steps": 16384,
+      "batch_size": 1024,
+      "gamma": 0.99,
+      "lookback_window": 400,
+      "transaction_cost": 0.0001,
+      "timesteps": 500000
+    },
+    "error": "PPO.__init__() got an unexpected keyword argument 'buffer_size'",
+    "score": 0,
+    "tier": "failed"
+  },
+  {
+    "attempt": 24,
+    "timestamp": "2025-07-17T11:36:21.881243",
+    "hyperparameters": {
+      "algorithm": "PPO",
+      "learning_rate": 0.0003,
+      "n_steps": 8192,
+      "batch_size": 1024,
+      "gamma": 0.95,
+      "lookback_window": 200,
+      "transaction_cost": 0.0002,
+      "timesteps": 500000
+    },
+    "error": "PPO.__init__() got an unexpected keyword argument 'buffer_size'",
+    "score": 0,
+    "tier": "failed"
+  },
+  {
+    "attempt": 25,
+    "timestamp": "2025-07-17T11:36:21.935286",
+    "hyperparameters": {
+      "algorithm": "PPO",
+      "learning_rate": 0.0001,
+      "n_steps": 8192,
+      "batch_size": 1024,
+      "gamma": 0.99,
+      "lookback_window": 100,
+      "transaction_cost": 0.0001,
+      "timesteps": 500000
+    },
+    "error": "PPO.__init__() got an unexpected keyword argument 'buffer_size'",
+    "score": 0,
+    "tier": "failed"
+  },
+  {
+    "attempt": 26,
+    "timestamp": "2025-07-17T11:36:21.977796",
+    "hyperparameters": {
+      "algorithm": "PPO",
+      "learning_rate": 0.003,
+      "n_steps": 8192,
+      "batch_size": 1024,
+      "gamma": 0.99,
+      "lookback_window": 400,
+      "transaction_cost": 0.0001,
+      "timesteps": 500000
+    },
+    "error": "PPO.__init__() got an unexpected keyword argument 'buffer_size'",
+    "score": 0,
+    "tier": "failed"
+  },
+  {
+    "attempt": 27,
+    "timestamp": "2025-07-17T11:36:22.017868",
+    "hyperparameters": {
+      "algorithm": "PPO",
+      "learning_rate": 0.0001,
+      "n_steps": 16384,
+      "batch_size": 1024,
+      "gamma": 0.95,
+      "lookback_window": 400,
+      "transaction_cost": 0.0001,
+      "timesteps": 500000
+    },
+    "error": "PPO.__init__() got an unexpected keyword argument 'buffer_size'",
+    "score": 0,
+    "tier": "failed"
+  },
+  {
+    "attempt": 28,
+    "timestamp": "2025-07-17T11:36:22.056380",
+    "hyperparameters": {
+      "algorithm": "PPO",
+      "learning_rate": 0.0001,
+      "n_steps": 16384,
+      "batch_size": 1024,
+      "gamma": 0.99,
+      "lookback_window": 300,
+      "transaction_cost": 0.0002,
+      "timesteps": 500000
+    },
+    "error": "PPO.__init__() got an unexpected keyword argument 'buffer_size'",
+    "score": 0,
+    "tier": "failed"
+  },
+  {
+    "attempt": 29,
+    "timestamp": "2025-07-17T11:36:22.101024",
+    "hyperparameters": {
+      "algorithm": "PPO",
+      "learning_rate": 0.001,
+      "n_steps": 4096,
+      "batch_size": 1024,
+      "gamma": 0.95,
+      "lookback_window": 100,
+      "transaction_cost": 0.0001,
+      "timesteps": 500000
+    },
+    "error": "PPO.__init__() got an unexpected keyword argument 'buffer_size'",
+    "score": 0,
+    "tier": "failed"
+  },
+  {
+    "attempt": 30,
+    "timestamp": "2025-07-17T11:36:22.145079",
+    "hyperparameters": {
+      "algorithm": "PPO",
+      "learning_rate": 0.003,
+      "n_steps": 8192,
+      "batch_size": 1024,
+      "gamma": 0.95,
+      "lookback_window": 200,
+      "transaction_cost": 0.0005,
+      "timesteps": 500000
+    },
+    "error": "PPO.__init__() got an unexpected keyword argument 'buffer_size'",
+    "score": 0,
+    "tier": "failed"
+  },
+  {
+    "attempt": 31,
+    "timestamp": "2025-07-17T11:36:22.186108",
+    "hyperparameters": {
+      "algorithm": "PPO",
+      "learning_rate": 0.001,
+      "n_steps": 8192,
+      "batch_size": 1024,
+      "gamma": 0.995,
+      "lookback_window": 200,
+      "transaction_cost": 0.0002,
+      "timesteps": 500000
+    },
+    "error": "PPO.__init__() got an unexpected keyword argument 'buffer_size'",
+    "score": 0,
+    "tier": "failed"
+  },
+  {
+    "attempt": 32,
+    "timestamp": "2025-07-17T11:36:22.224625",
+    "hyperparameters": {
+      "algorithm": "PPO",
+      "learning_rate": 0.0003,
+      "n_steps": 4096,
+      "batch_size": 1024,
+      "gamma": 0.99,
+      "lookback_window": 100,
+      "transaction_cost": 0.0002,
+      "timesteps": 500000
+    },
+    "error": "PPO.__init__() got an unexpected keyword argument 'buffer_size'",
+    "score": 0,
+    "tier": "failed"
+  },
+  {
+    "attempt": 33,
+    "timestamp": "2025-07-17T11:36:22.266266",
+    "hyperparameters": {
+      "algorithm": "PPO",
+      "learning_rate": 0.0001,
+      "n_steps": 4096,
+      "batch_size": 1024,
+      "gamma": 0.95,
+      "lookback_window": 100,
+      "transaction_cost": 0.0001,
+      "timesteps": 500000
+    },
+    "error": "PPO.__init__() got an unexpected keyword argument 'buffer_size'",
+    "score": 0,
+    "tier": "failed"
+  },
+  {
+    "attempt": 34,
+    "timestamp": "2025-07-17T11:36:22.305590",
+    "hyperparameters": {
+      "algorithm": "PPO",
+      "learning_rate": 0.003,
+      "n_steps": 16384,
+      "batch_size": 1024,
+      "gamma": 0.95,
+      "lookback_window": 100,
+      "transaction_cost": 0.0001,
+      "timesteps": 500000
+    },
+    "error": "PPO.__init__() got an unexpected keyword argument 'buffer_size'",
+    "score": 0,
+    "tier": "failed"
+  },
+  {
+    "attempt": 35,
+    "timestamp": "2025-07-17T11:36:22.346617",
+    "hyperparameters": {
+      "algorithm": "PPO",
+      "learning_rate": 0.003,
+      "n_steps": 8192,
+      "batch_size": 1024,
+      "gamma": 0.95,
+      "lookback_window": 100,
+      "transaction_cost": 0.0002,
+      "timesteps": 500000
+    },
+    "error": "PPO.__init__() got an unexpected keyword argument 'buffer_size'",
+    "score": 0,
+    "tier": "failed"
+  },
+  {
+    "attempt": 36,
+    "timestamp": "2025-07-17T11:36:22.386129",
+    "hyperparameters": {
+      "algorithm": "PPO",
+      "learning_rate": 0.001,
+      "n_steps": 16384,
+      "batch_size": 1024,
+      "gamma": 0.99,
+      "lookback_window": 200,
+      "transaction_cost": 0.0005,
+      "timesteps": 500000
+    },
+    "error": "PPO.__init__() got an unexpected keyword argument 'buffer_size'",
+    "score": 0,
+    "tier": "failed"
+  },
+  {
+    "attempt": 37,
+    "timestamp": "2025-07-17T11:36:22.425449",
+    "hyperparameters": {
+      "algorithm": "PPO",
+      "learning_rate": 0.0001,
+      "n_steps": 8192,
+      "batch_size": 1024,
+      "gamma": 0.95,
+      "lookback_window": 200,
+      "transaction_cost": 0.0001,
+      "timesteps": 500000
+    },
+    "error": "PPO.__init__() got an unexpected keyword argument 'buffer_size'",
+    "score": 0,
+    "tier": "failed"
+  },
+  {
+    "attempt": 38,
+    "timestamp": "2025-07-17T11:36:22.465015",
+    "hyperparameters": {
+      "algorithm": "PPO",
+      "learning_rate": 0.001,
+      "n_steps": 4096,
+      "batch_size": 1024,
+      "gamma": 0.95,
+      "lookback_window": 200,
+      "transaction_cost": 0.0001,
+      "timesteps": 500000
+    },
+    "error": "PPO.__init__() got an unexpected keyword argument 'buffer_size'",
+    "score": 0,
+    "tier": "failed"
+  },
+  {
+    "attempt": 39,
+    "timestamp": "2025-07-17T11:36:22.506133",
+    "hyperparameters": {
+      "algorithm": "PPO",
+      "learning_rate": 0.0003,
+      "n_steps": 8192,
+      "batch_size": 1024,
+      "gamma": 0.995,
+      "lookback_window": 300,
+      "transaction_cost": 0.0001,
+      "timesteps": 500000
+    },
+    "error": "PPO.__init__() got an unexpected keyword argument 'buffer_size'",
+    "score": 0,
+    "tier": "failed"
+  },
+  {
+    "attempt": 40,
+    "timestamp": "2025-07-17T11:36:22.547220",
+    "hyperparameters": {
+      "algorithm": "PPO",
+      "learning_rate": 0.0001,
+      "n_steps": 16384,
+      "batch_size": 1024,
+      "gamma": 0.995,
+      "lookback_window": 100,
+      "transaction_cost": 0.0001,
+      "timesteps": 500000
+    },
+    "error": "PPO.__init__() got an unexpected keyword argument 'buffer_size'",
+    "score": 0,
+    "tier": "failed"
+  },
+  {
+    "attempt": 41,
+    "timestamp": "2025-07-17T11:36:22.586736",
+    "hyperparameters": {
+      "algorithm": "PPO",
+      "learning_rate": 0.0003,
+      "n_steps": 8192,
+      "batch_size": 1024,
+      "gamma": 0.995,
+      "lookback_window": 300,
+      "transaction_cost": 0.0005,
+      "timesteps": 500000
+    },
+    "error": "PPO.__init__() got an unexpected keyword argument 'buffer_size'",
+    "score": 0,
+    "tier": "failed"
+  },
+  {
+    "attempt": 42,
+    "timestamp": "2025-07-17T11:36:22.636649",
+    "hyperparameters": {
+      "algorithm": "PPO",
+      "learning_rate": 0.0003,
+      "n_steps": 16384,
+      "batch_size": 1024,
+      "gamma": 0.995,
+      "lookback_window": 300,
+      "transaction_cost": 0.0001,
+      "timesteps": 500000
+    },
+    "error": "PPO.__init__() got an unexpected keyword argument 'buffer_size'",
+    "score": 0,
+    "tier": "failed"
+  },
+  {
+    "attempt": 43,
+    "timestamp": "2025-07-17T11:36:22.682748",
+    "hyperparameters": {
+      "algorithm": "PPO",
+      "learning_rate": 0.001,
+      "n_steps": 8192,
+      "batch_size": 1024,
+      "gamma": 0.995,
+      "lookback_window": 400,
+      "transaction_cost": 0.0002,
+      "timesteps": 500000
+    },
+    "error": "PPO.__init__() got an unexpected keyword argument 'buffer_size'",
+    "score": 0,
+    "tier": "failed"
+  },
+  {
+    "attempt": 44,
+    "timestamp": "2025-07-17T11:36:22.728270",
+    "hyperparameters": {
+      "algorithm": "PPO",
+      "learning_rate": 0.003,
+      "n_steps": 16384,
+      "batch_size": 1024,
+      "gamma": 0.995,
+      "lookback_window": 200,
+      "transaction_cost": 0.0001,
+      "timesteps": 500000
+    },
+    "error": "PPO.__init__() got an unexpected keyword argument 'buffer_size'",
+    "score": 0,
+    "tier": "failed"
+  },
+  {
+    "attempt": 45,
+    "timestamp": "2025-07-17T11:36:22.768872",
+    "hyperparameters": {
+      "algorithm": "PPO",
+      "learning_rate": 0.0001,
+      "n_steps": 16384,
+      "batch_size": 1024,
+      "gamma": 0.99,
+      "lookback_window": 200,
+      "transaction_cost": 0.0001,
+      "timesteps": 500000
+    },
+    "error": "PPO.__init__() got an unexpected keyword argument 'buffer_size'",
+    "score": 0,
+    "tier": "failed"
+  },
+  {
+    "attempt": 46,
+    "timestamp": "2025-07-17T11:36:22.812452",
+    "hyperparameters": {
+      "algorithm": "PPO",
+      "learning_rate": 0.001,
+      "n_steps": 4096,
+      "batch_size": 1024,
+      "gamma": 0.995,
+      "lookback_window": 300,
+      "transaction_cost": 0.0002,
+      "timesteps": 500000
+    },
+    "error": "PPO.__init__() got an unexpected keyword argument 'buffer_size'",
+    "score": 0,
+    "tier": "failed"
+  },
+  {
+    "attempt": 47,
+    "timestamp": "2025-07-17T11:36:22.852963",
+    "hyperparameters": {
+      "algorithm": "PPO",
+      "learning_rate": 0.0003,
+      "n_steps": 8192,
+      "batch_size": 1024,
+      "gamma": 0.995,
+      "lookback_window": 400,
+      "transaction_cost": 0.0005,
+      "timesteps": 500000
+    },
+    "error": "PPO.__init__() got an unexpected keyword argument 'buffer_size'",
+    "score": 0,
+    "tier": "failed"
+  },
+  {
+    "attempt": 48,
+    "timestamp": "2025-07-17T11:36:22.895014",
+    "hyperparameters": {
+      "algorithm": "PPO",
+      "learning_rate": 0.001,
+      "n_steps": 16384,
+      "batch_size": 1024,
+      "gamma": 0.99,
+      "lookback_window": 300,
+      "transaction_cost": 0.0001,
+      "timesteps": 500000
+    },
+    "error": "PPO.__init__() got an unexpected keyword argument 'buffer_size'",
+    "score": 0,
+    "tier": "failed"
+  },
+  {
+    "attempt": 49,
+    "timestamp": "2025-07-17T11:36:22.940597",
+    "hyperparameters": {
+      "algorithm": "PPO",
+      "learning_rate": 0.0001,
+      "n_steps": 4096,
+      "batch_size": 1024,
+      "gamma": 0.95,
+      "lookback_window": 300,
+      "transaction_cost": 0.0005,
+      "timesteps": 500000
+    },
+    "error": "PPO.__init__() got an unexpected keyword argument 'buffer_size'",
+    "score": 0,
+    "tier": "failed"
+  },
+  {
+    "attempt": 50,
+    "timestamp": "2025-07-17T11:36:22.987690",
+    "hyperparameters": {
+      "algorithm": "PPO",
+      "learning_rate": 0.003,
+      "n_steps": 4096,
+      "batch_size": 1024,
+      "gamma": 0.95,
+      "lookback_window": 400,
+      "transaction_cost": 0.0002,
+      "timesteps": 500000
+    },
+    "error": "PPO.__init__() got an unexpected keyword argument 'buffer_size'",
+    "score": 0,
+    "tier": "failed"
+  },
+  {
+    "attempt": 51,
+    "timestamp": "2025-07-17T11:36:23.030416",
+    "hyperparameters": {
+      "algorithm": "PPO",
+      "learning_rate": 0.001,
+      "n_steps": 16384,
+      "batch_size": 1024,
+      "gamma": 0.995,
+      "lookback_window": 100,
+      "transaction_cost": 0.0002,
+      "timesteps": 500000
+    },
+    "error": "PPO.__init__() got an unexpected keyword argument 'buffer_size'",
+    "score": 0,
+    "tier": "failed"
+  },
+  {
+    "attempt": 52,
+    "timestamp": "2025-07-17T11:36:23.071930",
+    "hyperparameters": {
+      "algorithm": "PPO",
+      "learning_rate": 0.003,
+      "n_steps": 16384,
+      "batch_size": 1024,
+      "gamma": 0.95,
+      "lookback_window": 400,
+      "transaction_cost": 0.0005,
+      "timesteps": 500000
+    },
+    "error": "PPO.__init__() got an unexpected keyword argument 'buffer_size'",
+    "score": 0,
+    "tier": "failed"
+  },
+  {
+    "attempt": 53,
+    "timestamp": "2025-07-17T11:36:23.116800",
+    "hyperparameters": {
+      "algorithm": "PPO",
+      "learning_rate": 0.003,
+      "n_steps": 8192,
+      "batch_size": 1024,
+      "gamma": 0.95,
+      "lookback_window": 100,
+      "transaction_cost": 0.0001,
+      "timesteps": 500000
+    },
+    "error": "PPO.__init__() got an unexpected keyword argument 'buffer_size'",
+    "score": 0,
+    "tier": "failed"
+  },
+  {
+    "attempt": 54,
+    "timestamp": "2025-07-17T11:36:23.170832",
+    "hyperparameters": {
+      "algorithm": "PPO",
+      "learning_rate": 0.0003,
+      "n_steps": 8192,
+      "batch_size": 1024,
+      "gamma": 0.99,
+      "lookback_window": 200,
+      "transaction_cost": 0.0001,
+      "timesteps": 500000
+    },
+    "error": "PPO.__init__() got an unexpected keyword argument 'buffer_size'",
+    "score": 0,
+    "tier": "failed"
+  },
+  {
+    "attempt": 55,
+    "timestamp": "2025-07-17T11:36:23.211348",
+    "hyperparameters": {
+      "algorithm": "PPO",
+      "learning_rate": 0.0001,
+      "n_steps": 4096,
+      "batch_size": 1024,
+      "gamma": 0.95,
+      "lookback_window": 400,
+      "transaction_cost": 0.0002,
+      "timesteps": 500000
+    },
+    "error": "PPO.__init__() got an unexpected keyword argument 'buffer_size'",
+    "score": 0,
+    "tier": "failed"
+  },
+  {
+    "attempt": 56,
+    "timestamp": "2025-07-17T11:36:23.255014",
+    "hyperparameters": {
+      "algorithm": "PPO",
+      "learning_rate": 0.0001,
+      "n_steps": 4096,
+      "batch_size": 1024,
+      "gamma": 0.995,
+      "lookback_window": 300,
+      "transaction_cost": 0.0001,
+      "timesteps": 500000
+    },
+    "error": "PPO.__init__() got an unexpected keyword argument 'buffer_size'",
+    "score": 0,
+    "tier": "failed"
+  },
+  {
+    "attempt": 57,
+    "timestamp": "2025-07-17T11:36:23.300534",
+    "hyperparameters": {
+      "algorithm": "PPO",
+      "learning_rate": 0.003,
+      "n_steps": 4096,
+      "batch_size": 1024,
+      "gamma": 0.99,
+      "lookback_window": 100,
+      "transaction_cost": 0.0001,
+      "timesteps": 500000
+    },
+    "error": "PPO.__init__() got an unexpected keyword argument 'buffer_size'",
+    "score": 0,
+    "tier": "failed"
+  },
+  {
+    "attempt": 58,
+    "timestamp": "2025-07-17T11:36:23.351077",
+    "hyperparameters": {
+      "algorithm": "PPO",
+      "learning_rate": 0.0003,
+      "n_steps": 8192,
+      "batch_size": 1024,
+      "gamma": 0.99,
+      "lookback_window": 200,
+      "transaction_cost": 0.0001,
+      "timesteps": 500000
+    },
+    "error": "PPO.__init__() got an unexpected keyword argument 'buffer_size'",
+    "score": 0,
+    "tier": "failed"
+  },
+  {
+    "attempt": 59,
+    "timestamp": "2025-07-17T11:36:23.403108",
+    "hyperparameters": {
+      "algorithm": "PPO",
+      "learning_rate": 0.0003,
+      "n_steps": 8192,
+      "batch_size": 1024,
+      "gamma": 0.99,
+      "lookback_window": 200,
+      "transaction_cost": 0.0001,
+      "timesteps": 500000
+    },
+    "error": "PPO.__init__() got an unexpected keyword argument 'buffer_size'",
+    "score": 0,
+    "tier": "failed"
+  },
+  {
+    "attempt": 60,
+    "timestamp": "2025-07-17T11:36:23.445618",
+    "hyperparameters": {
+      "algorithm": "PPO",
+      "learning_rate": 0.0003,
+      "n_steps": 4096,
+      "batch_size": 1024,
+      "gamma": 0.995,
+      "lookback_window": 100,
+      "transaction_cost": 0.0005,
+      "timesteps": 500000
+    },
+    "error": "PPO.__init__() got an unexpected keyword argument 'buffer_size'",
+    "score": 0,
+    "tier": "failed"
+  },
+  {
+    "attempt": 61,
+    "timestamp": "2025-07-17T11:36:23.492133",
+    "hyperparameters": {
+      "algorithm": "PPO",
+      "learning_rate": 0.0003,
+      "n_steps": 8192,
+      "batch_size": 1024,
+      "gamma": 0.99,
+      "lookback_window": 200,
+      "transaction_cost": 0.0001,
+      "timesteps": 500000
+    },
+    "error": "PPO.__init__() got an unexpected keyword argument 'buffer_size'",
+    "score": 0,
+    "tier": "failed"
+  },
+  {
+    "attempt": 62,
+    "timestamp": "2025-07-17T11:36:23.539853",
+    "hyperparameters": {
+      "algorithm": "PPO",
+      "learning_rate": 0.0003,
+      "n_steps": 8192,
+      "batch_size": 1024,
+      "gamma": 0.99,
+      "lookback_window": 200,
+      "transaction_cost": 0.0001,
+      "timesteps": 500000
+    },
+    "error": "PPO.__init__() got an unexpected keyword argument 'buffer_size'",
+    "score": 0,
+    "tier": "failed"
+  },
+  {
+    "attempt": 63,
+    "timestamp": "2025-07-17T11:36:23.585369",
+    "hyperparameters": {
+      "algorithm": "PPO",
+      "learning_rate": 0.0003,
+      "n_steps": 8192,
+      "batch_size": 1024,
+      "gamma": 0.99,
+      "lookback_window": 200,
+      "transaction_cost": 0.0001,
+      "timesteps": 500000
+    },
+    "error": "PPO.__init__() got an unexpected keyword argument 'buffer_size'",
+    "score": 0,
+    "tier": "failed"
+  },
+  {
+    "attempt": 64,
+    "timestamp": "2025-07-17T11:36:23.633912",
+    "hyperparameters": {
+      "algorithm": "PPO",
+      "learning_rate": 0.0003,
+      "n_steps": 8192,
+      "batch_size": 1024,
+      "gamma": 0.99,
+      "lookback_window": 200,
+      "transaction_cost": 0.0001,
+      "timesteps": 500000
+    },
+    "error": "PPO.__init__() got an unexpected keyword argument 'buffer_size'",
+    "score": 0,
+    "tier": "failed"
+  },
+  {
+    "attempt": 65,
+    "timestamp": "2025-07-17T11:36:23.681429",
+    "hyperparameters": {
+      "algorithm": "PPO",
+      "learning_rate": 0.0003,
+      "n_steps": 8192,
+      "batch_size": 1024,
+      "gamma": 0.99,
+      "lookback_window": 200,
+      "transaction_cost": 0.0001,
+      "timesteps": 500000
+    },
+    "error": "PPO.__init__() got an unexpected keyword argument 'buffer_size'",
+    "score": 0,
+    "tier": "failed"
+  },
+  {
+    "attempt": 66,
+    "timestamp": "2025-07-17T11:36:23.730024",
+    "hyperparameters": {
+      "algorithm": "PPO",
+      "learning_rate": 0.0003,
+      "n_steps": 8192,
+      "batch_size": 1024,
+      "gamma": 0.99,
+      "lookback_window": 200,
+      "transaction_cost": 0.0001,
+      "timesteps": 500000
+    },
+    "error": "PPO.__init__() got an unexpected keyword argument 'buffer_size'",
+    "score": 0,
+    "tier": "failed"
+  },
+  {
+    "attempt": 67,
+    "timestamp": "2025-07-17T11:36:23.776052",
+    "hyperparameters": {
+      "algorithm": "PPO",
+      "learning_rate": 0.0003,
+      "n_steps": 8192,
+      "batch_size": 1024,
+      "gamma": 0.99,
+      "lookback_window": 200,
+      "transaction_cost": 0.0001,
+      "timesteps": 500000
+    },
+    "error": "PPO.__init__() got an unexpected keyword argument 'buffer_size'",
+    "score": 0,
+    "tier": "failed"
+  },
+  {
+    "attempt": 68,
+    "timestamp": "2025-07-17T11:36:23.826573",
+    "hyperparameters": {
+      "algorithm": "PPO",
+      "learning_rate": 0.0003,
+      "n_steps": 8192,
+      "batch_size": 1024,
+      "gamma": 0.99,
+      "lookback_window": 200,
+      "transaction_cost": 0.0001,
+      "timesteps": 500000
+    },
+    "error": "PPO.__init__() got an unexpected keyword argument 'buffer_size'",
+    "score": 0,
+    "tier": "failed"
+  },
+  {
+    "attempt": 69,
+    "timestamp": "2025-07-17T11:36:23.874388",
+    "hyperparameters": {
+      "algorithm": "PPO",
+      "learning_rate": 0.0003,
+      "n_steps": 8192,
+      "batch_size": 1024,
+      "gamma": 0.99,
+      "lookback_window": 200,
+      "transaction_cost": 0.0001,
+      "timesteps": 500000
+    },
+    "error": "PPO.__init__() got an unexpected keyword argument 'buffer_size'",
+    "score": 0,
+    "tier": "failed"
+  },
+  {
+    "attempt": 70,
+    "timestamp": "2025-07-17T11:36:23.921906",
+    "hyperparameters": {
+      "algorithm": "PPO",
+      "learning_rate": 0.0003,
+      "n_steps": 8192,
+      "batch_size": 1024,
+      "gamma": 0.99,
+      "lookback_window": 200,
+      "transaction_cost": 0.0001,
+      "timesteps": 500000
+    },
+    "error": "PPO.__init__() got an unexpected keyword argument 'buffer_size'",
+    "score": 0,
+    "tier": "failed"
+  },
+  {
+    "attempt": 71,
+    "timestamp": "2025-07-17T11:36:23.970697",
+    "hyperparameters": {
+      "algorithm": "PPO",
+      "learning_rate": 0.0003,
+      "n_steps": 8192,
+      "batch_size": 1024,
+      "gamma": 0.99,
+      "lookback_window": 200,
+      "transaction_cost": 0.0001,
+      "timesteps": 500000
+    },
+    "error": "PPO.__init__() got an unexpected keyword argument 'buffer_size'",
+    "score": 0,
+    "tier": "failed"
+  },
+  {
+    "attempt": 72,
+    "timestamp": "2025-07-17T11:36:24.018225",
+    "hyperparameters": {
+      "algorithm": "PPO",
+      "learning_rate": 0.0003,
+      "n_steps": 8192,
+      "batch_size": 1024,
+      "gamma": 0.99,
+      "lookback_window": 200,
+      "transaction_cost": 0.0001,
+      "timesteps": 500000
+    },
+    "error": "PPO.__init__() got an unexpected keyword argument 'buffer_size'",
+    "score": 0,
+    "tier": "failed"
+  },
+  {
+    "attempt": 73,
+    "timestamp": "2025-07-17T11:36:24.065769",
+    "hyperparameters": {
+      "algorithm": "PPO",
+      "learning_rate": 0.0003,
+      "n_steps": 8192,
+      "batch_size": 1024,
+      "gamma": 0.99,
+      "lookback_window": 200,
+      "transaction_cost": 0.0001,
+      "timesteps": 500000
+    },
+    "error": "PPO.__init__() got an unexpected keyword argument 'buffer_size'",
+    "score": 0,
+    "tier": "failed"
+  },
+  {
+    "attempt": 74,
+    "timestamp": "2025-07-17T11:36:24.113848",
+    "hyperparameters": {
+      "algorithm": "PPO",
+      "learning_rate": 0.0003,
+      "n_steps": 8192,
+      "batch_size": 1024,
+      "gamma": 0.99,
+      "lookback_window": 200,
+      "transaction_cost": 0.0001,
+      "timesteps": 500000
+    },
+    "error": "PPO.__init__() got an unexpected keyword argument 'buffer_size'",
+    "score": 0,
+    "tier": "failed"
+  },
+  {
+    "attempt": 75,
+    "timestamp": "2025-07-17T11:36:24.163286",
+    "hyperparameters": {
+      "algorithm": "PPO",
+      "learning_rate": 0.0003,
+      "n_steps": 8192,
+      "batch_size": 1024,
+      "gamma": 0.99,
+      "lookback_window": 200,
+      "transaction_cost": 0.0001,
+      "timesteps": 500000
+    },
+    "error": "PPO.__init__() got an unexpected keyword argument 'buffer_size'",
+    "score": 0,
+    "tier": "failed"
+  },
+  {
+    "attempt": 76,
+    "timestamp": "2025-07-17T11:36:24.212804",
+    "hyperparameters": {
+      "algorithm": "PPO",
+      "learning_rate": 0.0003,
+      "n_steps": 8192,
+      "batch_size": 1024,
+      "gamma": 0.99,
+      "lookback_window": 200,
+      "transaction_cost": 0.0001,
+      "timesteps": 500000
+    },
+    "error": "PPO.__init__() got an unexpected keyword argument 'buffer_size'",
+    "score": 0,
+    "tier": "failed"
+  },
+  {
+    "attempt": 77,
+    "timestamp": "2025-07-17T11:36:24.262874",
+    "hyperparameters": {
+      "algorithm": "PPO",
+      "learning_rate": 0.0003,
+      "n_steps": 8192,
+      "batch_size": 1024,
+      "gamma": 0.99,
+      "lookback_window": 200,
+      "transaction_cost": 0.0001,
+      "timesteps": 500000
+    },
+    "error": "PPO.__init__() got an unexpected keyword argument 'buffer_size'",
+    "score": 0,
+    "tier": "failed"
+  },
+  {
+    "attempt": 78,
+    "timestamp": "2025-07-17T11:36:24.309570",
+    "hyperparameters": {
+      "algorithm": "PPO",
+      "learning_rate": 0.0003,
+      "n_steps": 8192,
+      "batch_size": 1024,
+      "gamma": 0.99,
+      "lookback_window": 200,
+      "transaction_cost": 0.0001,
+      "timesteps": 500000
+    },
+    "error": "PPO.__init__() got an unexpected keyword argument 'buffer_size'",
+    "score": 0,
+    "tier": "failed"
+  },
+  {
+    "attempt": 79,
+    "timestamp": "2025-07-17T11:36:24.358724",
+    "hyperparameters": {
+      "algorithm": "PPO",
+      "learning_rate": 0.0003,
+      "n_steps": 8192,
+      "batch_size": 1024,
+      "gamma": 0.99,
+      "lookback_window": 200,
+      "transaction_cost": 0.0001,
+      "timesteps": 500000
+    },
+    "error": "PPO.__init__() got an unexpected keyword argument 'buffer_size'",
+    "score": 0,
+    "tier": "failed"
+  },
+  {
+    "attempt": 80,
+    "timestamp": "2025-07-17T11:36:24.408752",
+    "hyperparameters": {
+      "algorithm": "PPO",
+      "learning_rate": 0.0003,
+      "n_steps": 8192,
+      "batch_size": 1024,
+      "gamma": 0.99,
+      "lookback_window": 200,
+      "transaction_cost": 0.0001,
+      "timesteps": 500000
+    },
+    "error": "PPO.__init__() got an unexpected keyword argument 'buffer_size'",
+    "score": 0,
+    "tier": "failed"
+  },
+  {
+    "attempt": 81,
+    "timestamp": "2025-07-17T11:36:24.463814",
+    "hyperparameters": {
+      "algorithm": "PPO",
+      "learning_rate": 0.0003,
+      "n_steps": 8192,
+      "batch_size": 1024,
+      "gamma": 0.99,
+      "lookback_window": 200,
+      "transaction_cost": 0.0001,
+      "timesteps": 500000
+    },
+    "error": "PPO.__init__() got an unexpected keyword argument 'buffer_size'",
+    "score": 0,
+    "tier": "failed"
+  },
+  {
+    "attempt": 82,
+    "timestamp": "2025-07-17T11:36:24.512795",
+    "hyperparameters": {
+      "algorithm": "PPO",
+      "learning_rate": 0.0003,
+      "n_steps": 8192,
+      "batch_size": 1024,
+      "gamma": 0.99,
+      "lookback_window": 200,
+      "transaction_cost": 0.0001,
+      "timesteps": 500000
+    },
+    "error": "PPO.__init__() got an unexpected keyword argument 'buffer_size'",
+    "score": 0,
+    "tier": "failed"
+  },
+  {
+    "attempt": 83,
+    "timestamp": "2025-07-17T11:36:24.560353",
+    "hyperparameters": {
+      "algorithm": "PPO",
+      "learning_rate": 0.0003,
+      "n_steps": 8192,
+      "batch_size": 1024,
+      "gamma": 0.99,
+      "lookback_window": 200,
+      "transaction_cost": 0.0001,
+      "timesteps": 500000
+    },
+    "error": "PPO.__init__() got an unexpected keyword argument 'buffer_size'",
+    "score": 0,
+    "tier": "failed"
+  },
+  {
+    "attempt": 84,
+    "timestamp": "2025-07-17T11:36:24.612875",
+    "hyperparameters": {
+      "algorithm": "PPO",
+      "learning_rate": 0.0003,
+      "n_steps": 8192,
+      "batch_size": 1024,
+      "gamma": 0.99,
+      "lookback_window": 200,
+      "transaction_cost": 0.0001,
+      "timesteps": 500000
+    },
+    "error": "PPO.__init__() got an unexpected keyword argument 'buffer_size'",
+    "score": 0,
+    "tier": "failed"
+  },
+  {
+    "attempt": 85,
+    "timestamp": "2025-07-17T11:36:24.664455",
+    "hyperparameters": {
+      "algorithm": "PPO",
+      "learning_rate": 0.0003,
+      "n_steps": 8192,
+      "batch_size": 1024,
+      "gamma": 0.99,
+      "lookback_window": 200,
+      "transaction_cost": 0.0001,
+      "timesteps": 500000
+    },
+    "error": "PPO.__init__() got an unexpected keyword argument 'buffer_size'",
+    "score": 0,
+    "tier": "failed"
+  },
+  {
+    "attempt": 86,
+    "timestamp": "2025-07-17T11:36:24.718607",
+    "hyperparameters": {
+      "algorithm": "PPO",
+      "learning_rate": 0.0003,
+      "n_steps": 8192,
+      "batch_size": 1024,
+      "gamma": 0.99,
+      "lookback_window": 200,
+      "transaction_cost": 0.0001,
+      "timesteps": 500000
+    },
+    "error": "PPO.__init__() got an unexpected keyword argument 'buffer_size'",
+    "score": 0,
+    "tier": "failed"
+  },
+  {
+    "attempt": 87,
+    "timestamp": "2025-07-17T11:36:24.770132",
+    "hyperparameters": {
+      "algorithm": "PPO",
+      "learning_rate": 0.0003,
+      "n_steps": 8192,
+      "batch_size": 1024,
+      "gamma": 0.99,
+      "lookback_window": 200,
+      "transaction_cost": 0.0001,
+      "timesteps": 500000
+    },
+    "error": "PPO.__init__() got an unexpected keyword argument 'buffer_size'",
+    "score": 0,
+    "tier": "failed"
+  },
+  {
+    "attempt": 88,
+    "timestamp": "2025-07-17T11:36:24.820844",
+    "hyperparameters": {
+      "algorithm": "PPO",
+      "learning_rate": 0.0003,
+      "n_steps": 8192,
+      "batch_size": 1024,
+      "gamma": 0.99,
+      "lookback_window": 200,
+      "transaction_cost": 0.0001,
+      "timesteps": 500000
+    },
+    "error": "PPO.__init__() got an unexpected keyword argument 'buffer_size'",
+    "score": 0,
+    "tier": "failed"
+  },
+  {
+    "attempt": 89,
+    "timestamp": "2025-07-17T11:36:24.874874",
+    "hyperparameters": {
+      "algorithm": "PPO",
+      "learning_rate": 0.0003,
+      "n_steps": 8192,
+      "batch_size": 1024,
+      "gamma": 0.99,
+      "lookback_window": 200,
+      "transaction_cost": 0.0001,
+      "timesteps": 500000
+    },
+    "error": "PPO.__init__() got an unexpected keyword argument 'buffer_size'",
+    "score": 0,
+    "tier": "failed"
+  },
+  {
+    "attempt": 90,
+    "timestamp": "2025-07-17T11:36:24.923390",
+    "hyperparameters": {
+      "algorithm": "PPO",
+      "learning_rate": 0.0003,
+      "n_steps": 8192,
+      "batch_size": 1024,
+      "gamma": 0.99,
+      "lookback_window": 200,
+      "transaction_cost": 0.0001,
+      "timesteps": 500000
+    },
+    "error": "PPO.__init__() got an unexpected keyword argument 'buffer_size'",
+    "score": 0,
+    "tier": "failed"
+  },
+  {
+    "attempt": 91,
+    "timestamp": "2025-07-17T11:36:24.976414",
+    "hyperparameters": {
+      "algorithm": "PPO",
+      "learning_rate": 0.0003,
+      "n_steps": 8192,
+      "batch_size": 1024,
+      "gamma": 0.99,
+      "lookback_window": 200,
+      "transaction_cost": 0.0001,
+      "timesteps": 500000
+    },
+    "error": "PPO.__init__() got an unexpected keyword argument 'buffer_size'",
+    "score": 0,
+    "tier": "failed"
+  },
+  {
+    "attempt": 92,
+    "timestamp": "2025-07-17T11:36:25.028446",
+    "hyperparameters": {
+      "algorithm": "PPO",
+      "learning_rate": 0.0003,
+      "n_steps": 8192,
+      "batch_size": 1024,
+      "gamma": 0.99,
+      "lookback_window": 200,
+      "transaction_cost": 0.0001,
+      "timesteps": 500000
+    },
+    "error": "PPO.__init__() got an unexpected keyword argument 'buffer_size'",
+    "score": 0,
+    "tier": "failed"
+  },
+  {
+    "attempt": 93,
+    "timestamp": "2025-07-17T11:36:25.078480",
+    "hyperparameters": {
+      "algorithm": "PPO",
+      "learning_rate": 0.0003,
+      "n_steps": 8192,
+      "batch_size": 1024,
+      "gamma": 0.99,
+      "lookback_window": 200,
+      "transaction_cost": 0.0001,
+      "timesteps": 500000
+    },
+    "error": "PPO.__init__() got an unexpected keyword argument 'buffer_size'",
+    "score": 0,
+    "tier": "failed"
+  },
+  {
+    "attempt": 94,
+    "timestamp": "2025-07-17T11:36:25.130036",
+    "hyperparameters": {
+      "algorithm": "PPO",
+      "learning_rate": 0.0003,
+      "n_steps": 8192,
+      "batch_size": 1024,
+      "gamma": 0.99,
+      "lookback_window": 200,
+      "transaction_cost": 0.0001,
+      "timesteps": 500000
+    },
+    "error": "PPO.__init__() got an unexpected keyword argument 'buffer_size'",
+    "score": 0,
+    "tier": "failed"
+  },
+  {
+    "attempt": 95,
+    "timestamp": "2025-07-17T11:36:25.180115",
+    "hyperparameters": {
+      "algorithm": "PPO",
+      "learning_rate": 0.0003,
+      "n_steps": 8192,
+      "batch_size": 1024,
+      "gamma": 0.99,
+      "lookback_window": 200,
+      "transaction_cost": 0.0001,
+      "timesteps": 500000
+    },
+    "error": "PPO.__init__() got an unexpected keyword argument 'buffer_size'",
+    "score": 0,
+    "tier": "failed"
+  },
+  {
+    "attempt": 96,
+    "timestamp": "2025-07-17T11:36:25.236138",
+    "hyperparameters": {
+      "algorithm": "PPO",
+      "learning_rate": 0.0003,
+      "n_steps": 8192,
+      "batch_size": 1024,
+      "gamma": 0.99,
+      "lookback_window": 200,
+      "transaction_cost": 0.0001,
+      "timesteps": 500000
+    },
+    "error": "PPO.__init__() got an unexpected keyword argument 'buffer_size'",
+    "score": 0,
+    "tier": "failed"
+  },
+  {
+    "attempt": 97,
+    "timestamp": "2025-07-17T11:36:25.288162",
+    "hyperparameters": {
+      "algorithm": "PPO",
+      "learning_rate": 0.0003,
+      "n_steps": 8192,
+      "batch_size": 1024,
+      "gamma": 0.99,
+      "lookback_window": 200,
+      "transaction_cost": 0.0001,
+      "timesteps": 500000
+    },
+    "error": "PPO.__init__() got an unexpected keyword argument 'buffer_size'",
+    "score": 0,
+    "tier": "failed"
+  },
+  {
+    "attempt": 98,
+    "timestamp": "2025-07-17T11:36:25.339181",
+    "hyperparameters": {
+      "algorithm": "PPO",
+      "learning_rate": 0.0003,
+      "n_steps": 8192,
+      "batch_size": 1024,
+      "gamma": 0.99,
+      "lookback_window": 200,
+      "transaction_cost": 0.0001,
+      "timesteps": 500000
+    },
+    "error": "PPO.__init__() got an unexpected keyword argument 'buffer_size'",
+    "score": 0,
+    "tier": "failed"
+  },
+  {
+    "attempt": 99,
+    "timestamp": "2025-07-17T11:36:25.389701",
+    "hyperparameters": {
+      "algorithm": "PPO",
+      "learning_rate": 0.0003,
+      "n_steps": 8192,
+      "batch_size": 1024,
+      "gamma": 0.99,
+      "lookback_window": 200,
+      "transaction_cost": 0.0001,
+      "timesteps": 500000
+    },
+    "error": "PPO.__init__() got an unexpected keyword argument 'buffer_size'",
+    "score": 0,
+    "tier": "failed"
+  },
+  {
+    "attempt": 100,
+    "timestamp": "2025-07-17T11:36:25.438735",
+    "hyperparameters": {
+      "algorithm": "PPO",
+      "learning_rate": 0.0003,
+      "n_steps": 8192,
+      "batch_size": 1024,
+      "gamma": 0.99,
+      "lookback_window": 200,
+      "transaction_cost": 0.0001,
+      "timesteps": 500000
+    },
+    "error": "PPO.__init__() got an unexpected keyword argument 'buffer_size'",
+    "score": 0,
+    "tier": "failed"
   }
 ]
