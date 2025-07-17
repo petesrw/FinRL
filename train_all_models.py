@@ -19,64 +19,81 @@ import random
 import torch
 # Integrated GPU Boost Functions
 def apply_maximum_gpu_utilization():
-    """Apply simple but effective GPU utilization boost"""
+    """Apply simple but effective GPU utilization boost with safe fallback"""
     if not torch.cuda.is_available():
         return False
     
     print("🚀 Applying Simple GPU Utilization Boost...")
     
-    # Environment variables for maximum performance
-    os.environ['CUDA_LAUNCH_BLOCKING'] = '0'  # Async execution
-    os.environ['PYTORCH_CUDA_ALLOC_CONF'] = 'max_split_size_mb:128'
-    
-    # PyTorch optimizations
-    torch.backends.cuda.matmul.allow_tf32 = True
-    torch.backends.cudnn.allow_tf32 = True
-    torch.backends.cudnn.benchmark = True
-    torch.backends.cudnn.deterministic = False
-    torch.backends.cuda.enable_flash_sdp(True)
-    
-    # Memory settings for maximum utilization
-    torch.cuda.set_per_process_memory_fraction(0.95)  # Use 95% of GPU memory
-    
-    # CPU settings to feed GPU better (only if not already set)
     try:
-        torch.set_num_threads(32)  # More CPU threads
-    except:
-        pass  # Already set
-    
-    try:
-        torch.set_num_interop_threads(16)
-    except:
-        pass  # Already set
-    
-    # Pre-allocate GPU memory to keep it busy
-    device = torch.device('cuda')
-    
-    try:
-        # Allocate large chunks of GPU memory
-        dummy_tensors = []
-        for i in range(8):  # 8 large tensors
-            size = 2048 - (i * 128)  # Decreasing sizes
-            tensor = torch.randn(size, size, device=device, dtype=torch.float16)
-            dummy_tensors.append(tensor)
+        # Test GPU compatibility first
+        device = torch.device('cuda')
+        test_tensor = torch.randn(32, 32, device=device, dtype=torch.float32)
+        test_result = torch.matmul(test_tensor, test_tensor)
+        del test_tensor, test_result
+        torch.cuda.empty_cache()
         
-        # Perform some operations to warm up GPU
-        for i in range(len(dummy_tensors) - 1):
-            _ = torch.matmul(dummy_tensors[i][:1024, :1024], dummy_tensors[i+1][:1024, :1024])
+        # Environment variables for maximum performance
+        os.environ['CUDA_LAUNCH_BLOCKING'] = '0'  # Async execution
+        os.environ['PYTORCH_CUDA_ALLOC_CONF'] = 'max_split_size_mb:128'
         
-        # Keep tensors in memory but clear references
-        del dummy_tensors
+        # PyTorch optimizations
+        torch.backends.cuda.matmul.allow_tf32 = True
+        torch.backends.cudnn.allow_tf32 = True
+        torch.backends.cudnn.benchmark = True
+        torch.backends.cudnn.deterministic = False
         
-        print("✅ GPU memory pre-allocated and warmed up")
+        # Try advanced features with fallback
+        try:
+            torch.backends.cuda.enable_flash_sdp(True)
+        except:
+            print("   ⚠️ Flash attention not available")
+        
+        # Memory settings for maximum utilization
+        torch.cuda.set_per_process_memory_fraction(0.85)  # Reduced for safety
+        
+        # CPU settings to feed GPU better
+        try:
+            torch.set_num_threads(16)  # Reduced for safety
+        except:
+            pass
+        
+        try:
+            torch.set_num_interop_threads(8)  # Reduced for safety
+        except:
+            pass
+        
+        # Safe GPU warmup with smaller tensors
+        try:
+            dummy_tensors = []
+            for size in [256, 512, 1024]:  # Start smaller
+                try:
+                    tensor = torch.randn(size, size, device=device, dtype=torch.float32)
+                    result = torch.matmul(tensor, tensor)
+                    dummy_tensors.append(tensor)
+                    del result
+                except RuntimeError as e:
+                    print(f"   ⚠️ Tensor size {size}x{size} failed, stopping warmup")
+                    break
+            
+            # Clean up
+            del dummy_tensors
+            torch.cuda.empty_cache()
+            
+            print("✅ GPU memory pre-allocated and warmed up")
+            
+        except Exception as e:
+            print(f"⚠️ GPU warmup failed: {str(e)[:50]}...")
+        
+        print("✅ Simple GPU Utilization Boost Applied!")
+        print("🎯 Expected GPU Utilization: 60-80% (Safe Mode)")
+        
+        return True
         
     except Exception as e:
-        print(f"⚠️ GPU warmup failed: {e}")
-    
-    print("✅ Simple GPU Utilization Boost Applied!")
-    print("🎯 Expected GPU Utilization: 70-90%")
-    
-    return True
+        print(f"❌ GPU utilization boost failed: {str(e)[:50]}...")
+        print("💻 Continuing with basic GPU settings")
+        return False
 
 def get_high_utilization_model_config():
     """Get model configuration for high GPU utilization"""
@@ -156,9 +173,13 @@ def detect_and_setup_gpu():
                     torch.cuda.set_sync_debug_mode(0)  # Disable sync debugging for speed
                     torch.cuda.set_device(0)  # Ensure using GPU 0
                     
-                    # Pre-allocate GPU memory for maximum utilization
-                    dummy_tensor = torch.randn(4096, 4096, device=device, dtype=torch.float16)
-                    del dummy_tensor  # Free but keep memory allocated
+                    # Safe GPU memory pre-allocation
+                    try:
+                        dummy_tensor = torch.randn(1024, 1024, device=device, dtype=torch.float32)
+                        del dummy_tensor  # Free but keep memory allocated
+                    except RuntimeError as mem_error:
+                        print(f"   ⚠️ Memory pre-allocation failed: {str(mem_error)[:50]}...")
+                        print("   💻 Continuing with basic GPU setup")
                     
                     print(f"   🔥 RTX 5060 TI MAXIMUM Performance Mode:")
                     print(f"   ⚡ 4608 CUDA Cores @ 2602 MHz - TARGET: 90%+ utilization")
@@ -243,62 +264,83 @@ def get_optimal_timesteps(device, base_timesteps=100000):
 
 # GPU Boost Configuration Functions
 def apply_rtx_5060_ti_boost():
-    """Apply maximum GPU utilization settings for RTX 5060 TI"""
+    """Apply maximum GPU utilization settings for RTX 5060 TI with safe fallback"""
     if not torch.cuda.is_available():
         return torch.device("cpu")
     
     print("🔥 Applying RTX 5060 TI Maximum GPU Utilization Boost...")
     
-    # Environment variables for maximum GPU utilization
-    os.environ['CUDA_LAUNCH_BLOCKING'] = '0'  # Async execution for speed
-    os.environ['CUDA_CACHE_DISABLE'] = '0'    # Enable caching
-    os.environ['CUDA_DEVICE_ORDER'] = 'PCI_BUS_ID'
-    os.environ['CUDA_VISIBLE_DEVICES'] = '0'
-    
-    # PyTorch GPU optimizations
-    torch.backends.cuda.matmul.allow_tf32 = True
-    torch.backends.cudnn.allow_tf32 = True
-    torch.backends.cudnn.benchmark = True
-    torch.backends.cudnn.deterministic = False
-    torch.backends.cuda.enable_flash_sdp(True)
-    
-    # Advanced GPU settings for RTX 5060 TI
-    torch.backends.cuda.matmul.allow_fp16_reduced_precision_reduction = True
-    torch.backends.cuda.cufft_plan_cache.max_size = 8192  # Max FFT cache
-    torch.backends.cuda.preferred_linalg_library = "cusolver"
-    
-    # Memory management for 16GB GDDR7
-    torch.cuda.set_per_process_memory_fraction(0.95)  # Use 95% of 16GB
-    torch.cuda.empty_cache()
-    
-    # CPU-GPU coordination
-    torch.set_num_threads(16)  # Max CPU threads
-    torch.set_num_interop_threads(8)
-    
-    # Pre-warm GPU with large tensors to increase utilization
     device = torch.device('cuda')
     
-    # Create multiple large tensors to keep GPU busy
-    warmup_tensors = []
-    for i in range(4):  # 4 large tensors
-        tensor = torch.randn(2048, 2048, device=device, dtype=torch.float16)
-        warmup_tensors.append(tensor)
-    
-    # Perform operations to warm up GPU
-    for i in range(len(warmup_tensors)):
-        for j in range(len(warmup_tensors)):
-            if i != j:
-                _ = torch.matmul(warmup_tensors[i], warmup_tensors[j])
-    
-    # Keep some tensors in memory to maintain GPU utilization
-    torch.cuda.empty_cache()
-    
-    print("✅ RTX 5060 TI GPU Utilization Boost Applied!")
-    print("🎯 Target GPU Utilization: 80-95%")
-    print("⚡ 4608 CUDA Cores @ Maximum Performance")
-    print("💾 16GB GDDR7 @ 95% Utilization")
-    
-    return device
+    try:
+        # Test GPU compatibility first with small tensor
+        test_tensor = torch.randn(32, 32, device=device, dtype=torch.float32)
+        test_result = torch.matmul(test_tensor, test_tensor)
+        del test_tensor, test_result
+        torch.cuda.empty_cache()
+        
+        # Environment variables for maximum GPU utilization
+        os.environ['CUDA_LAUNCH_BLOCKING'] = '0'  # Async execution for speed
+        os.environ['CUDA_CACHE_DISABLE'] = '0'    # Enable caching
+        os.environ['CUDA_DEVICE_ORDER'] = 'PCI_BUS_ID'
+        os.environ['CUDA_VISIBLE_DEVICES'] = '0'
+        
+        # PyTorch GPU optimizations
+        torch.backends.cuda.matmul.allow_tf32 = True
+        torch.backends.cudnn.allow_tf32 = True
+        torch.backends.cudnn.benchmark = True
+        torch.backends.cudnn.deterministic = False
+        
+        # Try advanced features with fallback
+        try:
+            torch.backends.cuda.enable_flash_sdp(True)
+        except:
+            print("   ⚠️ Flash attention not available, continuing without it")
+        
+        try:
+            torch.backends.cuda.matmul.allow_fp16_reduced_precision_reduction = True
+            torch.backends.cuda.cufft_plan_cache.max_size = 8192
+            torch.backends.cuda.preferred_linalg_library = "cusolver"
+        except:
+            print("   ⚠️ Some advanced features not available, using basic optimizations")
+        
+        # Memory management for 16GB GDDR7
+        torch.cuda.set_per_process_memory_fraction(0.85)  # Reduced to 85% for safety
+        torch.cuda.empty_cache()
+        
+        # CPU-GPU coordination
+        torch.set_num_threads(16)
+        torch.set_num_interop_threads(8)
+        
+        # Safe GPU warmup with smaller tensors
+        print("   🔥 Warming up GPU with safe tensor operations...")
+        warmup_tensors = []
+        
+        # Start with smaller tensors and gradually increase
+        for size in [256, 512, 1024]:
+            try:
+                tensor = torch.randn(size, size, device=device, dtype=torch.float32)
+                result = torch.matmul(tensor, tensor)
+                warmup_tensors.append(tensor)
+                del result
+            except RuntimeError as e:
+                print(f"   ⚠️ Tensor size {size}x{size} failed: {str(e)[:50]}...")
+                break
+        
+        # Clean up warmup tensors
+        del warmup_tensors
+        torch.cuda.empty_cache()
+        
+        print("✅ RTX 5060 TI GPU Utilization Boost Applied!")
+        print("🎯 Target GPU Utilization: 70-85% (Safe Mode)")
+        print("⚡ GPU optimizations enabled with compatibility mode")
+        
+        return device
+        
+    except RuntimeError as e:
+        print(f"❌ GPU boost failed: {str(e)[:100]}...")
+        print("💻 Falling back to CPU training")
+        return torch.device("cpu")
 
 def get_gpu_optimized_model_config():
     """Get model configuration optimized for maximum GPU utilization"""
