@@ -29,6 +29,35 @@
     "symbol": "XAUUSD"
   },
   {
+    "attempt": 7,
+    "timestamp": "2025-07-18T22:43:09.151460",
+    "config": {
+      "algorithm": "PPO",
+      "learning_rate": 0.0003,
+      "n_steps": 8192,
+      "batch_size": 1024,
+      "gamma": 0.99,
+      "lookback_window": 200,
+      "transaction_cost": 0.0001,
+      "timesteps": 500000
+    },
+    "metrics": {
+      "balance": 9999.554632160985,
+      "equity": 9999.554632160985,
+      "total_return": -4.453678390145797e-05,
+      "win_rate": 0.48205128205128206,
+      "profit_factor": 1.2771118865551794,
+      "max_drawdown": 0.003134248367372537,
+      "total_trades": 195,
+      "profitable_trades": 94,
+      "sharpe_ratio": -0.0020161813430591585,
+      "max_consecutive_losses": 10
+    },
+    "score": 5191.771930619288,
+    "tier": "none",
+    "symbol": "XAUUSD"
+  },
+  {
     "attempt": 8,
     "timestamp": "2025-07-16T21:26:33.794261",
     "config": {
@@ -54,6 +83,35 @@
       "max_consecutive_losses": 9
     },
     "score": 4778.150382516556,
+    "tier": "none",
+    "symbol": "XAUUSD"
+  },
+  {
+    "attempt": 1,
+    "timestamp": "2025-07-18T18:30:02.125399",
+    "config": {
+      "algorithm": "PPO",
+      "learning_rate": 0.0003,
+      "n_steps": 8192,
+      "batch_size": 1024,
+      "gamma": 0.99,
+      "lookback_window": 200,
+      "transaction_cost": 0.0001,
+      "timesteps": 500000
+    },
+    "metrics": {
+      "balance": 9965.907201941005,
+      "equity": 9958.454861941005,
+      "total_return": -0.004154513805899478,
+      "win_rate": 0.5333333333333333,
+      "profit_factor": 0.6803340568487432,
+      "max_drawdown": 0.007104240689227491,
+      "total_trades": 30,
+      "profitable_trades": 16,
+      "sharpe_ratio": -0.1358646080736216,
+      "max_consecutive_losses": 5
+    },
+    "score": 4717.318123388355,
     "tier": "none",
     "symbol": "XAUUSD"
   },
@@ -112,6 +170,35 @@
       "max_consecutive_losses": 7
     },
     "score": 4362.973932317747,
+    "tier": "none",
+    "symbol": "XAUUSD"
+  },
+  {
+    "attempt": 6,
+    "timestamp": "2025-07-18T17:00:51.271653",
+    "config": {
+      "algorithm": "PPO",
+      "learning_rate": 0.0003,
+      "n_steps": 8192,
+      "batch_size": 1024,
+      "gamma": 0.99,
+      "lookback_window": 200,
+      "transaction_cost": 0.0001,
+      "timesteps": 500000
+    },
+    "metrics": {
+      "balance": 9969.296023844001,
+      "equity": 9967.404513844001,
+      "total_return": -0.0032595486155998516,
+      "win_rate": 0.4594594594594595,
+      "profit_factor": 0.5488573678163622,
+      "max_drawdown": 0.004172375874207051,
+      "total_trades": 37,
+      "profitable_trades": 17,
+      "sharpe_ratio": -0.15718515854056384,
+      "max_consecutive_losses": 5
+    },
+    "score": 4291.41312288709,
     "tier": "none",
     "symbol": "XAUUSD"
   },
@@ -373,6 +460,35 @@
       "max_consecutive_losses": 8
     },
     "score": 3497.3475254550926,
+    "tier": "none",
+    "symbol": "XAUUSD"
+  },
+  {
+    "attempt": 4,
+    "timestamp": "2025-07-18T15:50:48.870234",
+    "config": {
+      "algorithm": "PPO",
+      "learning_rate": 0.0003,
+      "n_steps": 8192,
+      "batch_size": 1024,
+      "gamma": 0.99,
+      "lookback_window": 200,
+      "transaction_cost": 0.0001,
+      "timesteps": 500000
+    },
+    "metrics": {
+      "balance": 9838.722626138022,
+      "equity": 9838.722626138022,
+      "total_return": -0.016127737386197806,
+      "win_rate": 0.3738738738738739,
+      "profit_factor": 0.6297476742959652,
+      "max_drawdown": 0.016127737386197806,
+      "total_trades": 444,
+      "profitable_trades": 166,
+      "sharpe_ratio": -1.1911163387009711,
+      "max_consecutive_losses": 9
+    },
+    "score": 3465.1740508961843,
     "tier": "none",
     "symbol": "XAUUSD"
   },
@@ -736,6 +852,87 @@
     "symbol": "XAUUSD"
   },
   {
+    "attempt": 1,
+    "timestamp": "2025-07-18T14:06:25.467610",
+    "config": {
+      "algorithm": "PPO",
+      "learning_rate": 0.0003,
+      "n_steps": 8192,
+      "batch_size": 1024,
+      "gamma": 0.99,
+      "lookback_window": 200,
+      "transaction_cost": 0.0001,
+      "timesteps": 500000
+    },
+    "metrics": {
+      "balance": 10000,
+      "equity": 10000,
+      "total_return": 0,
+      "win_rate": 0,
+      "profit_factor": 0,
+      "max_drawdown": 0,
+      "total_trades": 0,
+      "sharpe_ratio": 0
+    },
+    "score": 2000.0,
+    "tier": "none",
+    "symbol": "XAUUSD"
+  },
+  {
+    "attempt": 3,
+    "timestamp": "2025-07-18T15:15:55.782364",
+    "config": {
+      "algorithm": "PPO",
+      "learning_rate": 0.0003,
+      "n_steps": 8192,
+      "batch_size": 1024,
+      "gamma": 0.99,
+      "lookback_window": 200,
+      "transaction_cost": 0.0001,
+      "timesteps": 500000
+    },
+    "metrics": {
+      "balance": 10000,
+      "equity": 10000,
+      "total_return": 0,
+      "win_rate": 0,
+      "profit_factor": 0,
+      "max_drawdown": 0,
+      "total_trades": 0,
+      "sharpe_ratio": 0
+    },
+    "score": 2000.0,
+    "tier": "none",
+    "symbol": "XAUUSD"
+  },
+  {
+    "attempt": 5,
+    "timestamp": "2025-07-18T16:24:38.046300",
+    "config": {
+      "algorithm": "PPO",
+      "learning_rate": 0.0003,
+      "n_steps": 8192,
+      "batch_size": 1024,
+      "gamma": 0.99,
+      "lookback_window": 200,
+      "transaction_cost": 0.0001,
+      "timesteps": 500000
+    },
+    "metrics": {
+      "balance": 10000,
+      "equity": 10000,
+      "total_return": 0,
+      "win_rate": 0,
+      "profit_factor": 0,
+      "max_drawdown": 0,
+      "total_trades": 0,
+      "sharpe_ratio": 0
+    },
+    "score": 2000.0,
+    "tier": "none",
+    "symbol": "XAUUSD"
+  },
+  {
     "attempt": 12,
     "timestamp": "2025-07-18T06:56:37.064641",
     "config": {
@@ -759,6 +956,33 @@
       "sharpe_ratio": 0
     },
     "score": 1974.2322049914712,
+    "tier": "none",
+    "symbol": "XAUUSD"
+  },
+  {
+    "attempt": 7,
+    "timestamp": "2025-07-18T17:38:05.068874",
+    "config": {
+      "algorithm": "PPO",
+      "learning_rate": 0.0003,
+      "n_steps": 8192,
+      "batch_size": 1024,
+      "gamma": 0.99,
+      "lookback_window": 200,
+      "transaction_cost": 0.0001,
+      "timesteps": 500000
+    },
+    "metrics": {
+      "balance": 9999.804415309,
+      "equity": 10032.677135308999,
+      "total_return": 0,
+      "win_rate": 0,
+      "profit_factor": 0,
+      "max_drawdown": 0.006443812331816787,
+      "total_trades": 0,
+      "sharpe_ratio": 0
+    },
+    "score": 1974.2247506727329,
     "tier": "none",
     "symbol": "XAUUSD"
   },
@@ -1035,6 +1259,114 @@
   {
     "attempt": 23,
     "timestamp": "2025-07-18T13:26:33.592313",
+    "config": {
+      "algorithm": "PPO",
+      "learning_rate": 0.0003,
+      "n_steps": 8192,
+      "batch_size": 1024,
+      "gamma": 0.99,
+      "lookback_window": 200,
+      "transaction_cost": 0.0001,
+      "timesteps": 500000
+    },
+    "metrics": {
+      "balance": 9999.804298325,
+      "equity": 10031.507178325,
+      "total_return": 0,
+      "win_rate": 0,
+      "profit_factor": 0,
+      "max_drawdown": 0.006444561367339679,
+      "total_trades": 0,
+      "sharpe_ratio": 0
+    },
+    "score": 1974.2217545306414,
+    "tier": "none",
+    "symbol": "XAUUSD"
+  },
+  {
+    "attempt": 2,
+    "timestamp": "2025-07-18T14:40:07.141149",
+    "config": {
+      "algorithm": "PPO",
+      "learning_rate": 0.0003,
+      "n_steps": 8192,
+      "batch_size": 1024,
+      "gamma": 0.99,
+      "lookback_window": 200,
+      "transaction_cost": 0.0001,
+      "timesteps": 500000
+    },
+    "metrics": {
+      "balance": 9999.804298325,
+      "equity": 10031.507178325,
+      "total_return": 0,
+      "win_rate": 0,
+      "profit_factor": 0,
+      "max_drawdown": 0.006444561367339679,
+      "total_trades": 0,
+      "sharpe_ratio": 0
+    },
+    "score": 1974.2217545306414,
+    "tier": "none",
+    "symbol": "XAUUSD"
+  },
+  {
+    "attempt": 2,
+    "timestamp": "2025-07-18T19:07:52.701922",
+    "config": {
+      "algorithm": "PPO",
+      "learning_rate": 0.0003,
+      "n_steps": 8192,
+      "batch_size": 1024,
+      "gamma": 0.99,
+      "lookback_window": 200,
+      "transaction_cost": 0.0001,
+      "timesteps": 500000
+    },
+    "metrics": {
+      "balance": 9999.804298325,
+      "equity": 10031.507178325,
+      "total_return": 0,
+      "win_rate": 0,
+      "profit_factor": 0,
+      "max_drawdown": 0.006444561367339679,
+      "total_trades": 0,
+      "sharpe_ratio": 0
+    },
+    "score": 1974.2217545306414,
+    "tier": "none",
+    "symbol": "XAUUSD"
+  },
+  {
+    "attempt": 5,
+    "timestamp": "2025-07-18T21:13:03.922312",
+    "config": {
+      "algorithm": "PPO",
+      "learning_rate": 0.0003,
+      "n_steps": 8192,
+      "batch_size": 1024,
+      "gamma": 0.99,
+      "lookback_window": 200,
+      "transaction_cost": 0.0001,
+      "timesteps": 500000
+    },
+    "metrics": {
+      "balance": 9999.804298325,
+      "equity": 10031.507178325,
+      "total_return": 0,
+      "win_rate": 0,
+      "profit_factor": 0,
+      "max_drawdown": 0.006444561367339679,
+      "total_trades": 0,
+      "sharpe_ratio": 0
+    },
+    "score": 1974.2217545306414,
+    "tier": "none",
+    "symbol": "XAUUSD"
+  },
+  {
+    "attempt": 6,
+    "timestamp": "2025-07-18T22:07:48.880946",
     "config": {
       "algorithm": "PPO",
       "learning_rate": 0.0003,
@@ -1440,6 +1772,60 @@
   {
     "attempt": 22,
     "timestamp": "2025-07-18T12:44:33.267009",
+    "config": {
+      "algorithm": "PPO",
+      "learning_rate": 0.0003,
+      "n_steps": 8192,
+      "batch_size": 1024,
+      "gamma": 0.99,
+      "lookback_window": 200,
+      "transaction_cost": 0.0001,
+      "timesteps": 500000
+    },
+    "metrics": {
+      "balance": 9999.804298325,
+      "equity": 9968.101418324999,
+      "total_return": 0,
+      "win_rate": 0,
+      "profit_factor": 0,
+      "max_drawdown": 0.0072517537291204364,
+      "total_trades": 0,
+      "sharpe_ratio": 0
+    },
+    "score": 1970.992985083518,
+    "tier": "none",
+    "symbol": "XAUUSD"
+  },
+  {
+    "attempt": 3,
+    "timestamp": "2025-07-18T19:59:25.066462",
+    "config": {
+      "algorithm": "PPO",
+      "learning_rate": 0.0003,
+      "n_steps": 8192,
+      "batch_size": 1024,
+      "gamma": 0.99,
+      "lookback_window": 200,
+      "transaction_cost": 0.0001,
+      "timesteps": 500000
+    },
+    "metrics": {
+      "balance": 9999.804298325,
+      "equity": 9968.101418324999,
+      "total_return": 0,
+      "win_rate": 0,
+      "profit_factor": 0,
+      "max_drawdown": 0.0072517537291204364,
+      "total_trades": 0,
+      "sharpe_ratio": 0
+    },
+    "score": 1970.992985083518,
+    "tier": "none",
+    "symbol": "XAUUSD"
+  },
+  {
+    "attempt": 4,
+    "timestamp": "2025-07-18T20:36:24.656020",
     "config": {
       "algorithm": "PPO",
       "learning_rate": 0.0003,

@@ -1,0 +1,9 @@
+{
+  "symbol": "XAUUSD",
+  "tier": "none",
+  "score": 4717.318123388355,
+  "attempt": 1,
+  "timestamp": "20250718_183000",
+  "is_best": true,
+  "model_path": "models/successful/xauusd_best_none_score4717_attempt1_20250718_183000.zip"
+}
