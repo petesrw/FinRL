@@ -1,0 +1,9 @@
+{
+  "symbol": "XAUUSD",
+  "tier": "diamond",
+  "score": 8958.406443728001,
+  "attempt": 10,
+  "timestamp": "20250717_234714",
+  "is_best": false,
+  "model_path": "models/diamond/xauusd_diamond_score8958_attempt10_20250717_234714.zip"
+}

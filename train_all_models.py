@@ -1045,7 +1045,9 @@ class AdaptiveTrainer:
                 n_steps=n_steps,
                 batch_size=batch_size,
                 gamma=hyperparameters['gamma'],
-                **ppo_kwargs
+                device=DEVICE,
+                verbose=0,
+                **{k: v for k, v in ppo_kwargs.items() if k not in ['device', 'verbose']}
             )
         elif hyperparameters['algorithm'] == 'SAC':
             # Use GPU-optimized batch_size if available, otherwise use hyperparameter
