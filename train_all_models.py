@@ -790,6 +790,130 @@ class AdaptiveTrainer:
             return [fc['config'] for fc in failed_configs]
         return []
     
+    def analyze_performance_patterns(self):
+        """Analyze which hyperparameter patterns work best"""
+        if len(self.training_history) < 5:
+            return None
+        
+        # Categorize by performance
+        excellent = [h for h in self.training_history if h.get('score', 0) >= 60]
+        good = [h for h in self.training_history if 40 <= h.get('score', 0) < 60]
+        poor = [h for h in self.training_history if 15 <= h.get('score', 0) < 40]
+        bad = [h for h in self.training_history if h.get('score', 0) < 15]
+        
+        analysis = {
+            'excellent': len(excellent),
+            'good': len(good), 
+            'poor': len(poor),
+            'bad': len(bad),
+            'learning_rate_patterns': {},
+            'gamma_patterns': {},
+            'algorithm_patterns': {},
+            'successful_ranges': {}
+        }
+        
+        # Analyze learning rate patterns
+        for category, configs in [('excellent', excellent), ('good', good), ('poor', poor), ('bad', bad)]:
+            lr_list = [h['hyperparameters'].get('learning_rate', 0) for h in configs]
+            gamma_list = [h['hyperparameters'].get('gamma', 0) for h in configs]
+            algo_list = [h['hyperparameters'].get('algorithm', '') for h in configs]
+            
+            if lr_list:
+                analysis['learning_rate_patterns'][category] = {
+                    'avg': np.mean(lr_list),
+                    'min': min(lr_list),
+                    'max': max(lr_list),
+                    'count': len(lr_list)
+                }
+            
+            if gamma_list:
+                analysis['gamma_patterns'][category] = {
+                    'avg': np.mean(gamma_list),
+                    'min': min(gamma_list), 
+                    'max': max(gamma_list),
+                    'count': len(gamma_list)
+                }
+            
+            if algo_list:
+                analysis['algorithm_patterns'][category] = {}
+                for algo in set(algo_list):
+                    analysis['algorithm_patterns'][category][algo] = algo_list.count(algo)
+        
+        # Find successful parameter ranges
+        if excellent or good:
+            successful = excellent + good
+            analysis['successful_ranges'] = {
+                'learning_rate': {
+                    'min': min(h['hyperparameters'].get('learning_rate', 0) for h in successful),
+                    'max': max(h['hyperparameters'].get('learning_rate', 0) for h in successful),
+                    'preferred': [h['hyperparameters'].get('learning_rate', 0) for h in successful[:3]]
+                },
+                'gamma': {
+                    'min': min(h['hyperparameters'].get('gamma', 0) for h in successful),
+                    'max': max(h['hyperparameters'].get('gamma', 0) for h in successful),
+                    'preferred': [h['hyperparameters'].get('gamma', 0) for h in successful[:3]]
+                }
+            }
+        
+        return analysis
+    
+    def get_smart_hyperparameter_ranges(self):
+        """Get hyperparameter ranges based on performance analysis"""
+        analysis = self.analyze_performance_patterns()
+        
+        if not analysis or not analysis.get('successful_ranges'):
+            # Default ranges if no successful patterns found
+            return {
+                'learning_rates': [0.0001, 0.0003, 0.001],  # Conservative ranges
+                'gammas': [0.95, 0.99, 0.995],
+                'algorithms': ['PPO', 'A2C'],
+                'n_steps_ppo': [2048, 4096, 8192],
+                'batch_sizes': [256, 512, 1024],
+                'lookback_windows': [50, 100, 200],
+                'transaction_costs': [0.0001, 0.0002, 0.0003]
+            }
+        
+        # Use successful ranges with some exploration
+        successful = analysis['successful_ranges']
+        
+        # Expand successful ranges by ±20% for exploration
+        lr_range = successful.get('learning_rate', {})
+        gamma_range = successful.get('gamma', {})
+        
+        lr_min = lr_range.get('min', 0.0001) * 0.8
+        lr_max = lr_range.get('max', 0.001) * 1.2
+        gamma_min = max(0.90, gamma_range.get('min', 0.95) * 0.98)
+        gamma_max = min(0.999, gamma_range.get('max', 0.99) * 1.01)
+        
+        return {
+            'learning_rates': [lr_min, (lr_min + lr_max) / 2, lr_max] + lr_range.get('preferred', []),
+            'gammas': [gamma_min, (gamma_min + gamma_max) / 2, gamma_max] + gamma_range.get('preferred', []),
+            'algorithms': self._get_best_algorithms(analysis),
+            'n_steps_ppo': [2048, 4096, 8192],
+            'batch_sizes': [256, 512, 1024, 2048],
+            'lookback_windows': [50, 100, 200, 300],
+            'transaction_costs': [0.0001, 0.0002, 0.0003, 0.0005]
+        }
+    
+    def _get_best_algorithms(self, analysis):
+        """Select best performing algorithms"""
+        algo_patterns = analysis.get('algorithm_patterns', {})
+        
+        # Count successful uses of each algorithm
+        algo_scores = {}
+        for category in ['excellent', 'good']:
+            if category in algo_patterns:
+                for algo, count in algo_patterns[category].items():
+                    weight = 3 if category == 'excellent' else 1
+                    algo_scores[algo] = algo_scores.get(algo, 0) + (count * weight)
+        
+        if not algo_scores:
+            return ['PPO', 'A2C']  # Default
+        
+        # Sort by performance and return top algorithms
+        sorted_algos = sorted(algo_scores.items(), key=lambda x: x[1], reverse=True)
+        return [algo for algo, score in sorted_algos] + ['PPO', 'A2C']  # Always include defaults
+    
     def _save_model_by_tier(self, model, tier, score, attempt, is_best=True):
         """Save model in organized folder structure by tier"""
         # Create tier-specific directories
@@ -914,41 +1038,60 @@ class AdaptiveTrainer:
             return 'none', '❌'
     
     def generate_hyperparameters(self):
-        """Generate hyperparameters optimized for RTX 5060 TI 16GB - Enhanced with smart config avoidance"""
+        """Generate hyperparameters with Performance-based Learning - Enhanced Intelligence"""
+        # Get performance analysis
+        analysis = self.analyze_performance_patterns()
+        smart_ranges = self.get_smart_hyperparameter_ranges()
+        
         # Get all failed configurations from multiple sources
         failed_configs = []
         
         # 1. From training history (low score or error)
         for h in self.training_history:
-            if h.get('score', 0) < 40 or h.get('tier') == 'failed' or 'error' in h:  # ลดจาก 50 เป็น 40
+            if h.get('score', 0) < 40 or h.get('tier') == 'failed' or 'error' in h:
                 failed_configs.append(h['hyperparameters'])
         
         # 2. From dedicated failed configs file
         failed_configs.extend(self.load_failed_configs())
         
+        print(f"   🧠 Performance-based Learning: Using patterns from {len(self.training_history)} attempts")
         print(f"   🚫 Avoiding {len(failed_configs)} previously failed configurations")
         
-        max_attempts = 300  # เพิ่มจาก 200 เป็น 300
+        # 3. NEW: Identify problematic parameter ranges
+        problematic_ranges = self._identify_problematic_ranges()
+        if problematic_ranges:
+            print(f"   ⚠️ Avoiding problematic ranges: {list(problematic_ranges.keys())}")
+        
+        max_attempts = 300
         for attempt in range(max_attempts):
-            algorithm = random.choice(['PPO', 'A2C'])  # เอา SAC ออกเพราะต้องการ continuous action space
+            # Use performance-based algorithm selection
+            algorithm = random.choice(smart_ranges['algorithms'][:2])  # Prefer best algorithms
             
-            # Ultra Performance for RTX 5060 TI 16GB GDDR7
-            base_batch_size = random.choice([128, 256, 512])  # Larger base sizes
+            # Performance-optimized parameter selection
+            learning_rate = random.choice(smart_ranges['learning_rates'][:5])  # Best LRs first
+            gamma = random.choice(smart_ranges['gammas'][:3])  # Best gammas first
+            
+            # Conservative ranges based on observations
+            base_batch_size = random.choice([256, 512, 1024])  # Avoid extremes
             optimal_batch_size = get_optimal_batch_size(DEVICE, base_batch_size)
             
-            base_timesteps = random.choice([200000, 300000, 400000])  # More timesteps
+            base_timesteps = random.choice([200000, 300000, 400000])
             optimal_timesteps = get_optimal_timesteps(DEVICE, base_timesteps)
             
             config = {
                 'algorithm': algorithm,
-                'learning_rate': random.choice([0.00005, 0.0001, 0.0002, 0.0003, 0.0005, 0.001, 0.002, 0.003, 0.005]),  # เพิ่มตัวเลือก
-                'n_steps': random.choice([2048, 4096, 6144, 8192, 12288, 16384, 24576]) if algorithm == 'PPO' else None,  # เพิ่มตัวเลือก
-                'batch_size': optimal_batch_size,  # GPU-optimized batch size
-                'gamma': random.choice([0.90, 0.92, 0.95, 0.97, 0.98, 0.99, 0.995, 0.998]),  # เพิ่มตัวเลือก
-                'lookback_window': random.choice([50, 75, 100, 150, 200, 250, 300, 350, 400, 500]),  # เพิ่มตัวเลือก
-                'transaction_cost': random.choice([0.00005, 0.0001, 0.00015, 0.0002, 0.0003, 0.0005, 0.0007]),  # เพิ่มตัวเลือก
-                'timesteps': optimal_timesteps  # GPU-optimized timesteps
+                'learning_rate': learning_rate,
+                'n_steps': random.choice([2048, 4096, 8192, 16384]) if algorithm == 'PPO' else None,
+                'batch_size': optimal_batch_size,
+                'gamma': gamma,
+                'lookback_window': random.choice(smart_ranges['lookback_windows']),
+                'transaction_cost': random.choice(smart_ranges['transaction_costs']),
+                'timesteps': optimal_timesteps
             }
+            
+            # NEW: Check against problematic ranges
+            if self._is_in_problematic_range(config, problematic_ranges):
+                continue  # Skip this config
             
             # Enhanced config comparison - check if similar config already failed
             is_similar_to_failed = False
@@ -959,24 +1102,120 @@ class AdaptiveTrainer:
             
             if not is_similar_to_failed:
                 if attempt > 0:
-                    print(f"   ✅ Found unique config after {attempt + 1} attempts")
+                    print(f"   ✅ Found optimized config after {attempt + 1} attempts")
+                
+                # NEW: Print performance insights
+                if analysis:
+                    self._print_performance_insights(analysis, config)
+                
                 return config
         
-        # If we can't find a unique config after many attempts, use fallback with warning
-        print(f"   ⚠️ Could not find unique config after {max_attempts} attempts")
-        print(f"   🔄 Using fallback config (may be similar to previous attempts)")
+        # Enhanced fallback with best known parameters
+        print(f"   ⚠️ Could not find unique optimized config after {max_attempts} attempts")
+        print(f"   🔄 Using performance-based fallback config")
         
-        # Ultra Performance default for RTX 5060 TI 16GB GDDR7
+        # Use best known parameters if available
+        best_lr = smart_ranges['learning_rates'][0] if smart_ranges['learning_rates'] else 0.0003
+        best_gamma = smart_ranges['gammas'][0] if smart_ranges['gammas'] else 0.99
+        best_algo = smart_ranges['algorithms'][0] if smart_ranges['algorithms'] else 'PPO'
+        
         return {
-            'algorithm': 'PPO',
-            'learning_rate': 0.0003,
-            'n_steps': 8192,  # Ultra large for RTX 5060 TI
-            'batch_size': get_optimal_batch_size(DEVICE, 256),  # Ultra GPU-optimized
-            'gamma': 0.99,
-            'lookback_window': 200,  # Ultra large window
-            'transaction_cost': 0.0001,
-            'timesteps': get_optimal_timesteps(DEVICE, 300000)  # Ultra timesteps for RTX 5060 TI
+            'algorithm': best_algo,
+            'learning_rate': best_lr,
+            'n_steps': 4096 if best_algo == 'PPO' else None,
+            'batch_size': get_optimal_batch_size(DEVICE, 512),
+            'gamma': best_gamma,
+            'lookback_window': 100,
+            'transaction_cost': 0.0002,
+            'timesteps': get_optimal_timesteps(DEVICE, 300000)
         }
+    
+    def _identify_problematic_ranges(self):
+        """Identify parameter ranges that consistently fail"""
+        if len(self.training_history) < 10:
+            return {}
+        
+        # Analyze failed attempts
+        failed_attempts = [h for h in self.training_history if h.get('score', 0) < 20]
+        if len(failed_attempts) < 5:
+            return {}
+        
+        problematic_ranges = {}
+        
+        # Learning rate analysis
+        failed_lrs = [h['hyperparameters'].get('learning_rate', 0) for h in failed_attempts]
+        if failed_lrs:
+            # If most failures have LR > 0.002 or < 0.0001, mark as problematic
+            high_lr_failures = sum(1 for lr in failed_lrs if lr >= 0.002)
+            low_lr_failures = sum(1 for lr in failed_lrs if lr <= 0.0001)
+            
+            if high_lr_failures > len(failed_lrs) * 0.6:
+                problematic_ranges['high_learning_rate'] = {'min': 0.002, 'max': 1.0}
+            if low_lr_failures > len(failed_lrs) * 0.6:
+                problematic_ranges['low_learning_rate'] = {'min': 0.0, 'max': 0.0001}
+        
+        # Gamma analysis
+        failed_gammas = [h['hyperparameters'].get('gamma', 0) for h in failed_attempts]
+        if failed_gammas:
+            low_gamma_failures = sum(1 for gamma in failed_gammas if gamma <= 0.92)
+            if low_gamma_failures > len(failed_gammas) * 0.6:
+                problematic_ranges['low_gamma'] = {'min': 0.0, 'max': 0.92}
+        
+        return problematic_ranges
+    
+    def _is_in_problematic_range(self, config, problematic_ranges):
+        """Check if config falls into problematic ranges"""
+        if not problematic_ranges:
+            return False
+        
+        lr = config.get('learning_rate', 0)
+        gamma = config.get('gamma', 0)
+        
+        # Check learning rate
+        if 'high_learning_rate' in problematic_ranges:
+            range_info = problematic_ranges['high_learning_rate']
+            if range_info['min'] <= lr <= range_info['max']:
+                return True
+                
+        if 'low_learning_rate' in problematic_ranges:
+            range_info = problematic_ranges['low_learning_rate']
+            if range_info['min'] <= lr <= range_info['max']:
+                return True
+        
+        # Check gamma
+        if 'low_gamma' in problematic_ranges:
+            range_info = problematic_ranges['low_gamma']
+            if range_info['min'] <= gamma <= range_info['max']:
+                return True
+        
+        return False
+    
+    def _print_performance_insights(self, analysis, config):
+        """Print insights about the selected configuration"""
+        if not analysis:
+            return
+            
+        print(f"   🎯 Performance Insights:")
+        
+        # Learning rate insight
+        lr_patterns = analysis.get('learning_rate_patterns', {})
+        if 'good' in lr_patterns or 'excellent' in lr_patterns:
+            best_lr_avg = lr_patterns.get('excellent', lr_patterns.get('good', {})).get('avg', 0)
+            current_lr = config.get('learning_rate', 0)
+            if abs(current_lr - best_lr_avg) < best_lr_avg * 0.3:
+                print(f"      ✅ Learning rate {current_lr:.5f} close to successful average {best_lr_avg:.5f}")
+            else:
+                print(f"      ⚠️ Learning rate {current_lr:.5f} differs from successful average {best_lr_avg:.5f}")
+        
+        # Algorithm insight
+        algo_patterns = analysis.get('algorithm_patterns', {})
+        current_algo = config.get('algorithm', '')
+        if 'excellent' in algo_patterns and current_algo in algo_patterns['excellent']:
+            count = algo_patterns['excellent'][current_algo]
+            print(f"      🏆 Algorithm {current_algo} had {count} excellent performances")
+        elif 'good' in algo_patterns and current_algo in algo_patterns['good']:
+            count = algo_patterns['good'][current_algo]
+            print(f"      👍 Algorithm {current_algo} had {count} good performances")
     
     def _configs_are_similar(self, config1, config2, tolerance=0.2):  # เพิ่ม tolerance จาก 0.1 เป็น 0.2
         """Check if two configurations are similar enough to be considered duplicates"""
@@ -1205,7 +1444,7 @@ class AdaptiveTrainer:
                 
                 if hyperparameters['algorithm'] == 'PPO':
                     async_config.update({
-                        "n_steps": min(hyperparameters.get('n_steps', 2048), 4096),  # Smaller steps for concurrency
+                        "n_steps": min(hyperparameters.get('n_steps', 2048), 8192),  # Smaller steps for concurrency
                         "gae_lambda": 0.95,
                         "clip_range": 0.2,
                         "ent_coef": 0.01,
