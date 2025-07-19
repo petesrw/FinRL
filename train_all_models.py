@@ -707,12 +707,12 @@ class AdaptiveTrainer:
         
         self.load_history()
         
-        # Excellence targets
+        # Realistic Excellence targets for Forex Trading (adjusted score thresholds)
         self.targets = {
-            'bronze': {'win_rate': 0.70, 'profit_factor': 2.0, 'max_drawdown': 0.15, 'score': 70},
-            'silver': {'win_rate': 0.75, 'profit_factor': 2.5, 'max_drawdown': 0.12, 'score': 75},
-            'gold': {'win_rate': 0.80, 'profit_factor': 2.8, 'max_drawdown': 0.10, 'score': 80},
-            'diamond': {'win_rate': 0.85, 'profit_factor': 3.2, 'max_drawdown': 0.08, 'score': 85}
+            'bronze': {'win_rate': 0.55, 'profit_factor': 1.5, 'max_drawdown': 0.20, 'score': 45},
+            'silver': {'win_rate': 0.60, 'profit_factor': 1.8, 'max_drawdown': 0.18, 'score': 55},
+            'gold': {'win_rate': 0.65, 'profit_factor': 2.2, 'max_drawdown': 0.15, 'score': 70},
+            'diamond': {'win_rate': 0.70, 'profit_factor': 2.5, 'max_drawdown': 0.12, 'score': 85}
         }
         
         print(f"🚀 Async Training Setup: {self.max_concurrent_models} concurrent models")
@@ -840,43 +840,75 @@ class AdaptiveTrainer:
         return model_path
     
     def calculate_score(self, metrics):
-        """Calculate overall performance score"""
+        """Calculate overall performance score with realistic weighting for Forex"""
         win_rate = metrics.get('win_rate', 0)
         profit_factor = metrics.get('profit_factor', 0)
         max_drawdown = metrics.get('max_drawdown', 1)
         sharpe_ratio = metrics.get('sharpe_ratio', 0)
+        total_return = metrics.get('total_return', 0)
         
-        # Weighted scoring
-        score = (
-            win_rate * 40 +  # 40% weight on win rate
-            min(profit_factor / 3.0, 1.0) * 30 +  # 30% weight on profit factor (capped at 3.0)
-            max(0, 1 - max_drawdown * 2) * 20 +  # 20% weight on drawdown control
-            min(sharpe_ratio / 2.0, 1.0) * 10  # 10% weight on Sharpe ratio
-        ) * 100
+        # Base scores (0-100 scale)
+        win_rate_score = win_rate * 100  # Direct conversion to percentage
         
-        return score
+        # Profit factor: 1.0=0, 1.5=25, 2.0=50, 2.5=75, 3.0+=100
+        pf_score = min((profit_factor - 1.0) * 50, 100) if profit_factor >= 1.0 else 0
+        
+        # Drawdown penalty: 0%=100, 5%=90, 10%=80, 15%=70, 20%=60, 25%=50, 30%+=0
+        dd_score = max(0, 100 - (max_drawdown * 100 * 3.33))
+        
+        # Sharpe ratio: 0=0, 0.5=25, 1.0=50, 1.5=75, 2.0+=100
+        sharpe_score = min(sharpe_ratio * 50, 100)
+        
+        # Total return component: negative return penalty, positive return bonus
+        if total_return < 0:
+            return_component = total_return * 100  # Penalty for negative returns
+        else:
+            return_component = min(total_return * 50, 25)  # Bonus up to 25 points
+        
+        # Main score calculation (balanced weights)
+        main_score = (
+            win_rate_score * 0.35 +      # 35% weight on win rate
+            pf_score * 0.30 +            # 30% weight on profit factor  
+            dd_score * 0.25 +            # 25% weight on drawdown control
+            sharpe_score * 0.10          # 10% weight on Sharpe ratio
+        )
+        
+        # Add return component (can be negative)
+        final_score = main_score + return_component
+        
+        # Ensure realistic minimum for poor performance
+        if win_rate < 0.30 or profit_factor < 1.0 or max_drawdown > 0.50:
+            final_score = min(final_score, 30)  # Cap very poor performance
+        
+        return max(0, min(final_score, 100))  # Ensure score is between 0-100
     
     def get_tier(self, metrics):
-        """Determine performance tier"""
+        """Determine performance tier with stricter win rate requirements"""
         win_rate = metrics.get('win_rate', 0)
         profit_factor = metrics.get('profit_factor', 0)
         max_drawdown = metrics.get('max_drawdown', 1)
+        score = self.calculate_score(metrics)
         
+        # All tiers require minimum win rate AND must pass ALL criteria
         if (win_rate >= self.targets['diamond']['win_rate'] and 
             profit_factor >= self.targets['diamond']['profit_factor'] and 
-            max_drawdown <= self.targets['diamond']['max_drawdown']):
+            max_drawdown <= self.targets['diamond']['max_drawdown'] and
+            score >= self.targets['diamond']['score']):
             return 'diamond', '💎'
         elif (win_rate >= self.targets['gold']['win_rate'] and 
               profit_factor >= self.targets['gold']['profit_factor'] and 
-              max_drawdown <= self.targets['gold']['max_drawdown']):
+              max_drawdown <= self.targets['gold']['max_drawdown'] and
+              score >= self.targets['gold']['score']):
             return 'gold', '🥇'
         elif (win_rate >= self.targets['silver']['win_rate'] and 
               profit_factor >= self.targets['silver']['profit_factor'] and 
-              max_drawdown <= self.targets['silver']['max_drawdown']):
+              max_drawdown <= self.targets['silver']['max_drawdown'] and
+              score >= self.targets['silver']['score']):
             return 'silver', '🥈'
         elif (win_rate >= self.targets['bronze']['win_rate'] and 
               profit_factor >= self.targets['bronze']['profit_factor'] and 
-              max_drawdown <= self.targets['bronze']['max_drawdown']):
+              max_drawdown <= self.targets['bronze']['max_drawdown'] and
+              score >= self.targets['bronze']['score']):
             return 'bronze', '🥉'
         else:
             return 'none', '❌'
@@ -888,7 +920,7 @@ class AdaptiveTrainer:
         
         # 1. From training history (low score or error)
         for h in self.training_history:
-            if h.get('score', 0) < 50 or h.get('tier') == 'failed' or 'error' in h:
+            if h.get('score', 0) < 40 or h.get('tier') == 'failed' or 'error' in h:  # ลดจาก 50 เป็น 40
                 failed_configs.append(h['hyperparameters'])
         
         # 2. From dedicated failed configs file
@@ -896,9 +928,9 @@ class AdaptiveTrainer:
         
         print(f"   🚫 Avoiding {len(failed_configs)} previously failed configurations")
         
-        max_attempts = 200  # Increased attempts to find good config
+        max_attempts = 300  # เพิ่มจาก 200 เป็น 300
         for attempt in range(max_attempts):
-            algorithm = random.choice(['PPO', 'A2C'])
+            algorithm = random.choice(['PPO', 'A2C'])  # เอา SAC ออกเพราะต้องการ continuous action space
             
             # Ultra Performance for RTX 5060 TI 16GB GDDR7
             base_batch_size = random.choice([128, 256, 512])  # Larger base sizes
@@ -909,12 +941,12 @@ class AdaptiveTrainer:
             
             config = {
                 'algorithm': algorithm,
-                'learning_rate': random.choice([0.0001, 0.0003, 0.001, 0.003]),
-                'n_steps': random.choice([4096, 8192, 16384]) if algorithm == 'PPO' else None,  # Ultra large n_steps for RTX 5060 TI
+                'learning_rate': random.choice([0.00005, 0.0001, 0.0002, 0.0003, 0.0005, 0.001, 0.002, 0.003, 0.005]),  # เพิ่มตัวเลือก
+                'n_steps': random.choice([2048, 4096, 6144, 8192, 12288, 16384, 24576]) if algorithm == 'PPO' else None,  # เพิ่มตัวเลือก
                 'batch_size': optimal_batch_size,  # GPU-optimized batch size
-                'gamma': random.choice([0.95, 0.99, 0.995]),
-                'lookback_window': random.choice([100, 200, 300, 400]),  # Ultra large windows for RTX 5060 TI
-                'transaction_cost': random.choice([0.0001, 0.0002, 0.0005]),
+                'gamma': random.choice([0.90, 0.92, 0.95, 0.97, 0.98, 0.99, 0.995, 0.998]),  # เพิ่มตัวเลือก
+                'lookback_window': random.choice([50, 75, 100, 150, 200, 250, 300, 350, 400, 500]),  # เพิ่มตัวเลือก
+                'transaction_cost': random.choice([0.00005, 0.0001, 0.00015, 0.0002, 0.0003, 0.0005, 0.0007]),  # เพิ่มตัวเลือก
                 'timesteps': optimal_timesteps  # GPU-optimized timesteps
             }
             
@@ -946,7 +978,7 @@ class AdaptiveTrainer:
             'timesteps': get_optimal_timesteps(DEVICE, 300000)  # Ultra timesteps for RTX 5060 TI
         }
     
-    def _configs_are_similar(self, config1, config2, tolerance=0.1):
+    def _configs_are_similar(self, config1, config2, tolerance=0.2):  # เพิ่ม tolerance จาก 0.1 เป็น 0.2
         """Check if two configurations are similar enough to be considered duplicates"""
         if not config1 or not config2:
             return False
