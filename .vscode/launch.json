@@ -1,0 +1,69 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Debug Train All Models",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/train_all_models.py",
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}",
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}",
+                "CUDA_VISIBLE_DEVICES": "0",
+                "PYTHONUNBUFFERED": "1"
+            },
+            "args": [],
+            "justMyCode": false,
+            "stopOnEntry": false,
+            "showReturnValue": true,
+            "subProcess": true,
+            "python": "${command:python.interpreterPath}"
+        },
+        {
+            "name": "Debug Train All Models (Single Model)",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/train_all_models.py",
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}",
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}",
+                "CUDA_VISIBLE_DEVICES": "0",
+                "DEBUG_MODE": "1"
+            },
+            "args": ["--single", "--debug"],
+            "justMyCode": false,
+            "stopOnEntry": false,
+            "showReturnValue": true
+        },
+        {
+            "name": "Debug Quick Start",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/quick_start_automatic.py",
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}",
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}",
+                "CUDA_VISIBLE_DEVICES": "0"
+            },
+            "justMyCode": false
+        },
+        {
+            "name": "Python Debugger: Current File",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${file}",
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}",
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}"
+            },
+            "justMyCode": false
+        }
+    ]
+}

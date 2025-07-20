@@ -44,23 +44,23 @@ class AsyncTrainingConfig:
     def set_optimal_config(self):
         """Set optimal configuration based on hardware"""
         
-        # RTX 5060 TI Specific Optimization - MAXIMUM GPU UTILIZATION
+        # RTX 5060 TI Specific Optimization - BALANCED GPU UTILIZATION
         if "RTX 5060" in self.gpu_name or "RTX 50" in self.gpu_name:
-            self.max_concurrent_models = min(3, max(2, int(self.gpu_memory_gb / 4)))  # ลดจาก 6 เป็น 3
-            self.memory_per_model = 0.85  # เพิ่มจาก 0.50 เป็น 0.85 (85% per model)
+            self.max_concurrent_models = 2  # ลดจาก 8 เป็น 2 เพื่อหลีกเลี่ยง memory conflict
+            self.memory_per_model = 0.45  # ลดจาก 0.85 เป็น 0.45 (45% per model × 2 = 90%)
             self.batch_size_multiplier = 32  # เพิ่มจาก 24 เป็น 32
             self.timesteps_multiplier = 10   # เพิ่มจาก 8 เป็น 10
             self.neural_network_size = "ultra"  # [32768, 16384, 8192, 4096, 2048, 1024]
-            self.gpu_memory_fraction = 0.98  # เพิ่มจาก 0.95 เป็น 0.98
+            self.gpu_memory_fraction = 0.95  # ลดจาก 0.98 เป็น 0.95
             
-        # High-end GPUs (16GB+) - OPTIMIZED FOR RTX 5060 TI
+        # High-end GPUs (16GB+) - OPTIMIZED FOR RTX 5060 TI  
         elif self.gpu_memory_gb >= 16:
-            self.max_concurrent_models = min(2, max(1, int(self.gpu_memory_gb / 8)))  # 2 models max for max utilization
-            self.memory_per_model = 0.80  # เพิ่มจาก 0.50 เป็น 0.80 (80% per model)
+            self.max_concurrent_models = 2  # ลดจาก 4 เป็น 2 เพื่อ memory balance
+            self.memory_per_model = 0.45  # ลดจาก 0.80 เป็น 0.45 (45% per model × 2 = 90%)
             self.batch_size_multiplier = 32  # เพิ่มจาก 24 เป็น 32
             self.timesteps_multiplier = 10   # เพิ่มจาก 8 เป็น 10
             self.neural_network_size = "ultra"  # [8192, 8192, 4096, 2048, 1024]
-            self.gpu_memory_fraction = 0.98  # เพิ่มจาก 0.95 เป็น 0.98
+            self.gpu_memory_fraction = 0.95  # ลดจาก 0.98 เป็น 0.95
             
         # Mid-range GPUs (8-16GB)
         elif self.gpu_memory_gb >= 8:
