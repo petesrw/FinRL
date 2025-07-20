@@ -47,20 +47,20 @@ class AsyncTrainingConfig:
         # RTX 5060 TI Specific Optimization
         if "RTX 5060" in self.gpu_name or "RTX 50" in self.gpu_name:
             self.max_concurrent_models = min(6, max(2, int(self.gpu_memory_gb / 2.5)))
-            self.memory_per_model = 0.20  # 15% per model for RTX 5060 TI
-            self.batch_size_multiplier = 8
-            self.timesteps_multiplier = 4
+            self.memory_per_model = 0.50  # 50% per model for RTX 5060 TI
+            self.batch_size_multiplier = 24
+            self.timesteps_multiplier = 8
             self.neural_network_size = "ultra"  # [8192, 8192, 4096, 2048, 1024]
             self.gpu_memory_fraction = 0.95  # Use 95% of 16GB
             
         # High-end GPUs (16GB+)
         elif self.gpu_memory_gb >= 16:
-            self.max_concurrent_models = min(4, max(2, int(self.gpu_memory_gb / 4)))
-            self.memory_per_model = 0.20  # 20% per model
-            self.batch_size_multiplier = 6
-            self.timesteps_multiplier = 3
-            self.neural_network_size = "large"  # [4096, 4096, 2048, 1024, 512]
-            self.gpu_memory_fraction = 0.90
+            self.max_concurrent_models = min(6, max(2, int(self.gpu_memory_gb / 2.5)))
+            self.memory_per_model = 0.50  # 50% per model for RTX 5060 TI
+            self.batch_size_multiplier = 24
+            self.timesteps_multiplier = 8
+            self.neural_network_size = "ultra"  # [8192, 8192, 4096, 2048, 1024]
+            self.gpu_memory_fraction = 0.95  # Use 95% of 16GB
             
         # Mid-range GPUs (8-16GB)
         elif self.gpu_memory_gb >= 8:
@@ -98,8 +98,8 @@ class AsyncTrainingConfig:
         self.max_batch_size = min(8, self.max_concurrent_models)
         
         # Training Timeouts (seconds)
-        self.model_timeout = 300  # 5 minutes per model
-        self.batch_timeout = self.model_timeout * 2  # 10 minutes per batch
+        self.model_timeout = 900   # เพิ่มจาก 300 เป็น 900 (15 minutes)
+        self.batch_timeout = 1800  # เพิ่มจาก 600 เป็น 1800 (30 minutes)
         
         # Memory Management
         self.memory_cleanup_interval = 5  # Clean memory every 5 models
@@ -108,21 +108,21 @@ class AsyncTrainingConfig:
     def get_neural_network_architecture(self):
         """Get neural network architecture based on hardware"""
         architectures = {
-            "ultra": [12288, 8192, 4096, 2048, 1024],
-            "large": [4096, 4096, 2048, 1024, 512],
-            "medium": [2048, 2048, 1024, 512],
-            "small": [1024, 1024, 512, 256],
-            "minimal": [512, 512, 256]
+            "ultra": [32768, 16384, 8192, 4096, 2048, 1024],  # เพิ่มจาก [12288, 8192, ...] เป็น [32768, 16384, ...]
+            "large": [16384, 8192, 4096, 2048, 1024],         # เพิ่มขนาด
+            "medium": [8192, 4096, 2048, 1024],               # เพิ่มขนาด
+            "small": [4096, 2048, 1024, 512],                 # เพิ่มขนาด
+            "minimal": [2048, 1024, 512]   
         }
         return architectures.get(self.neural_network_size, architectures["medium"])
     
     def get_optimal_batch_size(self, base_batch_size=64):
         """Get optimal batch size for current hardware"""
-        return min(base_batch_size * self.batch_size_multiplier, 8192)
+        return min(base_batch_size * self.batch_size_multiplier, 32768)
     
     def get_optimal_timesteps(self, base_timesteps=100000):
         """Get optimal timesteps for current hardware"""
-        return min(int(base_timesteps * self.timesteps_multiplier), 2000000)
+        return min(int(base_timesteps * self.timesteps_multiplier), 5000000)
     
     def apply_gpu_optimizations(self):
         """Apply GPU optimizations based on hardware"""
@@ -135,21 +135,36 @@ class AsyncTrainingConfig:
             
             # Environment variables
             os.environ['CUDA_LAUNCH_BLOCKING'] = '0'
-            os.environ['PYTORCH_CUDA_ALLOC_CONF'] = f'max_split_size_mb:{int(self.gpu_memory_gb * 32)}'
+            os.environ['PYTORCH_CUDA_ALLOC_CONF'] = f'max_split_size_mb:{int(self.gpu_memory_gb * 128)},expandable_segments:True'  # เพิ่มจาก 32 เป็น 128
+            os.environ['CUDA_DEVICE_ORDER'] = 'PCI_BUS_ID'
+            os.environ['CUDA_VISIBLE_DEVICES'] = '0'
             
-            # PyTorch optimizations
+            # PyTorch optimizations - MAXIMUM PERFORMANCE
             torch.backends.cuda.matmul.allow_tf32 = True
             torch.backends.cudnn.allow_tf32 = True
             torch.backends.cudnn.benchmark = True
             torch.backends.cudnn.deterministic = False
+            torch.backends.cudnn.enabled = True
+            torch.backends.cuda.enable_math_sdp(True)  # เพิ่ม
+            torch.backends.cuda.enable_flash_sdp(True)  # เพิ่ม
             
             # RTX 5060 TI specific optimizations
             if "RTX 5060" in self.gpu_name or "RTX 50" in self.gpu_name:
                 try:
-                    torch.backends.cuda.enable_flash_sdp(True)
+                    # Memory optimizations
                     torch.backends.cuda.matmul.allow_fp16_reduced_precision_reduction = True
-                    torch.backends.cuda.cufft_plan_cache.max_size = 8192
+                    torch.backends.cuda.cufft_plan_cache.max_size = 16384  # เพิ่มจาก 8192
                     torch.backends.cuda.preferred_linalg_library = "cusolver"
+                    torch.backends.cuda.flash_attn_error_on_noncuda = False
+                    
+                    # Advanced compute optimizations
+                    torch.set_float32_matmul_precision('high')  # เพิ่ม
+                    torch.backends.cudnn.benchmark = True
+                    torch.backends.cudnn.enabled = True
+                    
+                    # Memory pool optimizations
+                    torch.cuda.empty_cache()
+                    torch.cuda.memory.set_per_process_memory_fraction(self.gpu_memory_fraction)
                 except:
                     pass  # Not all features available on all systems
             
@@ -162,6 +177,51 @@ class AsyncTrainingConfig:
         except Exception as e:
             print(f"⚠️ GPU optimization failed: {e}")
             return False
+    def warmup_gpu(self):
+        """Warmup GPU for maximum performance"""
+        if not self.gpu_available:
+            return
+        
+        try:
+            print("🔥 Warming up RTX 5060 TI for maximum performance...")
+            
+            # Create large tensors to utilize GPU fully
+            device = torch.device('cuda:0')
+            
+            # Warmup with progressively larger tensors
+            for size in [1024, 2048, 4096, 8192]:
+                x = torch.randn(size, size, device=device)
+                y = torch.randn(size, size, device=device)
+                
+                # Matrix multiplications to warmup cores
+                for _ in range(10):
+                    z = torch.matmul(x, y)
+                    z = torch.relu(z)
+                
+                del x, y, z
+                torch.cuda.synchronize()
+            
+            # Warmup neural network layers
+            net_arch = self.get_neural_network_architecture()
+            dummy_input = torch.randn(256, net_arch[0], device=device)  # Large batch
+            
+            layers = []
+            for i in range(len(net_arch)-1):
+                layers.append(torch.nn.Linear(net_arch[i], net_arch[i+1]).to(device))
+                layers.append(torch.nn.ReLU())
+            
+            # Forward pass warmup
+            x = dummy_input
+            for layer in layers:
+                x = layer(x)
+            
+            torch.cuda.synchronize()
+            torch.cuda.empty_cache()
+            
+            print("✅ RTX 5060 TI warmed up for maximum performance!")
+            
+        except Exception as e:
+            print(f"⚠️ GPU warmup failed: {e}")
     
     def print_config(self):
         """Print current configuration"""
@@ -184,6 +244,9 @@ class AsyncTrainingConfig:
         print(f"   Timesteps Multiplier: {self.timesteps_multiplier}x")
         print(f"   GPU Memory Fraction: {self.gpu_memory_fraction*100:.0f}%")
         print(f"   CPU Threads: {self.cpu_threads_training}")
+                # Warmup GPU after printing config
+        if self.gpu_available and "RTX 5060" in self.gpu_name:
+            self.warmup_gpu()
 
 # Global configuration instance
 CONFIG = AsyncTrainingConfig()
