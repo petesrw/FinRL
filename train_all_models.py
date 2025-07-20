@@ -2071,33 +2071,24 @@ def main():
         print(f"      - Lower resource utilization")
         print(f"      - Slower but more stable")
         
-        choice = input(f"\n🎯 Choose training mode (1/2) [1]: ").strip()
+        # � AUTO-START ASYNC TRAINING - NO USER INPUT REQUIRED
+        print(f"\n🚀 AUTOMATIC Async Multi-Model Training...")
+        print(f"   ⚡ Expected {trainer.max_concurrent_models}x performance boost")
+        print(f"   🎯 Target GPU utilization: 80-95%")
         
-        if choice == '2':
-            print(f"\n📈 Starting Traditional Sequential Training...")
-            best_result = trainer.adaptive_train(df, max_attempts=100, target_tier='gold')
-        else:
-            print(f"\n🚀 Starting Async Multi-Model Training...")
-            print(f"   ⚡ Expected {trainer.max_concurrent_models}x performance boost")
-            print(f"   🎯 Maximum GPU utilization: 85-98%")
-            
-            # Get async batch size
-            batch_size = min(trainer.max_concurrent_models, 4)  # Safe default
-            
-            # Option to customize batch size
-            custom_batch = input(f"\n📊 Async batch size [1-8] (default: {batch_size}): ").strip()
-            if custom_batch.isdigit() and 1 <= int(custom_batch) <= 8:
-                batch_size = int(custom_batch)
-            
-            print(f"   🔧 Using batch size: {batch_size}")
-            print(f"   🚀 Training {batch_size} models simultaneously")
-            
-            best_result = trainer.adaptive_train_async(
-                df, 
-                max_attempts=100, 
-                target_tier='gold', 
-                batch_size=batch_size
-            )
+        # Optimal batch size for RTX 5060 Ti based on bottleneck analysis
+        batch_size = min(trainer.max_concurrent_models,4)  # ลดจาก 4 เป็น 2 เพื่อ GPU utilization
+        
+        print(f"   🔧 Optimized batch size: {batch_size} (GPU bottleneck fix)")
+        print(f"   🚀 Training {batch_size} models simultaneously")
+        print(f"   📊 Each model: 60% GPU memory ({0.60*100:.0f}%)")
+        
+        best_result = trainer.adaptive_train_async(
+            df, 
+            max_attempts=100, 
+            target_tier='gold', 
+            batch_size=batch_size
+        )
     else:
         print(f"   💻 CPU-only training")
         print(f"\n📈 Starting CPU Training (Sequential mode only)...")

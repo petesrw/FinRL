@@ -44,23 +44,23 @@ class AsyncTrainingConfig:
     def set_optimal_config(self):
         """Set optimal configuration based on hardware"""
         
-        # RTX 5060 TI Specific Optimization
+        # RTX 5060 TI Specific Optimization - MAXIMUM GPU UTILIZATION
         if "RTX 5060" in self.gpu_name or "RTX 50" in self.gpu_name:
-            self.max_concurrent_models = min(6, max(2, int(self.gpu_memory_gb / 2.5)))
-            self.memory_per_model = 0.50  # 50% per model for RTX 5060 TI
-            self.batch_size_multiplier = 24
-            self.timesteps_multiplier = 8
-            self.neural_network_size = "ultra"  # [8192, 8192, 4096, 2048, 1024]
-            self.gpu_memory_fraction = 0.95  # Use 95% of 16GB
+            self.max_concurrent_models = min(3, max(2, int(self.gpu_memory_gb / 4)))  # ลดจาก 6 เป็น 3
+            self.memory_per_model = 0.85  # เพิ่มจาก 0.50 เป็น 0.85 (85% per model)
+            self.batch_size_multiplier = 32  # เพิ่มจาก 24 เป็น 32
+            self.timesteps_multiplier = 10   # เพิ่มจาก 8 เป็น 10
+            self.neural_network_size = "ultra"  # [32768, 16384, 8192, 4096, 2048, 1024]
+            self.gpu_memory_fraction = 0.98  # เพิ่มจาก 0.95 เป็น 0.98
             
-        # High-end GPUs (16GB+)
+        # High-end GPUs (16GB+) - OPTIMIZED FOR RTX 5060 TI
         elif self.gpu_memory_gb >= 16:
-            self.max_concurrent_models = min(6, max(2, int(self.gpu_memory_gb / 2.5)))
-            self.memory_per_model = 0.50  # 50% per model for RTX 5060 TI
-            self.batch_size_multiplier = 24
-            self.timesteps_multiplier = 8
+            self.max_concurrent_models = min(2, max(1, int(self.gpu_memory_gb / 8)))  # 2 models max for max utilization
+            self.memory_per_model = 0.80  # เพิ่มจาก 0.50 เป็น 0.80 (80% per model)
+            self.batch_size_multiplier = 32  # เพิ่มจาก 24 เป็น 32
+            self.timesteps_multiplier = 10   # เพิ่มจาก 8 เป็น 10
             self.neural_network_size = "ultra"  # [8192, 8192, 4096, 2048, 1024]
-            self.gpu_memory_fraction = 0.95  # Use 95% of 16GB
+            self.gpu_memory_fraction = 0.98  # เพิ่มจาก 0.95 เป็น 0.98
             
         # Mid-range GPUs (8-16GB)
         elif self.gpu_memory_gb >= 8:
@@ -93,9 +93,9 @@ class AsyncTrainingConfig:
         self.cpu_threads_training = min(16, max(4, self.cpu_cores))
         self.cpu_threads_interop = min(8, max(2, self.cpu_cores // 2))
         
-        # Async Batch Configuration
-        self.default_batch_size = min(self.max_concurrent_models, 4)
-        self.max_batch_size = min(8, self.max_concurrent_models)
+        # Async Batch Configuration - OPTIMIZED for GPU UTILIZATION
+        self.default_batch_size = min(self.max_concurrent_models, 2)  # ลดจาก 4 เป็น 2
+        self.max_batch_size = min(3, self.max_concurrent_models)      # ลดจาก 8 เป็น 3
         
         # Training Timeouts (seconds)
         self.model_timeout = 900   # เพิ่มจาก 300 เป็น 900 (15 minutes)
