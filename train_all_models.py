@@ -108,13 +108,13 @@ def get_high_utilization_model_config_async():
     return {
         # Ultra large neural networks for async training
         "policy_kwargs": {
-            "net_arch": [8192, 8192, 4096, 2048, 1024],  # Massive networks for async
+            "net_arch": [12288, 8192, 4096, 2048, 1024],  # Massive networks for async
             "activation_fn": torch.nn.ReLU,
             "ortho_init": False,
         },
         # Massive batch sizes for multiple async models
-        "batch_size": 8192,  # Ultra large batch for async
-        "n_steps": 65536,    # Ultra large n_steps for async training
+        "batch_size": 16384,  # Ultra large batch for async
+        "n_steps": 131072,    # Ultra large n_steps for async training
         
         # Other settings
         "learning_rate": 0.0003,
@@ -619,14 +619,16 @@ class AdvancedForexEnv(gym.Env):
         if self.total_trades >= 3:  # Need some trades to calculate meaningful profit factor
             current_profit_factor = self.total_profit / max(self.total_loss, 1e-8)
             
-            if current_profit_factor > 2.0:
-                reward += 10  # High reward for excellent profit factor
+            if current_profit_factor > 2.5:
+                reward += 20  # เพิ่มจาก 10 เป็น 20
+            elif current_profit_factor > 2.0:
+                reward += 15  # เพิ่ม reward
             elif current_profit_factor > 1.5:
-                reward += 5
+                reward += 8   # เพิ่มจาก 5 เป็น 8
             elif current_profit_factor > 1.0:
-                reward += 2  # Modest reward for profitable factor
+                reward += 4   # เพิ่มจาก 2 เป็น 4
             elif current_profit_factor < 0.5:
-                reward -= 5  # Penalty for poor profit factor
+                reward -= 10  # เพิ่ม penalty จาก -5 เป็น -10
         
         # 3. Win rate optimization (but secondary to profit factor)
         if self.total_trades > 5:
@@ -1157,11 +1159,11 @@ class AdaptiveTrainer:
             gamma = random.choice(smart_ranges['gammas'][:3])  # Top 3 gammas
             
             # Moderate batch sizes work better than extremes
-            base_batch_size = random.choice([512, 1024])  # Avoid very large/small batches
+            base_batch_size = random.choice([512, 1024,2048])  # Avoid very large/small batches
             optimal_batch_size = get_optimal_batch_size(DEVICE, base_batch_size)
             
             # Increase timesteps for better learning
-            base_timesteps = random.choice([500000, 750000, 1000000])  # More training time
+            base_timesteps = random.choice([1000000, 1500000, 2000000])  # More training time
             optimal_timesteps = get_optimal_timesteps(DEVICE, base_timesteps)
             
             config = {
@@ -1196,25 +1198,36 @@ class AdaptiveTrainer:
                 
                 return config
         
-        # Enhanced fallback with best known parameters
+        # Enhanced fallback with MAXIMUM performance parameters
         print(f"   ⚠️ Could not find unique optimized config after {max_attempts} attempts")
-        print(f"   🔄 Using performance-based fallback config")
+        print(f"   🔥 Using HIGH-PERFORMANCE fallback config (GPU Optimized)")
         
-        # Use best known parameters if available
-        best_lr = smart_ranges['learning_rates'][0] if smart_ranges['learning_rates'] else 0.0003
+        # Use best known parameters with HIGH-PERFORMANCE defaults
+        best_lr = smart_ranges['learning_rates'][0] if smart_ranges['learning_rates'] else 0.0005  # เพิ่มจาก 0.0003
         best_gamma = smart_ranges['gammas'][0] if smart_ranges['gammas'] else 0.99
         best_algo = smart_ranges['algorithms'][0] if smart_ranges['algorithms'] else 'PPO'
         
-        return {
+        # HIGH-PERFORMANCE fallback configuration
+        fallback_config = {
             'algorithm': best_algo,
             'learning_rate': best_lr,
-            'n_steps': 4096 if best_algo == 'PPO' else None,
-            'batch_size': get_optimal_batch_size(DEVICE, 512),
+            'n_steps': 8192 if best_algo == 'PPO' else None,  # เพิ่มจาก 4096 เป็น 8192
+            'batch_size': get_optimal_batch_size(DEVICE, 2048),  # เพิ่ม base จาก 512 เป็น 2048
             'gamma': best_gamma,
-            'lookback_window': 100,
-            'transaction_cost': 0.0002,
-            'timesteps': get_optimal_timesteps(DEVICE, 300000)
+            'lookback_window': 100,  # คงเดิม เพราะเป็นค่าที่ดีที่สุด
+            'transaction_cost': 0.0002,  # คงเดิม เพราะเป็นค่าที่ดีที่สุด
+            'timesteps': get_optimal_timesteps(DEVICE, 1500000)  # เพิ่มจาก 300,000 เป็น 1,500,000
         }
+        
+        print(f"   🚀 HIGH-PERFORMANCE Fallback Settings:")
+        print(f"      ⚡ Algorithm: {fallback_config['algorithm']}")
+        print(f"      🧠 Learning Rate: {fallback_config['learning_rate']}")
+        print(f"      🔥 Batch Size: {fallback_config['batch_size']}")
+        print(f"      📊 N Steps: {fallback_config['n_steps']}")
+        print(f"      ⏱️ Timesteps: {fallback_config['timesteps']:,}")
+        print(f"      🎯 Expected GPU Utilization: 80-95%")
+        
+        return fallback_config
     
     def _identify_problematic_ranges(self):
         """Identify parameter ranges that consistently fail"""
@@ -1492,7 +1505,17 @@ class AdaptiveTrainer:
         try:
             # Set GPU memory fraction for this worker
             if DEVICE.type == 'cuda':
-                torch.cuda.set_per_process_memory_fraction(device_fraction)
+                # Calculate optimal memory fraction for RTX 5060 TI 16GB
+                gpu_memory_gb = torch.cuda.get_device_properties(0).total_memory / 1024**3
+                
+                if gpu_memory_gb >= 15:  # RTX 5060 TI with 16GB
+                    # Use more aggressive memory allocation for large VRAM
+                    optimal_fraction = min(device_fraction * 1.5, 0.85)  # เพิ่ม memory ให้แต่ละ model
+                    print(f"🔥 Model {model_id}: Enhanced RTX 5060 TI memory ({optimal_fraction*100:.0f}%)")
+                else:
+                    optimal_fraction = device_fraction
+                
+                torch.cuda.set_per_process_memory_fraction(optimal_fraction)
                 torch.cuda.empty_cache()
             
             print(f"🔄 Model {model_id} starting training...")

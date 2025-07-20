@@ -47,7 +47,7 @@ class AsyncTrainingConfig:
         # RTX 5060 TI Specific Optimization
         if "RTX 5060" in self.gpu_name or "RTX 50" in self.gpu_name:
             self.max_concurrent_models = min(6, max(2, int(self.gpu_memory_gb / 2.5)))
-            self.memory_per_model = 0.15  # 15% per model for RTX 5060 TI
+            self.memory_per_model = 0.20  # 15% per model for RTX 5060 TI
             self.batch_size_multiplier = 8
             self.timesteps_multiplier = 4
             self.neural_network_size = "ultra"  # [8192, 8192, 4096, 2048, 1024]
