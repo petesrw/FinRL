@@ -259,9 +259,9 @@ def get_optimal_timesteps(device, base_timesteps=100000):
         
         # RTX 5060 TI with 4608 CUDA Cores + 16GB GDDR7 - Maximum Performance
         if "RTX 5060" in gpu_name and gpu_memory_gb >= 15:
-            return min(base_timesteps * 4, 500000)  # 4x timesteps for RTX 5060 TI
+            return min(base_timesteps * 4, 2000000)  # 4x timesteps for RTX 5060 TI
         elif gpu_memory_gb >= 16:  # Other 16GB+ GPUs
-            return min(base_timesteps * 3, 400000)
+            return min(base_timesteps * 3, 2000000)
         elif gpu_memory_gb >= 12:
             return min(base_timesteps * 2.5, 350000)
         elif gpu_memory_gb >= 8:

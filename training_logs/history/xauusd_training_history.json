@@ -4336,5 +4336,853 @@
     "score": 0,
     "tier": "failed",
     "async_batch": 4
+  },
+  {
+    "attempt": 1,
+    "timestamp": "2025-07-20T14:01:22.423415",
+    "hyperparameters": {
+      "algorithm": "PPO",
+      "learning_rate": 0.0005,
+      "n_steps": 4096,
+      "batch_size": 1024,
+      "gamma": 0.99,
+      "lookback_window": 50,
+      "transaction_cost": 0.0002,
+      "timesteps": 500000
+    },
+    "metrics": {
+      "balance": 9970.107878363997,
+      "equity": 9970.107878363997,
+      "total_return": -0.002989212163600314,
+      "win_rate": 0.5185185185185185,
+      "profit_factor": 1.0311460804574633,
+      "max_drawdown": 0.00398061367705376,
+      "total_trades": 81,
+      "profitable_trades": 42,
+      "sharpe_ratio": -0.3526472327355827,
+      "max_consecutive_losses": 6
+    },
+    "score": 41.22179588635743,
+    "tier": "none",
+    "training_time": 3546.494523525238,
+    "async_batch": 1,
+    "model_id": 1
+  },
+  {
+    "attempt": 2,
+    "timestamp": "2025-07-20T14:01:22.430078",
+    "hyperparameters": {
+      "algorithm": "PPO",
+      "learning_rate": 0.0008,
+      "n_steps": 4096,
+      "batch_size": 1024,
+      "gamma": 0.98,
+      "lookback_window": 50,
+      "transaction_cost": 0.0001,
+      "timesteps": 500000
+    },
+    "metrics": {
+      "balance": 9945.281750492992,
+      "equity": 9945.281750492992,
+      "total_return": -0.00547182495070083,
+      "win_rate": 0.3924050632911392,
+      "profit_factor": 0.7903520108131813,
+      "max_drawdown": 0.006335211340522614,
+      "total_trades": 158,
+      "profitable_trades": 62,
+      "sharpe_ratio": -0.5163014446212039,
+      "max_consecutive_losses": 9
+    },
+    "score": 30,
+    "tier": "none",
+    "training_time": 3544.4926195144653,
+    "async_batch": 1,
+    "model_id": 2
+  },
+  {
+    "attempt": 3,
+    "timestamp": "2025-07-20T14:01:22.441619",
+    "hyperparameters": {
+      "algorithm": "PPO",
+      "learning_rate": 0.0005,
+      "n_steps": 8192,
+      "batch_size": 1024,
+      "gamma": 0.98,
+      "lookback_window": 150,
+      "transaction_cost": 0.0001,
+      "timesteps": 500000
+    },
+    "metrics": {
+      "balance": 9982.459781093004,
+      "equity": 9977.989971093004,
+      "total_return": -0.0022010028906996014,
+      "win_rate": 0.40384615384615385,
+      "profit_factor": 1.0416522869973395,
+      "max_drawdown": 0.006065534104887855,
+      "total_trades": 104,
+      "profitable_trades": 42,
+      "sharpe_ratio": -0.167568858588469,
+      "max_consecutive_losses": 9
+    },
+    "score": 38.19649939333126,
+    "tier": "none",
+    "training_time": 3550.4570689201355,
+    "async_batch": 1,
+    "model_id": 3
+  },
+  {
+    "attempt": 4,
+    "timestamp": "2025-07-20T14:01:22.454474",
+    "hyperparameters": {
+      "algorithm": "PPO",
+      "learning_rate": 0.0008,
+      "n_steps": 2048,
+      "batch_size": 1024,
+      "gamma": 0.995,
+      "lookback_window": 75,
+      "transaction_cost": 0.0002,
+      "timesteps": 500000
+    },
+    "metrics": {
+      "balance": 9910.066312073992,
+      "equity": 9900.439222073992,
+      "total_return": -0.009956077792600809,
+      "win_rate": 0.375,
+      "profit_factor": 0.4344739816074197,
+      "max_drawdown": 0.010634694503579293,
+      "total_trades": 48,
+      "profitable_trades": 18,
+      "sharpe_ratio": -0.6692574132406456,
+      "max_consecutive_losses": 12
+    },
+    "score": 30,
+    "tier": "none",
+    "training_time": 3524.0015931129456,
+    "async_batch": 1,
+    "model_id": 4
+  },
+  {
+    "attempt": 5,
+    "timestamp": "2025-07-20T14:01:22.467686",
+    "hyperparameters": {
+      "algorithm": "PPO",
+      "learning_rate": 0.0005,
+      "n_steps": 4096,
+      "batch_size": 1024,
+      "gamma": 0.99,
+      "lookback_window": 75,
+      "transaction_cost": 0.0002,
+      "timesteps": 500000
+    },
+    "metrics": {
+      "balance": 9870.960414641999,
+      "equity": 9872.429884641999,
+      "total_return": -0.01275701153580012,
+      "win_rate": 0.3247863247863248,
+      "profit_factor": 0.3888664794101226,
+      "max_drawdown": 0.014818019530680593,
+      "total_trades": 117,
+      "profitable_trades": 38,
+      "sharpe_ratio": -1.0060261175263967,
+      "max_consecutive_losses": 7
+    },
+    "score": 28.82808950038021,
+    "tier": "none",
+    "training_time": 3550.905985593796,
+    "async_batch": 1,
+    "model_id": 5
+  },
+  {
+    "attempt": 6,
+    "timestamp": "2025-07-20T14:01:22.480872",
+    "hyperparameters": {
+      "algorithm": "PPO",
+      "learning_rate": 0.0008,
+      "n_steps": 4096,
+      "batch_size": 1024,
+      "gamma": 0.98,
+      "lookback_window": 150,
+      "transaction_cost": 0.0001,
+      "timesteps": 500000
+    },
+    "metrics": {
+      "balance": 9999.798442389,
+      "equity": 10026.654922389,
+      "total_return": 0,
+      "win_rate": 0,
+      "profit_factor": 0,
+      "max_drawdown": 0.0036829660292500024,
+      "total_trades": 0,
+      "sharpe_ratio": 0
+    },
+    "score": 24.693393078064936,
+    "tier": "none",
+    "training_time": 3554.1645839214325,
+    "async_batch": 1,
+    "model_id": 6
+  },
+  {
+    "attempt": 7,
+    "timestamp": "2025-07-20T14:59:22.202979",
+    "hyperparameters": {
+      "algorithm": "PPO",
+      "learning_rate": 0.0006,
+      "n_steps": 4096,
+      "batch_size": 1024,
+      "gamma": 0.9702,
+      "lookback_window": 50,
+      "transaction_cost": 0.0002,
+      "timesteps": 500000
+    },
+    "metrics": {
+      "balance": 9681.066295436009,
+      "equity": 9681.066295436009,
+      "total_return": -0.03189337045639913,
+      "win_rate": 0.2803030303030303,
+      "profit_factor": 0.34170954070813947,
+      "max_drawdown": 0.03202388060179928,
+      "total_trades": 396,
+      "profitable_trades": 111,
+      "sharpe_ratio": -2.9104053961139353,
+      "max_consecutive_losses": 13
+    },
+    "score": 14.403253974296678,
+    "tier": "none",
+    "training_time": 3478.0392429828644,
+    "async_batch": 2,
+    "model_id": 1
+  },
+  {
+    "attempt": 8,
+    "timestamp": "2025-07-20T14:59:22.214979",
+    "hyperparameters": {
+      "algorithm": "PPO",
+      "learning_rate": 0.0006,
+      "n_steps": 4096,
+      "batch_size": 1024,
+      "gamma": 0.9702,
+      "lookback_window": 100,
+      "transaction_cost": 0.0001,
+      "timesteps": 500000
+    },
+    "metrics": {
+      "balance": 9977.123099957007,
+      "equity": 9979.692819957007,
+      "total_return": -0.0020307180042993425,
+      "win_rate": 0.4339622641509434,
+      "profit_factor": 0.8214596006744239,
+      "max_drawdown": 0.0039052593719739255,
+      "total_trades": 53,
+      "profitable_trades": 23,
+      "sharpe_ratio": -0.20689507230616472,
+      "max_consecutive_losses": 7
+    },
+    "score": 30,
+    "tier": "none",
+    "training_time": 3479.6243917942047,
+    "async_batch": 2,
+    "model_id": 2
+  },
+  {
+    "attempt": 9,
+    "timestamp": "2025-07-20T14:59:22.226980",
+    "hyperparameters": {
+      "algorithm": "PPO",
+      "learning_rate": 0.0006,
+      "n_steps": 4096,
+      "batch_size": 1024,
+      "gamma": 0.9845999999999999,
+      "lookback_window": 150,
+      "transaction_cost": 0.0002,
+      "timesteps": 500000
+    },
+    "metrics": {
+      "balance": 9961.257506167995,
+      "equity": 9961.257506167995,
+      "total_return": -0.003874249383200549,
+      "win_rate": 0.37209302325581395,
+      "profit_factor": 0.6479049283653823,
+      "max_drawdown": 0.0047884540278415235,
+      "total_trades": 43,
+      "profitable_trades": 16,
+      "sharpe_ratio": -0.5894270340105923,
+      "max_consecutive_losses": 5
+    },
+    "score": 30,
+    "tier": "none",
+    "training_time": 3479.4393949508667,
+    "async_batch": 2,
+    "model_id": 3
+  },
+  {
+    "attempt": 10,
+    "timestamp": "2025-07-20T14:59:22.238978",
+    "hyperparameters": {
+      "algorithm": "PPO",
+      "learning_rate": 0.0006,
+      "n_steps": 2048,
+      "batch_size": 1024,
+      "gamma": 0.9702,
+      "lookback_window": 150,
+      "transaction_cost": 0.0001,
+      "timesteps": 500000
+    },
+    "metrics": {
+      "balance": 10006.547982521999,
+      "equity": 10008.580532521999,
+      "total_return": 0.0008580532521998976,
+      "win_rate": 0.4523809523809524,
+      "profit_factor": 1.20604634417913,
+      "max_drawdown": 0.0038525562106276863,
+      "total_trades": 42,
+      "profitable_trades": 19,
+      "sharpe_ratio": 0.060169472849967646,
+      "max_consecutive_losses": 4
+    },
+    "score": 43.94705321834537,
+    "tier": "none",
+    "training_time": 3463.1281418800354,
+    "async_batch": 2,
+    "model_id": 4
+  },
+  {
+    "attempt": 11,
+    "timestamp": "2025-07-20T14:59:22.250982",
+    "hyperparameters": {
+      "algorithm": "PPO",
+      "learning_rate": 0.0004,
+      "n_steps": 4096,
+      "batch_size": 1024,
+      "gamma": 0.9702,
+      "lookback_window": 100,
+      "transaction_cost": 0.0002,
+      "timesteps": 500000
+    },
+    "metrics": {
+      "balance": 9999.59743116,
+      "equity": 10023.72200116,
+      "total_return": 0,
+      "win_rate": 0,
+      "profit_factor": 0,
+      "max_drawdown": 0.003684040287242444,
+      "total_trades": 0,
+      "sharpe_ratio": 0
+    },
+    "score": 24.693303646087067,
+    "tier": "none",
+    "training_time": 3473.82368683815,
+    "async_batch": 2,
+    "model_id": 5
+  },
+  {
+    "attempt": 12,
+    "timestamp": "2025-07-20T14:59:22.262491",
+    "hyperparameters": {
+      "algorithm": "PPO",
+      "learning_rate": 0.0004,
+      "n_steps": 2048,
+      "batch_size": 1024,
+      "gamma": 0.9845999999999999,
+      "lookback_window": 100,
+      "transaction_cost": 0.0002,
+      "timesteps": 500000
+    },
+    "metrics": {
+      "balance": 9999.59743116,
+      "equity": 10023.72200116,
+      "total_return": 0,
+      "win_rate": 0,
+      "profit_factor": 0,
+      "max_drawdown": 0.003684040287242444,
+      "total_trades": 0,
+      "sharpe_ratio": 0
+    },
+    "score": 24.693303646087067,
+    "tier": "none",
+    "training_time": 3450.694828271866,
+    "async_batch": 2,
+    "model_id": 6
+  },
+  {
+    "attempt": 13,
+    "timestamp": "2025-07-20T15:54:37.192684",
+    "hyperparameters": {
+      "algorithm": "PPO",
+      "learning_rate": 0.0004,
+      "n_steps": 4096,
+      "batch_size": 1024,
+      "gamma": 0.999,
+      "lookback_window": 75,
+      "transaction_cost": 0.0001,
+      "timesteps": 500000
+    },
+    "metrics": {
+      "balance": 9900.461704841011,
+      "equity": 9900.461704841011,
+      "total_return": -0.009953829515898906,
+      "win_rate": 0.39086294416243655,
+      "profit_factor": 0.46679972172017153,
+      "max_drawdown": 0.009976362898796035,
+      "total_trades": 197,
+      "profitable_trades": 77,
+      "sharpe_ratio": -1.3697004741088359,
+      "max_consecutive_losses": 10
+    },
+    "score": 30,
+    "tier": "none",
+    "training_time": 2972.336982011795,
+    "async_batch": 3,
+    "model_id": 1
+  },
+  {
+    "attempt": 14,
+    "timestamp": "2025-07-20T15:54:37.197685",
+    "hyperparameters": {
+      "algorithm": "PPO",
+      "learning_rate": 0.0004,
+      "n_steps": 4096,
+      "batch_size": 1024,
+      "gamma": 0.950796,
+      "lookback_window": 150,
+      "transaction_cost": 0.0001,
+      "timesteps": 500000
+    },
+    "metrics": {
+      "balance": 9987.451029390002,
+      "equity": 9987.080839390002,
+      "total_return": -0.0012919160609997562,
+      "win_rate": 0.44155844155844154,
+      "profit_factor": 1.0303157501743212,
+      "max_drawdown": 0.005086805355291252,
+      "total_trades": 77,
+      "profitable_trades": 34,
+      "sharpe_ratio": -0.0935393779527256,
+      "max_consecutive_losses": 6
+    },
+    "score": 39.88891666546868,
+    "tier": "none",
+    "training_time": 2981.005833864212,
+    "async_batch": 3,
+    "model_id": 2
+  },
+  {
+    "attempt": 15,
+    "timestamp": "2025-07-20T15:54:37.209685",
+    "hyperparameters": {
+      "algorithm": "A2C",
+      "learning_rate": 0.0007199999999999999,
+      "n_steps": null,
+      "batch_size": 1024,
+      "gamma": 0.974898,
+      "lookback_window": 75,
+      "transaction_cost": 0.0001,
+      "timesteps": 500000
+    },
+    "metrics": {
+      "balance": 9999.798919829,
+      "equity": 10021.880999829,
+      "total_return": 0,
+      "win_rate": 0,
+      "profit_factor": 0,
+      "max_drawdown": 0.003684714921634071,
+      "total_trades": 0,
+      "sharpe_ratio": 0
+    },
+    "score": 24.693247482773963,
+    "tier": "none",
+    "training_time": 3305.820335626602,
+    "async_batch": 3,
+    "model_id": 3
+  },
+  {
+    "attempt": 16,
+    "timestamp": "2025-07-20T15:54:37.220685",
+    "hyperparameters": {
+      "algorithm": "PPO",
+      "learning_rate": 0.0004,
+      "n_steps": 8192,
+      "batch_size": 1024,
+      "gamma": 0.974898,
+      "lookback_window": 50,
+      "transaction_cost": 0.0002,
+      "timesteps": 500000
+    },
+    "metrics": {
+      "balance": 9999.598094372,
+      "equity": 10020.406604372001,
+      "total_return": 0,
+      "win_rate": 0,
+      "profit_factor": 0,
+      "max_drawdown": 0.003685255391615972,
+      "total_trades": 0,
+      "sharpe_ratio": 0
+    },
+    "score": 24.69320248864797,
+    "tier": "none",
+    "training_time": 2908.626824617386,
+    "async_batch": 3,
+    "model_id": 4
+  },
+  {
+    "attempt": 17,
+    "timestamp": "2025-07-20T15:54:37.231684",
+    "hyperparameters": {
+      "algorithm": "A2C",
+      "learning_rate": 0.0007199999999999999,
+      "n_steps": null,
+      "batch_size": 1024,
+      "gamma": 0.974898,
+      "lookback_window": 150,
+      "transaction_cost": 0.0002,
+      "timesteps": 500000
+    },
+    "metrics": {
+      "balance": 10000,
+      "equity": 10000,
+      "total_return": 0,
+      "win_rate": 0,
+      "profit_factor": 0,
+      "max_drawdown": 0,
+      "total_trades": 0,
+      "sharpe_ratio": 0
+    },
+    "score": 25.0,
+    "tier": "none",
+    "training_time": 3314.829092502594,
+    "async_batch": 3,
+    "model_id": 5
+  },
+  {
+    "attempt": 18,
+    "timestamp": "2025-07-20T15:54:37.242699",
+    "hyperparameters": {
+      "algorithm": "PPO",
+      "learning_rate": 0.0007199999999999999,
+      "n_steps": 2048,
+      "batch_size": 1024,
+      "gamma": 0.950796,
+      "lookback_window": 150,
+      "transaction_cost": 0.0001,
+      "timesteps": 500000
+    },
+    "metrics": {
+      "balance": 9966.303013679995,
+      "equity": 9966.303013679995,
+      "total_return": -0.0033696986320004728,
+      "win_rate": 0.38028169014084506,
+      "profit_factor": 0.6372165663024892,
+      "max_drawdown": 0.003589830984400578,
+      "total_trades": 71,
+      "profitable_trades": 27,
+      "sharpe_ratio": -0.43880711555601604,
+      "max_consecutive_losses": 9
+    },
+    "score": 30,
+    "tier": "none",
+    "training_time": 2978.176146030426,
+    "async_batch": 3,
+    "model_id": 6
+  },
+  {
+    "attempt": 19,
+    "timestamp": "2025-07-20T16:45:23.323988",
+    "hyperparameters": {
+      "algorithm": "PPO",
+      "learning_rate": 0.0007199999999999999,
+      "n_steps": 8192,
+      "batch_size": 1024,
+      "gamma": 0.974898,
+      "lookback_window": 150,
+      "transaction_cost": 0.0001,
+      "timesteps": 500000
+    },
+    "metrics": {
+      "balance": 9942.353764299993,
+      "equity": 9942.736414299992,
+      "total_return": -0.005726358570000775,
+      "win_rate": 0.30434782608695654,
+      "profit_factor": 0.4355246572124105,
+      "max_drawdown": 0.008074034517115808,
+      "total_trades": 23,
+      "profitable_trades": 7,
+      "sharpe_ratio": -0.3898931134507955,
+      "max_consecutive_losses": 4
+    },
+    "score": 30,
+    "tier": "none",
+    "training_time": 3045.977238178253,
+    "async_batch": 4,
+    "model_id": 1
+  },
+  {
+    "attempt": 20,
+    "timestamp": "2025-07-20T16:45:23.336988",
+    "hyperparameters": {
+      "algorithm": "PPO",
+      "learning_rate": 0.00056,
+      "n_steps": 4096,
+      "batch_size": 1024,
+      "gamma": 0.974898,
+      "lookback_window": 75,
+      "transaction_cost": 0.0001,
+      "timesteps": 500000
+    },
+    "metrics": {
+      "balance": 10000,
+      "equity": 10000,
+      "total_return": 0,
+      "win_rate": 0,
+      "profit_factor": 0,
+      "max_drawdown": 0,
+      "total_trades": 0,
+      "sharpe_ratio": 0
+    },
+    "score": 25.0,
+    "tier": "none",
+    "training_time": 3040.679936170578,
+    "async_batch": 4,
+    "model_id": 2
+  },
+  {
+    "attempt": 21,
+    "timestamp": "2025-07-20T16:45:23.349988",
+    "hyperparameters": {
+      "algorithm": "PPO",
+      "learning_rate": 0.0007199999999999999,
+      "n_steps": 2048,
+      "batch_size": 1024,
+      "gamma": 0.999,
+      "lookback_window": 50,
+      "transaction_cost": 0.0001,
+      "timesteps": 500000
+    },
+    "metrics": {
+      "balance": 9961.120758005993,
+      "equity": 9956.650948005992,
+      "total_return": -0.004334905199400782,
+      "win_rate": 0.4205607476635514,
+      "profit_factor": 0.8728917042462014,
+      "max_drawdown": 0.0054822634949843905,
+      "total_trades": 107,
+      "profitable_trades": 45,
+      "sharpe_ratio": -0.2842004489536043,
+      "max_consecutive_losses": 11
+    },
+    "score": 30,
+    "tier": "none",
+    "training_time": 3018.564770936966,
+    "async_batch": 4,
+    "model_id": 3
+  },
+  {
+    "attempt": 22,
+    "timestamp": "2025-07-20T16:45:23.363987",
+    "hyperparameters": {
+      "algorithm": "PPO",
+      "learning_rate": 0.0004,
+      "n_steps": 8192,
+      "batch_size": 1024,
+      "gamma": 0.999,
+      "lookback_window": 75,
+      "transaction_cost": 0.0002,
+      "timesteps": 500000
+    },
+    "metrics": {
+      "balance": 9999.597839658,
+      "equity": 10021.679919658,
+      "total_return": 0,
+      "win_rate": 0,
+      "profit_factor": 0,
+      "max_drawdown": 0.0036847886223707964,
+      "total_trades": 0,
+      "sharpe_ratio": 0
+    },
+    "score": 24.69324134718763,
+    "tier": "none",
+    "training_time": 3043.5880472660065,
+    "async_batch": 4,
+    "model_id": 4
+  },
+  {
+    "attempt": 23,
+    "timestamp": "2025-07-20T16:45:23.377987",
+    "hyperparameters": {
+      "algorithm": "PPO",
+      "learning_rate": 0.0007199999999999999,
+      "n_steps": 2048,
+      "batch_size": 1024,
+      "gamma": 0.974898,
+      "lookback_window": 75,
+      "transaction_cost": 0.0001,
+      "timesteps": 500000
+    },
+    "metrics": {
+      "balance": 9967.075710142999,
+      "equity": 9971.844050143,
+      "total_return": -0.0028155949857000453,
+      "win_rate": 0.3333333333333333,
+      "profit_factor": 0.009490735279354906,
+      "max_drawdown": 0.006625404392424477,
+      "total_trades": 3,
+      "profitable_trades": 1,
+      "sharpe_ratio": -0.1832368821979075,
+      "max_consecutive_losses": 1
+    },
+    "score": 30,
+    "tier": "none",
+    "training_time": 3022.570918083191,
+    "async_batch": 4,
+    "model_id": 5
+  },
+  {
+    "attempt": 24,
+    "timestamp": "2025-07-20T16:45:23.391988",
+    "hyperparameters": {
+      "algorithm": "PPO",
+      "learning_rate": 0.0004,
+      "n_steps": 8192,
+      "batch_size": 1024,
+      "gamma": 0.999,
+      "lookback_window": 75,
+      "transaction_cost": 0.0001,
+      "timesteps": 500000
+    },
+    "metrics": {
+      "balance": 9999.798663419,
+      "equity": 10024.444843419,
+      "total_return": 0,
+      "win_rate": 0,
+      "profit_factor": 0,
+      "max_drawdown": 0.003683775469446207,
+      "total_trades": 0,
+      "sharpe_ratio": 0
+    },
+    "score": 24.693325692168603,
+    "tier": "none",
+    "training_time": 3044.932948112488,
+    "async_batch": 4,
+    "model_id": 6
+  },
+  {
+    "attempt": 1,
+    "timestamp": "2025-07-20T21:18:19.564905",
+    "hyperparameters": {
+      "algorithm": "PPO",
+      "learning_rate": 0.0004,
+      "n_steps": 8192,
+      "batch_size": 1024,
+      "gamma": 0.999,
+      "lookback_window": 150,
+      "transaction_cost": 0.0001,
+      "timesteps": 2000000
+    },
+    "metrics": {
+      "balance": 9999.798442389,
+      "equity": 10026.654922389,
+      "total_return": 0,
+      "win_rate": 0,
+      "profit_factor": 0,
+      "max_drawdown": 0.0036829660292500024,
+      "total_trades": 0,
+      "sharpe_ratio": 0
+    },
+    "score": 24.693393078064936,
+    "tier": "none",
+    "training_time": 7344.067233800888,
+    "async_batch": 1,
+    "model_id": 1
+  },
+  {
+    "attempt": 2,
+    "timestamp": "2025-07-20T21:18:19.576905",
+    "hyperparameters": {
+      "algorithm": "PPO",
+      "learning_rate": 0.00056,
+      "n_steps": 8192,
+      "batch_size": 1024,
+      "gamma": 0.974898,
+      "lookback_window": 150,
+      "transaction_cost": 0.0001,
+      "timesteps": 2000000
+    },
+    "metrics": {
+      "balance": 9919.946274565991,
+      "equity": 9920.344864565992,
+      "total_return": -0.007965513543400811,
+      "win_rate": 0.38934426229508196,
+      "profit_factor": 0.7872922524909846,
+      "max_drawdown": 0.009204101473723419,
+      "total_trades": 244,
+      "profitable_trades": 95,
+      "sharpe_ratio": -0.6410177882268785,
+      "max_consecutive_losses": 10
+    },
+    "score": 30,
+    "tier": "none",
+    "training_time": 7182.632838487625,
+    "async_batch": 1,
+    "model_id": 2
+  },
+  {
+    "attempt": 3,
+    "timestamp": "2025-07-20T21:18:19.589904",
+    "hyperparameters": {
+      "algorithm": "PPO",
+      "learning_rate": 0.00056,
+      "n_steps": 8192,
+      "batch_size": 1024,
+      "gamma": 0.999,
+      "lookback_window": 75,
+      "transaction_cost": 0.0002,
+      "timesteps": 2000000
+    },
+    "metrics": {
+      "balance": 9989.348112696007,
+      "equity": 9989.348112696007,
+      "total_return": -0.0010651887303993134,
+      "win_rate": 0.4583333333333333,
+      "profit_factor": 0.9804233858246535,
+      "max_drawdown": 0.0040263371662761895,
+      "total_trades": 24,
+      "profitable_trades": 11,
+      "sharpe_ratio": -0.11222586506766817,
+      "max_consecutive_losses": 5
+    },
+    "score": 30,
+    "tier": "none",
+    "training_time": 7316.982273578644,
+    "async_batch": 1,
+    "model_id": 3
+  },
+  {
+    "attempt": 4,
+    "timestamp": "2025-07-20T21:18:19.603905",
+    "hyperparameters": {
+      "algorithm": "PPO",
+      "learning_rate": 0.00056,
+      "n_steps": 8192,
+      "batch_size": 1024,
+      "gamma": 0.974898,
+      "lookback_window": 100,
+      "transaction_cost": 0.0001,
+      "timesteps": 2000000
+    },
+    "metrics": {
+      "balance": 9857.738913465995,
+      "equity": 9857.738913465995,
+      "total_return": -0.014226108653400479,
+      "win_rate": 0.3469387755102041,
+      "profit_factor": 0.5507336578321578,
+      "max_drawdown": 0.014892784223076756,
+      "total_trades": 245,
+      "profitable_trades": 85,
+      "sharpe_ratio": -1.1326431573358837,
+      "max_consecutive_losses": 11
+    },
+    "score": 28.817206204266537,
+    "tier": "none",
+    "training_time": 7337.687370538712,
+    "async_batch": 1,
+    "model_id": 4
   }
 ]

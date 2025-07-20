@@ -108,7 +108,7 @@ class AsyncTrainingConfig:
     def get_neural_network_architecture(self):
         """Get neural network architecture based on hardware"""
         architectures = {
-            "ultra": [8192, 8192, 4096, 2048, 1024],
+            "ultra": [12288, 8192, 4096, 2048, 1024],
             "large": [4096, 4096, 2048, 1024, 512],
             "medium": [2048, 2048, 1024, 512],
             "small": [1024, 1024, 512, 256],
@@ -122,7 +122,7 @@ class AsyncTrainingConfig:
     
     def get_optimal_timesteps(self, base_timesteps=100000):
         """Get optimal timesteps for current hardware"""
-        return min(int(base_timesteps * self.timesteps_multiplier), 500000)
+        return min(int(base_timesteps * self.timesteps_multiplier), 2000000)
     
     def apply_gpu_optimizations(self):
         """Apply GPU optimizations based on hardware"""
