@@ -1,0 +1,29 @@
+{
+  "validation_timestamp": "20250721_110645",
+  "system_version": "Enhanced Active Trading System v2.0",
+  "key_improvements": [
+    "Trading Activity Incentive (40% weight in scoring)",
+    "Consecutive Hold Penalty",
+    "Market Opportunity Reward",
+    "Relaxed Risk Thresholds",
+    "Enhanced Algorithm Distribution (35% SAC)",
+    "Extended Training Time (4-6M timesteps)",
+    "Minimum Trading Activity Requirements"
+  ],
+  "expected_improvements": [
+    "Models will trade more frequently (target: 20-80 trades)",
+    "Less holding behavior (max 30 consecutive holds)",
+    "Better ROI through active trading",
+    "Bronze tier achievement with 20+ trades",
+    "Reduced penalty for reasonable risk-taking"
+  ],
+  "success_criteria": {
+    "bronze_tier": {
+      "min_trades": 20,
+      "win_rate": 0.45,
+      "profit_factor": 1.2,
+      "max_drawdown": 0.25,
+      "score": 35
+    }
+  }
+}

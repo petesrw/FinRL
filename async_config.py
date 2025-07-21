@@ -8,6 +8,9 @@ import torch
 import multiprocessing as mp
 import os
 
+# Skip threading configuration - handled globally by main script
+# (Threading configuration moved to train_all_models.py startup)
+
 class AsyncTrainingConfig:
     """Configuration class for async training"""
     
@@ -53,7 +56,7 @@ class AsyncTrainingConfig:
             self.neural_network_size = "ultra"  # [32768, 16384, 8192, 4096, 2048, 1024]
             self.gpu_memory_fraction = 0.95  # ลดจาก 0.98 เป็น 0.95
             
-        # High-end GPUs (16GB+) - OPTIMIZED FOR RTX 5060 TI  
+        # High-end GPUs (16GB+) - OPTIMIZED FOR RTX 5060 TI with sm_120 (Blackwell)  
         elif self.gpu_memory_gb >= 16:
             self.max_concurrent_models = 2  # ลดจาก 4 เป็น 2 เพื่อ memory balance
             self.memory_per_model = 0.45  # ลดจาก 0.80 เป็น 0.45 (45% per model × 2 = 90%)
@@ -168,9 +171,12 @@ class AsyncTrainingConfig:
                 except:
                     pass  # Not all features available on all systems
             
-            # CPU optimizations
-            torch.set_num_threads(self.cpu_threads_training)
-            torch.set_num_interop_threads(self.cpu_threads_interop)
+            # CPU optimizations (threading configured globally at startup)
+            try:
+                torch.set_num_threads(self.cpu_threads_training)
+                torch.set_num_interop_threads(self.cpu_threads_interop)
+            except Exception:
+                pass
             
             return True
             

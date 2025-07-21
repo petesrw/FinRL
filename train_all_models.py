@@ -5,6 +5,21 @@ Trains until reaching excellence targets with full tracking
 🚀 Async Multi-Model Training for Maximum GPU/RAM Utilization
 """
 
+# 🚨 CRITICAL: Import and configure threading FIRST before any other imports
+import torch
+import multiprocessing as mp
+
+# Configure PyTorch threading before ANY other operations
+_threading_configured = False
+try:
+    torch.set_num_threads(max(16, mp.cpu_count()))
+    torch.set_num_interop_threads(max(8, mp.cpu_count() // 2))
+    _threading_configured = True
+    print("✅ PyTorch threading configured globally at startup")
+except Exception as e:
+    print(f"⚠️ Early threading setup: {str(e)[:50]}...")
+
+# Now safe to import everything else
 import pandas as pd
 import numpy as np
 import gymnasium as gym
@@ -17,17 +32,19 @@ from datetime import datetime
 import warnings
 import time
 import random
-import torch
 import asyncio
 import concurrent.futures
 import threading
 import multiprocessing as mp
+
 from functools import partial
 import gc
 from async_config import get_config, print_system_info
+
 # Integrated GPU Boost Functions with Async Support
 async def apply_maximum_gpu_utilization_async():
     """Apply simple but effective GPU utilization boost with safe fallback - Async version"""
+    global _threading_configured
     if not torch.cuda.is_available():
         return False
     
@@ -60,16 +77,7 @@ async def apply_maximum_gpu_utilization_async():
         # Memory settings for maximum utilization with async consideration
         torch.cuda.set_per_process_memory_fraction(0.9)  # Increased for async training
         
-        # CPU settings to feed GPU better
-        try:
-            torch.set_num_threads(max(16, mp.cpu_count()))  # Use all available CPUs
-        except:
-            pass
-        
-        try:
-            torch.set_num_interop_threads(max(8, mp.cpu_count() // 2))  # Better parallelism
-        except:
-            pass
+        # Threading is now handled globally at startup
         
         # Safe GPU warmup with async tensor operations
         try:
@@ -126,37 +134,54 @@ warnings.filterwarnings('ignore')
 
 # GPU Detection and Setup
 def detect_and_setup_gpu():
-    """Smart GPU detection with RTX 5060 TI sm_90 compatibility mode"""
+    """Smart GPU detection with RTX 5060 TI sm_120 compatibility mode (Blackwell architecture)"""
+    global _threading_configured
     if torch.cuda.is_available():
         try:
             device = torch.device("cuda")
             gpu_name = torch.cuda.get_device_name(0)
             gpu_memory = torch.cuda.get_device_properties(0).total_memory / 1024**3
+            gpu_capability = torch.cuda.get_device_capability(0)
             
             print(f"🚀 GPU Detected: {gpu_name}")
             print(f"   GPU Memory: {gpu_memory:.1f} GB")
             print(f"   CUDA Version: {torch.version.cuda}")
+            print(f"   Compute Capability: {gpu_capability[0]}.{gpu_capability[1]}")
             
-            # Force sm_90 compatibility mode for RTX 5060 TI
+            # Auto-detect and configure for RTX 5060 TI (Blackwell architecture)
             if "RTX 5060" in gpu_name or "RTX 50" in gpu_name:
-                print("   🔧 RTX 5060 TI detected - enabling sm_90 compatibility mode...")
+                major, minor = gpu_capability
                 
-                # Set environment variables for sm_90 compatibility
+                if major >= 12:  # Blackwell architecture - sm_120+
+                    print("   � RTX 5060 TI Blackwell detected - enabling sm_120 native mode...")
+                    arch_list = '12.0'
+                    arch_name = "sm_120"
+                elif major >= 9:   # Ada Lovelace fallback
+                    print("   🔧 RTX 5060 TI Ada Lovelace mode - enabling sm_90 compatibility...")
+                    arch_list = '9.0'
+                    arch_name = "sm_90"
+                else:  # Older architecture fallback
+                    print(f"   ⚠️ Older architecture detected - using sm_{major}{minor}")
+                    arch_list = f'{major}.{minor}'
+                    arch_name = f"sm_{major}{minor}"
+                
+                # Set environment variables for optimal architecture
                 import os
-                os.environ['TORCH_CUDA_ARCH_LIST'] = '9.0'
+                os.environ['TORCH_CUDA_ARCH_LIST'] = arch_list
                 os.environ['CUDA_LAUNCH_BLOCKING'] = '0'  # Disable synchronous execution for maximum speed
                 
                 try:
-                    # Force PyTorch to use sm_90 kernels
-                    print("   🎯 Forcing sm_90 kernel compatibility...")
+                    # Force PyTorch to use optimal kernels
+                    print(f"   🎯 Configuring {arch_name} kernel optimization...")
                     
                     # Test with smaller tensor first
                     test_tensor = torch.randn(32, 32, device=device, dtype=torch.float32)
                     test_result = torch.matmul(test_tensor, test_tensor.T)
                     test_sum = test_result.sum().item()
                     
-                    print("   ✅ sm_90 compatibility test passed!")
+                    print(f"   ✅ {arch_name} optimization test passed!")
                     print(f"   🚀 GPU acceleration enabled: {device}")
+                    print(f"   🎯 Architecture: {arch_name} (Optimal for RTX 5060 Ti)")
                     
                     # Ultra Performance settings for RTX 5060 TI 16GB GDDR7
                     torch.backends.cudnn.benchmark = True  # Enable for maximum performance
@@ -168,9 +193,7 @@ def detect_and_setup_gpu():
                     # Aggressive memory usage for 16GB GDDR7
                     torch.cuda.set_per_process_memory_fraction(0.9)  # Use 90% of 16GB
                     
-                    # RTX 5060 TI Ultra Performance Optimizations
-                    torch.cuda.empty_cache()  # Clear cache
-                    torch.set_num_threads(16)  # Max CPU threads for data loading
+                    # Threading is now handled globally at startup
                     
                     # Advanced GPU utilization settings
                     torch.backends.cuda.matmul.allow_fp16_reduced_precision_reduction = True
@@ -202,7 +225,7 @@ def detect_and_setup_gpu():
                     return device
                     
                 except Exception as gpu_error:
-                    print(f"   ❌ sm_90 compatibility failed: {str(gpu_error)[:100]}...")
+                    print(f"   ❌ {arch_name} optimization failed: {str(gpu_error)[:100]}...")
                     print("   💻 Falling back to CPU training")
                     return torch.device("cpu")
             else:
@@ -273,6 +296,7 @@ def get_optimal_timesteps(device, base_timesteps=100000):
 # GPU Boost Configuration Functions
 def apply_rtx_5060_ti_boost():
     """Apply maximum GPU utilization settings for RTX 5060 TI with safe fallback"""
+    global _threading_configured
     if not torch.cuda.is_available():
         return torch.device("cpu")
     
@@ -316,9 +340,7 @@ def apply_rtx_5060_ti_boost():
         torch.cuda.set_per_process_memory_fraction(0.85)  # Reduced to 85% for safety
         torch.cuda.empty_cache()
         
-        # CPU-GPU coordination
-        torch.set_num_threads(16)
-        torch.set_num_interop_threads(8)
+        # Threading is now handled globally at startup
         
         # Safe GPU warmup with smaller tensors
         print("   🔥 Warming up GPU with safe tensor operations...")
@@ -372,17 +394,30 @@ def get_gpu_optimized_model_config():
         "verbose": 0
     }
 
-# Setup device globally
-DEVICE = detect_and_setup_gpu()
+# Setup device globally - will be initialized in main()
+DEVICE = None
 
-# Apply additional GPU boost if RTX 5060 TI detected
-if torch.cuda.is_available():
-    gpu_name = torch.cuda.get_device_name(0)
-    if "RTX 5060" in gpu_name or "RTX 50" in gpu_name:
-        DEVICE = apply_rtx_5060_ti_boost()
-        # Apply integrated GPU utilization boost with async support
-        print("🚀 Applying integrated async GPU utilization boost...")
-        asyncio.run(apply_maximum_gpu_utilization_async())
+def initialize_gpu_setup():
+    """Initialize GPU setup - called from main() to avoid module-level execution"""
+    global DEVICE
+    DEVICE = detect_and_setup_gpu()
+    
+    # Apply additional GPU boost if RTX 5060 TI detected
+    if torch.cuda.is_available():
+        gpu_name = torch.cuda.get_device_name(0)
+        if "RTX 5060" in gpu_name or "RTX 50" in gpu_name:
+            # The boost is already applied if the card is detected.
+            # We only need to apply the final async boost.
+            print("🚀 Applying final integrated async GPU utilization boost...")
+            try:
+                asyncio.run(apply_maximum_gpu_utilization_async())
+            except RuntimeError as e:
+                if "cannot run loop while another loop is running" in str(e):
+                    print("   ⚠️ Async loop already running, skipping separate boost application.")
+                else:
+                    raise e
+    
+    return DEVICE
 
 class AdvancedForexEnv(gym.Env):
     """
@@ -430,8 +465,11 @@ class AdvancedForexEnv(gym.Env):
         self.equity_curve = [initial_balance]
         self._last_action_reward = 0  # For enhanced reward tracking
         
-        # Action space: 0=Hold, 1=Buy, 2=Sell, 3=Close
-        self.action_space = spaces.Discrete(4)
+        # Action space: Configurable for different algorithms
+        # PPO/A2C can use Discrete, SAC/DDPG need Box
+        # We'll use Box space for compatibility with all algorithms
+        self.action_space = spaces.Box(low=-1, high=1, shape=(1,), dtype=np.float32)
+        self._use_discrete_actions = False  # Flag for action conversion
         
         # Observation space: OHLC + indicators + position info
         self.observation_space = spaces.Box(
@@ -519,12 +557,33 @@ class AdvancedForexEnv(gym.Env):
         return self._get_observation(), {}
     
     def step(self, action):
-        """Execute one step with advanced reward calculation"""
+        """Execute one step with advanced reward calculation - supports continuous actions"""
         current_price = self.data.iloc[self.current_step]['close']
         reward = 0
         
-        # Execute action
-        if action == 1 and self.position == 0:  # Buy
+        # Convert continuous action to discrete action
+        # Action is Box(-1, 1) - convert to discrete actions
+        if isinstance(action, (list, np.ndarray)):
+            action_value = float(action[0])
+        else:
+            action_value = float(action)
+        
+        # Convert continuous to discrete:
+        # [-1, -0.5): Sell (Short) = 2
+        # [-0.5, 0.5): Hold = 0  
+        # [0.5, 0.75): Buy = 1
+        # [0.75, 1]: Close = 3
+        if action_value < -0.5:
+            discrete_action = 2  # Sell
+        elif action_value < 0.5:
+            discrete_action = 0  # Hold
+        elif action_value < 0.75:
+            discrete_action = 1  # Buy
+        else:
+            discrete_action = 3  # Close
+        
+        # Execute discrete action
+        if discrete_action == 1 and self.position == 0:  # Buy
             self.position = 1
             self.position_size = self.max_position_size
             self.entry_price = current_price
@@ -532,7 +591,7 @@ class AdvancedForexEnv(gym.Env):
             cost = current_price * self.position_size * self.transaction_cost
             self.balance -= cost
             
-        elif action == 2 and self.position == 0:  # Sell (Short)
+        elif discrete_action == 2 and self.position == 0:  # Sell (Short)
             self.position = -1
             self.position_size = self.max_position_size
             self.entry_price = current_price
@@ -540,7 +599,7 @@ class AdvancedForexEnv(gym.Env):
             cost = current_price * self.position_size * self.transaction_cost
             self.balance -= cost
             
-        elif action == 3 and self.position != 0:  # Close position
+        elif discrete_action == 3 and self.position != 0:  # Close position
             if self.position == 1:  # Close long
                 profit = (current_price - self.entry_price) * self.position_size
             else:  # Close short
@@ -608,60 +667,121 @@ class AdvancedForexEnv(gym.Env):
         current_drawdown = (self.max_equity - self.equity) / self.max_equity
         self.max_drawdown = max(self.max_drawdown, current_drawdown)
         
-        # Enhanced reward shaping for profit factor optimization
+        # 🎯 ACTIVE TRADING ENHANCED REWARD FUNCTION
         reward = 0  # Reset base reward
         
-        # 1. Immediate trading performance reward
+        # 1. Reduced immediate reward weight (prevent over-optimization on single trades)
         if hasattr(self, '_last_action_reward'):
-            reward += self._last_action_reward * 0.5  # Carry forward recent trade performance
+            reward += self._last_action_reward * 0.2  # Reduced from 0.3 to 0.2
         
-        # 2. Profit factor focused rewards
-        if self.total_trades >= 3:  # Need some trades to calculate meaningful profit factor
+        # 2. 🎁 TRADING ACTIVITY INCENTIVE (Core Fix for Low Trading Issue)
+        if self.current_step > self.lookback_window + 50:  # After warm-up
+            progress = (self.current_step - self.lookback_window) / (self.max_steps - self.lookback_window)
+            expected_trades = max(20, int(50 * progress))  # Expect 20-50 trades by end
+            
+            if self.total_trades >= expected_trades:
+                reward += 3.0  # Strong reward for active trading
+            elif self.total_trades >= expected_trades * 0.7:
+                reward += 1.5  # Medium reward
+            elif self.total_trades >= expected_trades * 0.5:
+                reward += 0.5  # Small reward
+            else:
+                reward -= 2.0  # Penalty for insufficient trading
+        
+        # 3. 🚫 CONSECUTIVE HOLD PENALTY (Anti-Hold Strategy)
+        # Track consecutive non-trading steps
+        if not hasattr(self, 'consecutive_holds'):
+            self.consecutive_holds = 0
+            
+        if hasattr(self, '_last_action_reward') and self._last_action_reward == 0:
+            self.consecutive_holds += 1
+        else:
+            self.consecutive_holds = 0
+            
+        if self.consecutive_holds > 30:  # Don't hold for more than 30 steps
+            reward -= 1.5  # Increasing penalty for excessive holding
+        elif self.consecutive_holds > 20:
+            reward -= 0.5
+            
+        # 4. 🎯 MARKET OPPORTUNITY REWARD (Encourage trading during volatility)
+        if self.current_step > self.lookback_window + 1:
+            current_price = self.data.iloc[self.current_step]['close']
+            prev_price = self.data.iloc[self.current_step-1]['close']
+            price_change = abs(current_price - prev_price) / prev_price
+            
+            # If there's significant price movement and we took action
+            if price_change > 0.0005 and hasattr(self, '_last_action_reward') and self._last_action_reward != 0:
+                reward += 1.0  # Reward for trading during volatile periods
+            elif price_change > 0.0005 and (not hasattr(self, '_last_action_reward') or self._last_action_reward == 0):
+                reward -= 0.5  # Small penalty for missing opportunities
+        
+        # 5. BALANCED Profit Factor rewards (less aggressive than before)
+        if self.total_trades >= 3:
             current_profit_factor = self.total_profit / max(self.total_loss, 1e-8)
             
-            if current_profit_factor > 2.5:
-                reward += 20  # เพิ่มจาก 10 เป็น 20
-            elif current_profit_factor > 2.0:
-                reward += 15  # เพิ่ม reward
+            if current_profit_factor > 2.0:
+                reward += 8   # Reduced from 12
             elif current_profit_factor > 1.5:
-                reward += 8   # เพิ่มจาก 5 เป็น 8
+                reward += 6   # Reduced from 8
+            elif current_profit_factor > 1.2:
+                reward += 4   # Reduced from 5
             elif current_profit_factor > 1.0:
-                reward += 4   # เพิ่มจาก 2 เป็น 4
-            elif current_profit_factor < 0.5:
-                reward -= 10  # เพิ่ม penalty จาก -5 เป็น -10
+                reward += 2   # Same
+            elif current_profit_factor > 0.8:
+                reward += 0   # Neutral zone
+            elif current_profit_factor > 0.6:
+                reward -= 1   # Reduced penalty
+            else:  # < 0.6
+                reward -= 3   # Reduced penalty
         
-        # 3. Win rate optimization (but secondary to profit factor)
+        # 6. ENHANCED Win Rate (balanced)
         if self.total_trades > 5:
             current_win_rate = self.profitable_trades / self.total_trades
-            if current_win_rate > 0.7:
-                reward += 3
+            if current_win_rate > 0.6:
+                reward += 3   # Reduced from 4
             elif current_win_rate > 0.5:
-                reward += 1
-            elif current_win_rate < 0.3:
-                reward -= 2
+                reward += 2   # Same
+            elif current_win_rate > 0.4:
+                reward += 0   # Neutral zone
+            elif current_win_rate > 0.3:
+                reward -= 1   # Same
+            else:  # < 30%
+                reward -= 2   # Reduced penalty
         
-        # 4. Drawdown management (crucial for real trading)
-        if self.max_drawdown > 0.20:  # High drawdown penalty
-            reward -= 8
+        # 7. RELAXED Drawdown management (allow more risk for active trading)
+        if self.max_drawdown > 0.20:  # Relaxed from 0.15 to 0.20
+            reward -= 8   # Reduced penalty
+        elif self.max_drawdown > 0.15:
+            reward -= 4   # Reduced from -5
         elif self.max_drawdown > 0.10:
-            reward -= 3
-        elif self.max_drawdown < 0.05:  # Low drawdown reward
-            reward += 2
+            reward -= 1   # Reduced penalty
+        elif self.max_drawdown < 0.05:
+            reward += 2   # Reduced from 3
+        else:
+            reward += 1   # Same
         
-        # 5. Consecutive loss penalty (risk management)
-        if self.consecutive_losses >= 5:
-            reward -= 5
+        # 8. RELAXED Consecutive loss penalty
+        if self.consecutive_losses >= 5:  # More lenient threshold
+            reward -= 6   # Reduced from -8
+        elif self.consecutive_losses >= 4:
+            reward -= 3   # Reduced from -4
         elif self.consecutive_losses >= 3:
-            reward -= 2
+            reward -= 1   # Reduced from -1
+        else:  # 0-2 consecutive losses
+            reward += 0.5 # Reduced reward
         
-        # 6. Position sizing and risk management rewards
+        # 9. MODIFIED Equity curve stability (allow more variation)
         current_equity_ratio = self.equity / self.initial_balance
-        if 0.95 <= current_equity_ratio <= 1.50:  # Stable growth reward
-            reward += 1
-        elif current_equity_ratio > 2.0:  # Excessive growth might be risky
-            reward -= 1
-        elif current_equity_ratio < 0.8:  # Major losses penalty
-            reward -= 3
+        if 1.05 <= current_equity_ratio <= 1.30:  # Allow higher growth
+            reward += 1.5  # Reduced reward
+        elif 0.95 <= current_equity_ratio <= 1.05:
+            reward += 1    # Reward stability
+        elif current_equity_ratio > 1.50:  # Very high growth
+            reward -= 1    # Reduced penalty
+        elif current_equity_ratio < 0.85:  # Significant losses (relaxed)
+            reward -= 3    # Reduced penalty
+        elif current_equity_ratio < 0.75:  # Major losses (relaxed)
+            reward -= 6    # Reduced penalty
         
         # Move to next step
         self.current_step += 1
@@ -679,33 +799,111 @@ class AdvancedForexEnv(gym.Env):
             final_profit_factor = self.total_profit / max(self.total_loss, 1e-8) if self.total_trades > 0 else 0
             final_win_rate = self.profitable_trades / max(self.total_trades, 1)
             
-            # Multi-factor final reward calculation
+            # 🎯 ACTIVE TRADING ENHANCED FINAL REWARD
             final_reward = 0
             
-            # 1. Primary: Profit Factor achievement
-            if final_profit_factor > 2.0:
-                final_reward += 50
+            # 1. 🎁 TRADING ACTIVITY BONUS (Primary Focus)
+            if self.total_trades >= 50:
+                final_reward += 25  # Major bonus for high activity
+            elif self.total_trades >= 30:
+                final_reward += 15  # Good activity bonus
+            elif self.total_trades >= 20:
+                final_reward += 10  # Decent activity bonus
+            elif self.total_trades >= 10:
+                final_reward += 5   # Minimum activity bonus
+            else:
+                final_reward -= 15  # Strong penalty for low activity
+            
+            # 2. BALANCED Profit Factor (reduced importance)
+            if final_profit_factor > 1.8:
+                final_reward += 25  # Reduced from 40
             elif final_profit_factor > 1.5:
-                final_reward += 30
+                final_reward += 18  # Reduced from 25
+            elif final_profit_factor > 1.2:
+                final_reward += 10  # Reduced from 12
             elif final_profit_factor > 1.0:
-                final_reward += 15
-            elif final_profit_factor < 0.5:
-                final_reward -= 20
+                final_reward += 6   # Reduced from 8
+            elif final_profit_factor > 0.8:
+                final_reward += 0   # Neutral
+            elif final_profit_factor > 0.6:
+                final_reward -= 3   # Reduced penalty
+            else:  # < 0.6
+                final_reward -= 8   # Reduced from -15
             
-            # 2. Total return scaling
-            final_reward += total_return * 25
+            # 3. SCALED Total return (moderate weight)
+            final_reward += total_return * 10  # Reduced from 15
             
-            # 3. Risk-adjusted return (considering drawdown)
+            # 4. RELAXED Risk-adjusted return
             if self.max_drawdown > 0:
                 risk_adjusted_return = total_return / max(self.max_drawdown, 0.01)
-                final_reward += risk_adjusted_return * 10
+                final_reward += risk_adjusted_return * 5  # Reduced from 8
             
-            # 4. Trading consistency bonus
-            if self.total_trades >= 10:
-                if final_win_rate >= 0.6 and final_profit_factor > 1.0:
-                    final_reward += 20  # Consistency bonus
-                elif final_win_rate < 0.3:
-                    final_reward -= 10  # Inconsistency penalty
+            # 5. 📊 TRADING QUALITY SCORE (Enhanced)
+            if self.total_trades >= 5:  # Lower threshold
+                quality_score = 0
+                
+                # Win rate component (25% weight - reduced)
+                if final_win_rate >= 0.6:
+                    quality_score += 2.5  # Reduced from 3
+                elif final_win_rate >= 0.5:
+                    quality_score += 2    # Same
+                elif final_win_rate >= 0.4:
+                    quality_score += 1    # Same
+                else:
+                    quality_score -= 0.5  # Reduced penalty
+                
+                # Profit factor component (35% weight - reduced)
+                if final_profit_factor > 1.5:
+                    quality_score += 3.5  # Reduced from 4
+                elif final_profit_factor > 1.2:
+                    quality_score += 2.5  # Reduced from 3
+                elif final_profit_factor > 1.0:
+                    quality_score += 2    # Same
+                else:
+                    quality_score -= 0.5  # Reduced penalty
+                
+                # Drawdown component (25% weight - reduced)
+                if self.max_drawdown < 0.05:
+                    quality_score += 2.5  # Reduced from 3
+                elif self.max_drawdown < 0.10:
+                    quality_score += 2    # Same
+                elif self.max_drawdown < 0.20:  # More lenient
+                    quality_score += 1    # Same
+                else:
+                    quality_score -= 1    # Reduced penalty
+                
+                # Trading frequency component (15% weight - NEW)
+                trade_frequency = self.total_trades / max(self.current_step - self.lookback_window, 1)
+                if 0.02 <= trade_frequency <= 0.08:  # Good frequency range
+                    quality_score += 1.5  # Bonus for balanced trading
+                elif trade_frequency < 0.01:  # Too little trading
+                    quality_score -= 1.5  # Penalty
+                
+                # Apply quality score
+                final_reward += quality_score * 2  # Reduced multiplier from 3 to 2
+            
+            # 6. 🏆 CONSISTENCY BONUS (New component)
+            if self.total_trades >= 20:
+                # Calculate trading consistency
+                if len(self.equity_curve) > 10:
+                    equity_changes = [abs(self.equity_curve[i] - self.equity_curve[i-1]) 
+                                    for i in range(1, len(self.equity_curve))]
+                    avg_change = sum(equity_changes) / len(equity_changes)
+                    consistency_score = 1.0 / (1.0 + avg_change / self.initial_balance)
+                    
+                    if consistency_score > 0.8:  # Very consistent
+                        final_reward += 8
+                    elif consistency_score > 0.6:  # Good consistency
+                        final_reward += 4
+                    elif consistency_score > 0.4:  # Moderate consistency
+                        final_reward += 2
+            
+            # 7. Episode completion bonus (encourage full episodes)
+            if self.current_step >= self.max_steps * 0.9:
+                final_reward += 3  # Reduced from 5
+            
+            # 8. BALANCED final reward range (allow higher rewards for active traders)
+            final_reward = max(-40, min(final_reward, 120))  # Expanded range
             
             reward += final_reward
         
@@ -794,12 +992,36 @@ class AdaptiveTrainer:
         
         self.load_history()
         
-        # Realistic Excellence targets for Forex Trading (adjusted score thresholds)
+        # 🎯 ACTIVE TRADING Enhanced targets (Focus on Trading Activity)
         self.targets = {
-            'bronze': {'win_rate': 0.55, 'profit_factor': 1.5, 'max_drawdown': 0.20, 'score': 45},
-            'silver': {'win_rate': 0.60, 'profit_factor': 1.8, 'max_drawdown': 0.18, 'score': 55},
-            'gold': {'win_rate': 0.65, 'profit_factor': 2.2, 'max_drawdown': 0.15, 'score': 70},
-            'diamond': {'win_rate': 0.70, 'profit_factor': 2.5, 'max_drawdown': 0.12, 'score': 85}
+            'bronze': {
+                'win_rate': 0.45,           # Relaxed from 0.55
+                'profit_factor': 1.2,       # Relaxed from 1.5
+                'max_drawdown': 0.25,       # Relaxed from 0.20
+                'score': 35,                # Relaxed from 45
+                'min_trades': 20            # NEW: Minimum trading activity
+            },
+            'silver': {
+                'win_rate': 0.55,           # Relaxed from 0.60
+                'profit_factor': 1.5,       # Relaxed from 1.8
+                'max_drawdown': 0.20,       # Relaxed from 0.18
+                'score': 45,                # Relaxed from 55
+                'min_trades': 40            # NEW: Higher trading activity
+            },
+            'gold': {
+                'win_rate': 0.60,           # Relaxed from 0.65
+                'profit_factor': 1.8,       # Relaxed from 2.2
+                'max_drawdown': 0.18,       # Relaxed from 0.15
+                'score': 60,                # Relaxed from 70
+                'min_trades': 60            # NEW: High trading activity
+            },
+            'diamond': {
+                'win_rate': 0.65,           # Relaxed from 0.70
+                'profit_factor': 2.0,       # Relaxed from 2.5
+                'max_drawdown': 0.15,       # Relaxed from 0.12
+                'score': 75,                # Relaxed from 85
+                'min_trades': 80            # NEW: Very high trading activity
+            }
         }
         
         print(f"🚀 Async Training Setup: {self.max_concurrent_models} concurrent models")
@@ -975,7 +1197,7 @@ class AdaptiveTrainer:
         return {
             'learning_rates': [lr_min, (lr_min + lr_max) / 2, lr_max] + lr_range.get('preferred', []),
             'gammas': [gamma_min, (gamma_min + gamma_max) / 2, gamma_max] + gamma_range.get('preferred', []),
-            'algorithms': ['PPO'] + self._get_best_algorithms(analysis),  # Prioritize PPO
+            'algorithms': ['PPO', 'SAC'] + self._get_best_algorithms(analysis),  # Prioritize PPO and SAC
             'n_steps_ppo': [2048, 4096],  # Focus on proven effective ranges
             'batch_sizes': [512, 1024, 2048],  # Avoid extremes
             'lookback_windows': [50, 75, 100, 150],  # Narrower focus around successful values
@@ -995,12 +1217,12 @@ class AdaptiveTrainer:
                     algo_scores[algo] = algo_scores.get(algo, 0) + (count * weight)
         
         if not algo_scores:
-            return ['PPO', 'A2C']  # Default
-        
+            return ['SAC', 'A2C','PPO']  # Include SAC as default
+
         # Sort by performance and return top algorithms
         sorted_algos = sorted(algo_scores.items(), key=lambda x: x[1], reverse=True)
-        return [algo for algo, score in sorted_algos] + ['PPO', 'A2C']  # Always include defaults
-    
+        return [algo for algo, score in sorted_algos] + ['SAC', 'A2C','PPO']  # Always include SAC and A2C
+
     def _save_model_by_tier(self, model, tier, score, attempt, is_best=True):
         """Save model in organized folder structure by tier"""
         # Create tier-specific directories
@@ -1051,72 +1273,99 @@ class AdaptiveTrainer:
         return model_path
     
     def calculate_score(self, metrics):
-        """Calculate overall performance score with realistic weighting for Forex"""
+        """🎯 ACTIVE TRADING Enhanced Scoring System"""
         win_rate = metrics.get('win_rate', 0)
         profit_factor = metrics.get('profit_factor', 0)
         max_drawdown = metrics.get('max_drawdown', 1)
-        sharpe_ratio = metrics.get('sharpe_ratio', 0)
         total_return = metrics.get('total_return', 0)
+        sharpe_ratio = metrics.get('sharpe_ratio', 0)
+        total_trades = metrics.get('total_trades', 0)
         
-        # Base scores (0-100 scale)
+        # 🎁 TRADING ACTIVITY COMPONENT (NEW - Major Weight)
+        if total_trades >= 80:
+            activity_score = 100  # Excellent activity
+        elif total_trades >= 60:
+            activity_score = 85   # Very good activity
+        elif total_trades >= 40:
+            activity_score = 70   # Good activity
+        elif total_trades >= 20:
+            activity_score = 50   # Minimum acceptable
+        elif total_trades >= 10:
+            activity_score = 25   # Poor activity
+        else:
+            activity_score = 0    # Unacceptable (no trading)
+            
+        # Base scores (0-100 scale) - Reduced weights for traditional metrics
         win_rate_score = win_rate * 100  # Direct conversion to percentage
         
-        # Profit factor: 1.0=0, 1.5=25, 2.0=50, 2.5=75, 3.0+=100
-        pf_score = min((profit_factor - 1.0) * 50, 100) if profit_factor >= 1.0 else 0
+        # Profit factor: More lenient for active traders
+        pf_score = min((profit_factor - 0.8) * 62.5, 100) if profit_factor >= 0.8 else 0
         
-        # Drawdown penalty: 0%=100, 5%=90, 10%=80, 15%=70, 20%=60, 25%=50, 30%+=0
-        dd_score = max(0, 100 - (max_drawdown * 100 * 3.33))
+        # Drawdown: More tolerant for active trading
+        dd_score = max(0, 100 - (max_drawdown * 100 * 2.5))  # Reduced penalty
         
-        # Sharpe ratio: 0=0, 0.5=25, 1.0=50, 1.5=75, 2.0+=100
+        # Sharpe ratio: Standard
         sharpe_score = min(sharpe_ratio * 50, 100)
         
-        # Total return component: negative return penalty, positive return bonus
+        # Return component: More balanced
         if total_return < 0:
-            return_component = total_return * 100  # Penalty for negative returns
+            return_component = total_return * 80  # Reduced penalty
         else:
-            return_component = min(total_return * 50, 25)  # Bonus up to 25 points
+            return_component = min(total_return * 40, 20)  # Moderate bonus
         
-        # Main score calculation (balanced weights)
+        # 🎯 ACTIVE TRADING WEIGHTED SCORE CALCULATION
         main_score = (
-            win_rate_score * 0.35 +      # 35% weight on win rate
-            pf_score * 0.30 +            # 30% weight on profit factor  
-            dd_score * 0.25 +            # 25% weight on drawdown control
-            sharpe_score * 0.10          # 10% weight on Sharpe ratio
+            activity_score * 0.40 +      # 40% weight on trading activity (NEW!)
+            win_rate_score * 0.25 +      # 25% weight on win rate (reduced from 35%)
+            pf_score * 0.20 +            # 20% weight on profit factor (reduced from 30%)
+            dd_score * 0.10 +            # 10% weight on drawdown (reduced from 25%)
+            sharpe_score * 0.05          # 5% weight on Sharpe ratio (reduced from 10%)
         )
         
         # Add return component (can be negative)
         final_score = main_score + return_component
         
-        # Ensure realistic minimum for poor performance
-        if win_rate < 0.30 or profit_factor < 1.0 or max_drawdown > 0.50:
-            final_score = min(final_score, 30)  # Cap very poor performance
+        # 🚫 TRADING ACTIVITY PENALTIES
+        if total_trades < 10:
+            final_score = min(final_score, 20)  # Heavy penalty for low activity
+        elif total_trades < 20:
+            final_score = min(final_score, 35)  # Moderate penalty
+        
+        # Performance caps (more lenient)
+        if win_rate < 0.25 or profit_factor < 0.8 or max_drawdown > 0.60:
+            final_score = min(final_score, 25)  # Cap very poor performance
         
         return max(0, min(final_score, 100))  # Ensure score is between 0-100
     
     def get_tier(self, metrics):
-        """Determine performance tier with stricter win rate requirements"""
+        """🎯 ACTIVE TRADING Enhanced Tier System"""
         win_rate = metrics.get('win_rate', 0)
         profit_factor = metrics.get('profit_factor', 0)
         max_drawdown = metrics.get('max_drawdown', 1)
+        total_trades = metrics.get('total_trades', 0)
         score = self.calculate_score(metrics)
         
-        # All tiers require minimum win rate AND must pass ALL criteria
-        if (win_rate >= self.targets['diamond']['win_rate'] and 
+        # 🎯 ALL TIERS NOW REQUIRE MINIMUM TRADING ACTIVITY
+        if (total_trades >= self.targets['diamond']['min_trades'] and
+            win_rate >= self.targets['diamond']['win_rate'] and 
             profit_factor >= self.targets['diamond']['profit_factor'] and 
             max_drawdown <= self.targets['diamond']['max_drawdown'] and
             score >= self.targets['diamond']['score']):
             return 'diamond', '💎'
-        elif (win_rate >= self.targets['gold']['win_rate'] and 
+        elif (total_trades >= self.targets['gold']['min_trades'] and
+              win_rate >= self.targets['gold']['win_rate'] and 
               profit_factor >= self.targets['gold']['profit_factor'] and 
               max_drawdown <= self.targets['gold']['max_drawdown'] and
               score >= self.targets['gold']['score']):
             return 'gold', '🥇'
-        elif (win_rate >= self.targets['silver']['win_rate'] and 
+        elif (total_trades >= self.targets['silver']['min_trades'] and
+              win_rate >= self.targets['silver']['win_rate'] and 
               profit_factor >= self.targets['silver']['profit_factor'] and 
               max_drawdown <= self.targets['silver']['max_drawdown'] and
               score >= self.targets['silver']['score']):
             return 'silver', '🥈'
-        elif (win_rate >= self.targets['bronze']['win_rate'] and 
+        elif (total_trades >= self.targets['bronze']['min_trades'] and
+              win_rate >= self.targets['bronze']['win_rate'] and 
               profit_factor >= self.targets['bronze']['profit_factor'] and 
               max_drawdown <= self.targets['bronze']['max_drawdown'] and
               score >= self.targets['bronze']['score']):
@@ -1125,7 +1374,7 @@ class AdaptiveTrainer:
             return 'none', '❌'
     
     def generate_hyperparameters(self):
-        """Generate hyperparameters with Performance-based Learning - Enhanced Intelligence"""
+        """🎯 Generate ACTIVE TRADING Enhanced Hyperparameters"""
         # Get performance analysis
         analysis = self.analyze_performance_patterns()
         smart_ranges = self.get_smart_hyperparameter_ranges()
@@ -1141,7 +1390,7 @@ class AdaptiveTrainer:
         # 2. From dedicated failed configs file
         failed_configs.extend(self.load_failed_configs())
         
-        print(f"   🧠 Performance-based Learning: Using patterns from {len(self.training_history)} attempts")
+        print(f"   🎯 Active Trading Enhanced Learning: Using patterns from {len(self.training_history)} attempts")
         print(f"   🚫 Avoiding {len(failed_configs)} previously failed configurations")
         
         # 3. NEW: Identify problematic parameter ranges
@@ -1151,32 +1400,90 @@ class AdaptiveTrainer:
         
         max_attempts = 300
         for attempt in range(max_attempts):
-            # Prioritize PPO algorithm based on analysis
-            algorithm = 'PPO' if random.random() < 0.8 else random.choice(smart_ranges['algorithms'])
+            # 🎯 ACTIVE TRADING ALGORITHM DISTRIBUTION (Enhanced for Exploration)
+            algorithm_choice = random.random()
+            if algorithm_choice < 0.35:  # 35% PPO (reduced from 50%)
+                algorithm = 'PPO'
+            elif algorithm_choice < 0.70:  # 35% SAC (increased for better exploration)
+                algorithm = 'SAC'
+            elif algorithm_choice < 0.85:  # 15% A2C (good for active trading)
+                algorithm = 'A2C'
+            else:  # 15% DDPG/TD3/others
+                algorithm = random.choice(['DDPG', 'TD3'])
             
-            # Focus on proven successful learning rates
-            learning_rate = random.choice(smart_ranges['learning_rates'][:3])  # Top 3 LRs
-            gamma = random.choice(smart_ranges['gammas'][:3])  # Top 3 gammas
+            # 🚀 ACTIVE TRADING OPTIMIZED LEARNING RATES
+            if algorithm == 'PPO':
+                learning_rate = random.choice([0.0002, 0.0003, 0.0005, 0.0007])  # Slightly higher for exploration
+            elif algorithm == 'SAC':
+                learning_rate = random.choice([0.0003, 0.0005, 0.0007, 0.001])  # Higher for SAC exploration
+            else:  # A2C, DDPG, etc.
+                learning_rate = random.choice([0.0003, 0.0005, 0.0008])
             
-            # Moderate batch sizes work better than extremes
-            base_batch_size = random.choice([512, 1024,2048])  # Avoid very large/small batches
+            # 📊 ACTIVE TRADING GAMMA (Allow shorter-term focus)
+            gamma = random.choice([0.95, 0.97, 0.98, 0.99])  # More variety including shorter-term
+            
+            # ⚡ ACTIVE TRADING OPTIMIZED BATCH SIZES
+            if algorithm == 'PPO':
+                base_batch_size = random.choice([1024, 2048, 4096])  # Larger batches for stability
+            elif algorithm == 'SAC':
+                base_batch_size = random.choice([256, 512, 1024])   # Smaller for SAC
+            else:
+                base_batch_size = random.choice([512, 1024, 2048])
+                
             optimal_batch_size = get_optimal_batch_size(DEVICE, base_batch_size)
             
-            # Increase timesteps for better learning
-            base_timesteps = random.choice([1000000, 1500000, 2000000])  # More training time
+            # 🕰️ EXTENDED TRAINING TIME (Key for Active Trading)
+            base_timesteps = random.choice([4000000, 5000000, 6000000])  # 4-6M timesteps
             optimal_timesteps = get_optimal_timesteps(DEVICE, base_timesteps)
             
             config = {
                 'algorithm': algorithm,
                 'learning_rate': learning_rate,
-                'n_steps': random.choice([2048, 4096, 8192]) if algorithm == 'PPO' else None,  # Focus on proven ranges
-                'batch_size': optimal_batch_size,
                 'gamma': gamma,
                 'lookback_window': random.choice(smart_ranges['lookback_windows']),
-                'transaction_cost': random.choice(smart_ranges['transaction_costs']),
+                'transaction_cost': random.choice([0.00005, 0.0001, 0.00015]),  # Lower transaction costs
                 'timesteps': optimal_timesteps
             }
             
+            # 🎁 ALGORITHM-SPECIFIC ACTIVE TRADING PARAMETERS
+            if algorithm == 'PPO':
+                config.update({
+                    'n_steps': random.choice([2048, 4096, 8192]),
+                    'batch_size': optimal_batch_size,
+                    'n_epochs': random.choice([8, 10, 15]),  # More epochs
+                    'clip_range': random.choice([0.15, 0.2, 0.25]),  # Higher clip for exploration
+                    'ent_coef': random.choice([0.01, 0.02, 0.03]),   # Higher entropy coefficient
+                    'vf_coef': 0.5,
+                    'max_grad_norm': 0.5
+                })
+            elif algorithm == 'SAC':
+                config.update({
+                    'batch_size': optimal_batch_size,
+                    'buffer_size': random.choice([500000, 1000000]),
+                    'learning_starts': random.choice([1000, 2000]),
+                    'tau': random.choice([0.005, 0.01, 0.02]),
+                    'ent_coef': random.choice([0.2, 0.3, 0.5]),  # High entropy for exploration
+                    'target_update_interval': 1,
+                    'gradient_steps': random.choice([1, 2])
+                })
+            elif algorithm == 'A2C':
+                config.update({
+                    'n_steps': random.choice([8, 16, 32]),
+                    'vf_coef': random.choice([0.5, 0.7, 1.0]),
+                    'ent_coef': random.choice([0.01, 0.02, 0.05]),  # Higher entropy
+                    'max_grad_norm': 0.5,
+                    'rms_prop_eps': 1e-5
+                })
+            elif algorithm in ['DDPG', 'TD3']:
+                config.update({
+                    'batch_size': optimal_batch_size,
+                    'buffer_size': random.choice([500000, 1000000]),
+                    'learning_starts': 1000,
+                    'tau': random.choice([0.005, 0.01]),
+                    'noise_type': 'normal',
+                    'noise_std': random.choice([0.1, 0.2, 0.3])  # Exploration noise
+                })
+                
             # NEW: Check against problematic ranges
             if self._is_in_problematic_range(config, problematic_ranges):
                 continue  # Skip this config
@@ -1190,7 +1497,7 @@ class AdaptiveTrainer:
             
             if not is_similar_to_failed:
                 if attempt > 0:
-                    print(f"   ✅ Found optimized config after {attempt + 1} attempts")
+                    print(f"   ✅ Found ACTIVE TRADING optimized config after {attempt + 1} attempts")
                 
                 # NEW: Print performance insights
                 if analysis:
@@ -1198,34 +1505,35 @@ class AdaptiveTrainer:
                 
                 return config
         
-        # Enhanced fallback with MAXIMUM performance parameters
+        # 🏆 ULTIMATE ACTIVE TRADING FALLBACK CONFIG
         print(f"   ⚠️ Could not find unique optimized config after {max_attempts} attempts")
-        print(f"   🔥 Using HIGH-PERFORMANCE fallback config (GPU Optimized)")
+        print(f"   🎯 Using ULTIMATE ACTIVE TRADING fallback config (Maximum Exploration)")
         
-        # Use best known parameters with HIGH-PERFORMANCE defaults
-        best_lr = smart_ranges['learning_rates'][0] if smart_ranges['learning_rates'] else 0.0005  # เพิ่มจาก 0.0003
-        best_gamma = smart_ranges['gammas'][0] if smart_ranges['gammas'] else 0.99
-        best_algo = smart_ranges['algorithms'][0] if smart_ranges['algorithms'] else 'PPO'
-        
-        # HIGH-PERFORMANCE fallback configuration
+        # ULTIMATE ACTIVE TRADING configuration
         fallback_config = {
-            'algorithm': best_algo,
-            'learning_rate': best_lr,
-            'n_steps': 8192 if best_algo == 'PPO' else None,  # เพิ่มจาก 4096 เป็น 8192
-            'batch_size': get_optimal_batch_size(DEVICE, 2048),  # เพิ่ม base จาก 512 เป็น 2048
-            'gamma': best_gamma,
-            'lookback_window': 100,  # คงเดิม เพราะเป็นค่าที่ดีที่สุด
-            'transaction_cost': 0.0002,  # คงเดิม เพราะเป็นค่าที่ดีที่สุด
-            'timesteps': get_optimal_timesteps(DEVICE, 1500000)  # เพิ่มจาก 300,000 เป็น 1,500,000
+            'algorithm': 'SAC',  # SAC for maximum exploration
+            'learning_rate': 0.0005,  # Higher learning rate for active exploration
+            'batch_size': get_optimal_batch_size(DEVICE, 512),
+            'buffer_size': 1000000,
+            'learning_starts': 1000,
+            'gamma': 0.97,  # Shorter-term focus
+            'tau': 0.01,
+            'ent_coef': 0.3,  # High entropy for exploration
+            'target_update_interval': 1,
+            'gradient_steps': 1,
+            'lookback_window': 100,
+            'transaction_cost': 0.00005,  # Very low transaction cost
+            'timesteps': get_optimal_timesteps(DEVICE, 5000000)  # 5M timesteps
         }
         
-        print(f"   🚀 HIGH-PERFORMANCE Fallback Settings:")
-        print(f"      ⚡ Algorithm: {fallback_config['algorithm']}")
-        print(f"      🧠 Learning Rate: {fallback_config['learning_rate']}")
+        print(f"   🎯 ULTIMATE ACTIVE TRADING Fallback Settings:")
+        print(f"      🧠 Algorithm: SAC (Maximum Exploration)")
+        print(f"      ⚡ Learning Rate: {fallback_config['learning_rate']}")
         print(f"      🔥 Batch Size: {fallback_config['batch_size']}")
-        print(f"      📊 N Steps: {fallback_config['n_steps']}")
+        print(f"      � Transaction Cost: {fallback_config['transaction_cost']}")
+        print(f"      🎁 Entropy Coef: {fallback_config['ent_coef']} (High Exploration)")
         print(f"      ⏱️ Timesteps: {fallback_config['timesteps']:,}")
-        print(f"      🎯 Expected GPU Utilization: 80-95%")
+        print(f"      🎯 Focus: Active Trading & Market Exploration")
         
         return fallback_config
     
@@ -1411,7 +1719,7 @@ class AdaptiveTrainer:
                         "activation_fn": torch.nn.ReLU,
                         "ortho_init": False,
                     },
-                    "batch_size": max(hyperparameters['batch_size'], 512)
+                    "batch_size": max(hyperparameters.get('batch_size', 512), 512)
                 }
                 
                 if hyperparameters['algorithm'] == 'PPO':
@@ -1426,8 +1734,8 @@ class AdaptiveTrainer:
         
         if hyperparameters['algorithm'] == 'PPO':
             # Use GPU-optimized batch_size if available, otherwise use hyperparameter
-            batch_size = model_kwargs.get('batch_size', hyperparameters['batch_size'])
-            n_steps = model_kwargs.get('n_steps', hyperparameters['n_steps'])
+            batch_size = model_kwargs.get('batch_size', hyperparameters.get('batch_size', 1024))  # Default fallback
+            n_steps = model_kwargs.get('n_steps', hyperparameters.get('n_steps', 2048))  # Default fallback
             
             # Remove conflicting parameters from model_kwargs
             ppo_kwargs = {k: v for k, v in model_kwargs.items() if k not in ['batch_size', 'n_steps']}
@@ -1445,10 +1753,15 @@ class AdaptiveTrainer:
             )
         elif hyperparameters['algorithm'] == 'SAC':
             # Use GPU-optimized batch_size if available, otherwise use hyperparameter
-            batch_size = model_kwargs.get('batch_size', hyperparameters['batch_size'])
+            batch_size = model_kwargs.get('batch_size', hyperparameters.get('batch_size', 512))  # Default fallback
             
-            # Remove conflicting parameters from model_kwargs
+            # Remove conflicting parameters from model_kwargs and filter SAC-incompatible policy_kwargs
             sac_kwargs = {k: v for k, v in model_kwargs.items() if k not in ['batch_size']}
+            
+            # SAC doesn't support ortho_init parameter - filter it out
+            if 'policy_kwargs' in sac_kwargs and 'ortho_init' in sac_kwargs['policy_kwargs']:
+                sac_policy_kwargs = {k: v for k, v in sac_kwargs['policy_kwargs'].items() if k != 'ortho_init'}
+                sac_kwargs['policy_kwargs'] = sac_policy_kwargs
             
             model = SAC(
                 "MlpPolicy",
@@ -1472,9 +1785,63 @@ class AdaptiveTrainer:
         
         print(f"   🖥️ Using device: {DEVICE}")
         
-        # Train model
+        # ENHANCED: Train model with Early Stopping
         start_time = time.time()
-        model.learn(total_timesteps=hyperparameters['timesteps'])
+        
+        # Implement custom early stopping
+        total_timesteps = hyperparameters['timesteps']
+        validation_interval = total_timesteps // 10  # Check every 10% of training
+        best_validation_score = -float('inf')
+        patience_counter = 0
+        patience_limit = 3  # Stop if no improvement for 3 validation checks
+        
+        print(f"   🛑 Early stopping enabled: patience={patience_limit}, validation_interval={validation_interval:,}")
+        
+        # Train in chunks with validation
+        current_timesteps = 0
+        while current_timesteps < total_timesteps:
+            # Calculate chunk size (remaining or validation interval, whichever is smaller)
+            chunk_size = min(validation_interval, total_timesteps - current_timesteps)
+            
+            # Train for this chunk
+            model.learn(total_timesteps=chunk_size, reset_num_timesteps=False)
+            current_timesteps += chunk_size
+            
+            # Validation check (except for the last chunk)
+            if current_timesteps < total_timesteps:
+                # Quick validation on a small subset
+                val_data = data.tail(2000)  # Small validation set
+                val_env = AdvancedForexEnv(
+                    val_data,
+                    symbol=self.symbol,
+                    lookback_window=hyperparameters['lookback_window'],
+                    transaction_cost=hyperparameters['transaction_cost']
+                )
+                
+                obs, _ = val_env.reset()
+                done = False
+                
+                while not done:
+                    action, _ = model.predict(obs, deterministic=True)
+                    obs, reward, done, _, val_info = val_env.step(action)
+                
+                val_score = self.calculate_score(val_info)
+                
+                print(f"   📊 Validation at {current_timesteps:,} steps: score={val_score:.1f}")
+                
+                # Early stopping check
+                if val_score > best_validation_score:
+                    best_validation_score = val_score
+                    patience_counter = 0
+                    print(f"   ✅ New best validation score: {val_score:.1f}")
+                else:
+                    patience_counter += 1
+                    print(f"   ⏳ No improvement: patience {patience_counter}/{patience_limit}")
+                    
+                    if patience_counter >= patience_limit:
+                        print(f"   🛑 Early stopping triggered at {current_timesteps:,}/{total_timesteps:,} timesteps")
+                        break
+        
         training_time = time.time() - start_time
         
         # Test model
@@ -1548,7 +1915,7 @@ class AdaptiveTrainer:
                         "activation_fn": torch.nn.ReLU,
                         "ortho_init": False,
                     },
-                    "batch_size": min(hyperparameters['batch_size'], 2048),  # Smaller batches for concurrency
+                    "batch_size": min(hyperparameters.get('batch_size', 1024), 2048),  # Smaller batches for concurrency
                 }
                 
                 if hyperparameters['algorithm'] == 'PPO':
@@ -1566,8 +1933,8 @@ class AdaptiveTrainer:
             
             # Create model based on algorithm
             if hyperparameters['algorithm'] == 'PPO':
-                batch_size = model_kwargs.get('batch_size', hyperparameters['batch_size'])
-                n_steps = model_kwargs.get('n_steps', hyperparameters['n_steps'])
+                batch_size = model_kwargs.get('batch_size', hyperparameters.get('batch_size', 1024))  # Default fallback
+                n_steps = model_kwargs.get('n_steps', hyperparameters.get('n_steps', 2048))  # Default fallback
                 
                 ppo_kwargs = {k: v for k, v in model_kwargs.items() if k not in ['batch_size', 'n_steps']}
                 
@@ -1583,8 +1950,13 @@ class AdaptiveTrainer:
                     **{k: v for k, v in ppo_kwargs.items() if k not in ['device', 'verbose']}
                 )
             elif hyperparameters['algorithm'] == 'SAC':
-                batch_size = model_kwargs.get('batch_size', hyperparameters['batch_size'])
+                batch_size = model_kwargs.get('batch_size', hyperparameters.get('batch_size', 512))  # Default fallback
                 sac_kwargs = {k: v for k, v in model_kwargs.items() if k not in ['batch_size']}
+                
+                # SAC doesn't support ortho_init parameter - filter it out
+                if 'policy_kwargs' in sac_kwargs and 'ortho_init' in sac_kwargs['policy_kwargs']:
+                    sac_policy_kwargs = {k: v for k, v in sac_kwargs['policy_kwargs'].items() if k != 'ortho_init'}
+                    sac_kwargs['policy_kwargs'] = sac_policy_kwargs
                 
                 model = SAC(
                     "MlpPolicy",
@@ -2037,6 +2409,10 @@ class AdaptiveTrainer:
 
 def main():
     """Main training function with Async Multi-Model Support"""
+    # Initialize GPU setup first
+    print("🔧 Initializing GPU configuration...")
+    initialize_gpu_setup()
+    
     symbol = 'XAUUSD'
     
     # Load data

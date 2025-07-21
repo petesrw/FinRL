@@ -1,0 +1,183 @@
+[
+  {
+    "attempt": 3,
+    "timestamp": "2025-07-21T12:58:21.480788",
+    "config": {
+      "algorithm": "A2C",
+      "learning_rate": 0.0003,
+      "gamma": 0.98,
+      "lookback_window": 100,
+      "transaction_cost": 5e-05,
+      "timesteps": 2000000,
+      "n_steps": 8,
+      "vf_coef": 0.7,
+      "ent_coef": 0.05,
+      "max_grad_norm": 0.5,
+      "rms_prop_eps": 1e-05
+    },
+    "error": "'batch_size'",
+    "symbol": "XAUUSD"
+  },
+  {
+    "attempt": 4,
+    "timestamp": "2025-07-21T12:58:21.487296",
+    "config": {
+      "algorithm": "A2C",
+      "learning_rate": 0.0003,
+      "gamma": 0.95,
+      "lookback_window": 100,
+      "transaction_cost": 0.00015,
+      "timesteps": 2000000,
+      "n_steps": 32,
+      "vf_coef": 0.5,
+      "ent_coef": 0.02,
+      "max_grad_norm": 0.5,
+      "rms_prop_eps": 1e-05
+    },
+    "error": "'batch_size'",
+    "symbol": "XAUUSD"
+  },
+  {
+    "attempt": 5,
+    "timestamp": "2025-07-21T12:58:21.726745",
+    "config": {
+      "algorithm": "SAC",
+      "learning_rate": 0.0007,
+      "gamma": 0.98,
+      "lookback_window": 100,
+      "transaction_cost": 5e-05,
+      "timesteps": 2000000,
+      "batch_size": 1024,
+      "buffer_size": 1000000,
+      "learning_starts": 1000,
+      "tau": 0.02,
+      "ent_coef": 0.3,
+      "target_update_interval": 1,
+      "gradient_steps": 1
+    },
+    "error": "The algorithm only supports (<class 'gymnasium.spaces.box.Box'>,) as action spaces but Discrete(4) was provided",
+    "symbol": "XAUUSD"
+  },
+  {
+    "attempt": 6,
+    "timestamp": "2025-07-21T12:58:21.734582",
+    "config": {
+      "algorithm": "SAC",
+      "learning_rate": 0.0007,
+      "gamma": 0.95,
+      "lookback_window": 100,
+      "transaction_cost": 5e-05,
+      "timesteps": 2000000,
+      "batch_size": 1024,
+      "buffer_size": 500000,
+      "learning_starts": 2000,
+      "tau": 0.01,
+      "ent_coef": 0.3,
+      "target_update_interval": 1,
+      "gradient_steps": 2
+    },
+    "error": "The algorithm only supports (<class 'gymnasium.spaces.box.Box'>,) as action spaces but Discrete(4) was provided",
+    "symbol": "XAUUSD"
+  },
+  {
+    "attempt": 7,
+    "timestamp": "2025-07-21T12:58:21.947153",
+    "config": {
+      "algorithm": "SAC",
+      "learning_rate": 0.001,
+      "gamma": 0.95,
+      "lookback_window": 100,
+      "transaction_cost": 0.0001,
+      "timesteps": 2000000,
+      "batch_size": 1024,
+      "buffer_size": 1000000,
+      "learning_starts": 1000,
+      "tau": 0.005,
+      "ent_coef": 0.2,
+      "target_update_interval": 1,
+      "gradient_steps": 2
+    },
+    "error": "The algorithm only supports (<class 'gymnasium.spaces.box.Box'>,) as action spaces but Discrete(4) was provided",
+    "symbol": "XAUUSD"
+  },
+  {
+    "attempt": 8,
+    "timestamp": "2025-07-21T12:58:21.953153",
+    "config": {
+      "algorithm": "SAC",
+      "learning_rate": 0.0007,
+      "gamma": 0.99,
+      "lookback_window": 75,
+      "transaction_cost": 0.0001,
+      "timesteps": 2000000,
+      "batch_size": 1024,
+      "buffer_size": 1000000,
+      "learning_starts": 1000,
+      "tau": 0.01,
+      "ent_coef": 0.2,
+      "target_update_interval": 1,
+      "gradient_steps": 1
+    },
+    "error": "The algorithm only supports (<class 'gymnasium.spaces.box.Box'>,) as action spaces but Discrete(4) was provided",
+    "symbol": "XAUUSD"
+  },
+  {
+    "attempt": 10,
+    "timestamp": "2025-07-21T13:54:38.232183",
+    "config": {
+      "algorithm": "A2C",
+      "learning_rate": 0.0008,
+      "gamma": 0.95,
+      "lookback_window": 50,
+      "transaction_cost": 0.0001,
+      "timesteps": 2000000,
+      "n_steps": 8,
+      "vf_coef": 0.5,
+      "ent_coef": 0.05,
+      "max_grad_norm": 0.5,
+      "rms_prop_eps": 1e-05
+    },
+    "error": "'batch_size'",
+    "symbol": "XAUUSD"
+  },
+  {
+    "attempt": 1,
+    "timestamp": "2025-07-21T18:22:14.123587",
+    "config": {
+      "algorithm": "A2C",
+      "learning_rate": 0.0005,
+      "gamma": 0.95,
+      "lookback_window": 75,
+      "transaction_cost": 0.0001,
+      "timesteps": 2000000,
+      "n_steps": 32,
+      "vf_coef": 0.7,
+      "ent_coef": 0.05,
+      "max_grad_norm": 0.5,
+      "rms_prop_eps": 1e-05
+    },
+    "error": "'batch_size'",
+    "symbol": "XAUUSD"
+  },
+  {
+    "attempt": 2,
+    "timestamp": "2025-07-21T18:22:14.133073",
+    "config": {
+      "algorithm": "SAC",
+      "learning_rate": 0.001,
+      "gamma": 0.98,
+      "lookback_window": 100,
+      "transaction_cost": 5e-05,
+      "timesteps": 2000000,
+      "batch_size": 1024,
+      "buffer_size": 500000,
+      "learning_starts": 2000,
+      "tau": 0.005,
+      "ent_coef": 0.2,
+      "target_update_interval": 1,
+      "gradient_steps": 2
+    },
+    "error": "The algorithm only supports (<class 'gymnasium.spaces.box.Box'>,) as action spaces but Discrete(4) was provided",
+    "symbol": "XAUUSD"
+  }
+]
