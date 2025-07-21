@@ -1769,6 +1769,7 @@ class AdaptiveTrainer:
                 learning_rate=hyperparameters['learning_rate'],
                 batch_size=batch_size,
                 gamma=hyperparameters['gamma'],
+                device=DEVICE,
                 **sac_kwargs
             )
         else:  # A2C
@@ -1780,6 +1781,7 @@ class AdaptiveTrainer:
                 env,
                 learning_rate=hyperparameters['learning_rate'],
                 gamma=hyperparameters['gamma'],
+                device=DEVICE,
                 **a2c_kwargs
             )
         
