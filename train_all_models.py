@@ -1294,8 +1294,10 @@ class AdaptiveTrainer:
             activity_score = 50   # Minimum acceptable
         elif total_trades >= 10:
             activity_score = 25   # Poor activity
+        elif total_trades >= 1:
+            activity_score = 5    # Very poor activity
         else:
-            activity_score = 0    # Unacceptable (no trading)
+            activity_score = -50  # MASSIVE PENALTY for no trading at all
             
         # Base scores (0-100 scale) - Reduced weights for traditional metrics
         win_rate_score = win_rate * 100  # Direct conversion to percentage
@@ -1327,17 +1329,21 @@ class AdaptiveTrainer:
         # Add return component (can be negative)
         final_score = main_score + return_component
         
-        # 🚫 TRADING ACTIVITY PENALTIES
-        if total_trades < 10:
-            final_score = min(final_score, 20)  # Heavy penalty for low activity
+        # 🚫 MASSIVE TRADING ACTIVITY PENALTIES
+        if total_trades == 0:
+            final_score = -20  # NEGATIVE score for complete inactivity
+        elif total_trades < 5:
+            final_score = min(final_score, 5)   # Almost zero score for minimal activity
+        elif total_trades < 10:
+            final_score = min(final_score, 15)  # Heavy penalty for low activity
         elif total_trades < 20:
-            final_score = min(final_score, 35)  # Moderate penalty
+            final_score = min(final_score, 30)  # Moderate penalty
         
         # Performance caps (more lenient)
         if win_rate < 0.25 or profit_factor < 0.8 or max_drawdown > 0.60:
             final_score = min(final_score, 25)  # Cap very poor performance
         
-        return max(0, min(final_score, 100))  # Ensure score is between 0-100
+        return max(-50, min(final_score, 100))  # Allow negative scores for non-traders
     
     def get_tier(self, metrics):
         """🎯 ACTIVE TRADING Enhanced Tier System"""
@@ -1372,6 +1378,8 @@ class AdaptiveTrainer:
               max_drawdown <= self.targets['bronze']['max_drawdown'] and
               score >= self.targets['bronze']['score']):
             return 'bronze', '🥉'
+        elif total_trades == 0:
+            return 'inactive', '💤'  # Special tier for non-traders
         else:
             return 'none', '❌'
     
@@ -2419,7 +2427,7 @@ def main():
     print("🔧 Initializing GPU configuration...")
     initialize_gpu_setup()
     
-    symbol = 'XAUUSD'
+    symbol = 'EURUSD'
     
     # Load data
     data_file = f"train_data/{symbol}/{symbol}_M5_real.csv"

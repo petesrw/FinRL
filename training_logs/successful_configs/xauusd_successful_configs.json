@@ -66,5 +66,69 @@
     "score": 25,
     "tier": "none",
     "symbol": "XAUUSD"
+  },
+  {
+    "attempt": 1,
+    "timestamp": "2025-07-22T20:23:56.883629",
+    "config": {
+      "algorithm": "PPO",
+      "learning_rate": 0.0005,
+      "gamma": 0.98,
+      "lookback_window": 75,
+      "transaction_cost": 1e-05,
+      "timesteps": 2000000,
+      "n_steps": 2048,
+      "batch_size": 1024,
+      "n_epochs": 10,
+      "clip_range": 0.15,
+      "ent_coef": 0.08,
+      "vf_coef": 0.5,
+      "max_grad_norm": 0.5
+    },
+    "metrics": {
+      "balance": 10000,
+      "equity": 10000,
+      "total_return": 0,
+      "win_rate": 0,
+      "profit_factor": 0,
+      "max_drawdown": 0,
+      "total_trades": 0,
+      "sharpe_ratio": 0
+    },
+    "score": 10.0,
+    "tier": "none",
+    "symbol": "XAUUSD"
+  },
+  {
+    "attempt": 2,
+    "timestamp": "2025-07-22T20:23:56.890775",
+    "config": {
+      "algorithm": "PPO",
+      "learning_rate": 0.0003,
+      "gamma": 0.98,
+      "lookback_window": 50,
+      "transaction_cost": 2e-05,
+      "timesteps": 2000000,
+      "n_steps": 8192,
+      "batch_size": 1024,
+      "n_epochs": 15,
+      "clip_range": 0.25,
+      "ent_coef": 0.05,
+      "vf_coef": 0.5,
+      "max_grad_norm": 0.5
+    },
+    "metrics": {
+      "balance": 10000,
+      "equity": 10000,
+      "total_return": 0,
+      "win_rate": 0,
+      "profit_factor": 0,
+      "max_drawdown": 0,
+      "total_trades": 0,
+      "sharpe_ratio": 0
+    },
+    "score": 10.0,
+    "tier": "none",
+    "symbol": "XAUUSD"
   }
 ]
