@@ -6190,5 +6190,77 @@
     "training_time": 5043.568417787552,
     "async_batch": 3,
     "model_id": 2
+  },
+  {
+    "attempt": 1,
+    "timestamp": "2025-07-22T18:34:56.639708",
+    "hyperparameters": {
+      "algorithm": "SAC",
+      "learning_rate": 0.0003,
+      "gamma": 0.98,
+      "lookback_window": 50,
+      "transaction_cost": 1e-05,
+      "timesteps": 2000000,
+      "batch_size": 1024,
+      "buffer_size": 1000000,
+      "learning_starts": 1000,
+      "tau": 0.01,
+      "ent_coef": 1.0,
+      "target_update_interval": 1,
+      "gradient_steps": 2
+    },
+    "metrics": {
+      "balance": 9861.825621263491,
+      "equity": 9854.717481263491,
+      "total_return": -0.01452825187365088,
+      "win_rate": 0.45145631067961167,
+      "profit_factor": 0.7705190931379008,
+      "max_drawdown": 0.017338300232557554,
+      "total_trades": 206,
+      "profitable_trades": 93,
+      "sharpe_ratio": -0.34673798386741583,
+      "max_consecutive_losses": 8
+    },
+    "score": 25,
+    "tier": "none",
+    "training_time": 30622.917340755463,
+    "async_batch": 1,
+    "model_id": 1
+  },
+  {
+    "attempt": 2,
+    "timestamp": "2025-07-22T18:34:56.644949",
+    "hyperparameters": {
+      "algorithm": "SAC",
+      "learning_rate": 0.0007,
+      "gamma": 0.95,
+      "lookback_window": 50,
+      "transaction_cost": 3e-05,
+      "timesteps": 2000000,
+      "batch_size": 1024,
+      "buffer_size": 1000000,
+      "learning_starts": 2000,
+      "tau": 0.01,
+      "ent_coef": 1.0,
+      "target_update_interval": 1,
+      "gradient_steps": 2
+    },
+    "metrics": {
+      "balance": 9827.805561683508,
+      "equity": 9827.805561683508,
+      "total_return": -0.017219443831649188,
+      "win_rate": 0.47393364928909953,
+      "profit_factor": 0.7758762742901967,
+      "max_drawdown": 0.020251670186543967,
+      "total_trades": 211,
+      "profitable_trades": 100,
+      "sharpe_ratio": -0.4126263806451488,
+      "max_consecutive_losses": 8
+    },
+    "score": 25,
+    "tier": "none",
+    "training_time": 30410.509508371353,
+    "async_batch": 1,
+    "model_id": 2
   }
 ]

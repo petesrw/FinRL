@@ -1403,15 +1403,16 @@ class AdaptiveTrainer:
         max_attempts = 300
         for attempt in range(max_attempts):
             # 🎯 ACTIVE TRADING ALGORITHM DISTRIBUTION (Enhanced for Exploration)
-            algorithm_choice = random.random()
-            if algorithm_choice < 0.35:  # 35% PPO (reduced from 50%)
-                algorithm = 'PPO'
-            elif algorithm_choice < 0.70:  # 35% SAC (increased for better exploration)
-                algorithm = 'SAC'
-            elif algorithm_choice < 0.85:  # 15% A2C (good for active trading)
-                algorithm = 'A2C'
-            else:  # 15% DDPG/TD3/others
-                algorithm = random.choice(['DDPG', 'TD3'])
+            # algorithm_choice = random.random()
+            # if algorithm_choice < 0.35:  # 35% PPO (reduced from 50%)
+            #     algorithm = 'PPO'
+            # elif algorithm_choice < 0.70:  # 35% SAC (increased for better exploration)
+            #     algorithm = 'SAC'
+            # elif algorithm_choice < 0.85:  # 15% A2C (good for active trading)
+            #     algorithm = 'A2C'
+            # else:  # 15% DDPG/TD3/others
+            #     algorithm = random.choice(['DDPG', 'TD3'])
+            algorithm = 'PPO'
             
             # 🚀 ACTIVE TRADING OPTIMIZED LEARNING RATES
             if algorithm == 'PPO':
