@@ -1,39 +1,42 @@
 [
   {
     "batch_number": 1,
-    "timestamp": "2025-07-21T12:58:21.260134",
+    "timestamp": "2025-07-22T02:11:46.694326",
     "symbol": "XAUUSD",
     "results": [
       {
         "model_id": 1,
         "hyperparameters": {
-          "algorithm": "DDPG",
-          "learning_rate": 0.0003,
-          "gamma": 0.99,
-          "lookback_window": 150,
-          "transaction_cost": 0.0001,
+          "algorithm": "SAC",
+          "learning_rate": 0.0007,
+          "gamma": 0.98,
+          "lookback_window": 50,
+          "transaction_cost": 0.00015,
           "timesteps": 2000000,
           "batch_size": 1024,
-          "buffer_size": 1000000,
-          "learning_starts": 1000,
-          "tau": 0.01,
-          "noise_type": "normal",
-          "noise_std": 0.1
+          "buffer_size": 500000,
+          "learning_starts": 2000,
+          "tau": 0.02,
+          "ent_coef": 0.3,
+          "target_update_interval": 1,
+          "gradient_steps": 1
         },
         "metrics": {
-          "balance": 9999.798442389,
-          "equity": 10026.654922389,
-          "total_return": 0,
-          "win_rate": 0,
-          "profit_factor": 0,
-          "max_drawdown": 0.0036829660292500024,
-          "total_trades": 0,
-          "sharpe_ratio": 0
+          "balance": 9828.50378374201,
+          "equity": 9828.59262374201,
+          "total_return": -0.01714073762579901,
+          "win_rate": 0.3758620689655172,
+          "profit_factor": 0.642744189927272,
+          "max_drawdown": 0.017290347110600787,
+          "total_trades": 290,
+          "profitable_trades": 109,
+          "sharpe_ratio": -1.2832647707163398,
+          "max_consecutive_losses": 10
         },
-        "score": 9.90792584926875,
+        "score": 25,
         "tier": "none",
         "emoji": "\u274c",
-        "training_time": 6331.965805530548,
+        "training_time": 20815.90617775917,
         "success": true,
         "data_size": 25000,
         "test_size": 5000
@@ -41,36 +44,34 @@
       {
         "model_id": 2,
         "hyperparameters": {
-          "algorithm": "PPO",
+          "algorithm": "A2C",
           "learning_rate": 0.0003,
-          "gamma": 0.99,
-          "lookback_window": 150,
-          "transaction_cost": 0.0001,
+          "gamma": 0.97,
+          "lookback_window": 50,
+          "transaction_cost": 5e-05,
           "timesteps": 2000000,
-          "n_steps": 8192,
-          "batch_size": 1024,
-          "n_epochs": 8,
-          "clip_range": 0.15,
-          "ent_coef": 0.02,
-          "vf_coef": 0.5,
-          "max_grad_norm": 0.5
+          "n_steps": 8,
+          "vf_coef": 0.7,
+          "ent_coef": 0.05,
+          "max_grad_norm": 0.5,
+          "rms_prop_eps": 1e-05
         },
         "metrics": {
-          "balance": 9966.551399158001,
-          "equity": 9962.896089158,
-          "total_return": -0.0037103910841999096,
-          "win_rate": 0.3617021276595745,
-          "profit_factor": 0.8594043547364276,
-          "max_drawdown": 0.005107805563756686,
-          "total_trades": 94,
-          "profitable_trades": 34,
-          "sharpe_ratio": -0.2505625135258576,
-          "max_consecutive_losses": 6
+          "balance": 9999.788911463002,
+          "equity": 9999.788911463002,
+          "total_return": -2.1108853699843167e-05,
+          "win_rate": 0.6666666666666666,
+          "profit_factor": 1.2231667785340683,
+          "max_drawdown": 0.00014197729888783131,
+          "total_trades": 6,
+          "profitable_trades": 4,
+          "sharpe_ratio": -0.018709584337454573,
+          "max_consecutive_losses": 1
         },
-        "score": 58.73417491605015,
+        "score": 20,
         "tier": "none",
         "emoji": "\u274c",
-        "training_time": 5279.830617427826,
+        "training_time": 8749.394295215607,
         "success": true,
         "data_size": 25000,
         "test_size": 5000
@@ -81,173 +82,25 @@
   },
   {
     "batch_number": 2,
-    "timestamp": "2025-07-21T12:58:21.493414",
+    "timestamp": "2025-07-22T03:36:41.605194",
     "symbol": "XAUUSD",
     "results": [
       {
         "model_id": 1,
         "hyperparameters": {
-          "algorithm": "A2C",
-          "learning_rate": 0.0003,
-          "gamma": 0.98,
-          "lookback_window": 100,
-          "transaction_cost": 5e-05,
-          "timesteps": 2000000,
-          "n_steps": 8,
-          "vf_coef": 0.7,
-          "ent_coef": 0.05,
-          "max_grad_norm": 0.5,
-          "rms_prop_eps": 1e-05
-        },
-        "error": "'batch_size'",
-        "success": false,
-        "training_time": 0.20705366134643555
-      },
-      {
-        "model_id": 2,
-        "hyperparameters": {
-          "algorithm": "A2C",
-          "learning_rate": 0.0003,
-          "gamma": 0.95,
-          "lookback_window": 100,
-          "transaction_cost": 0.00015,
-          "timesteps": 2000000,
-          "n_steps": 32,
-          "vf_coef": 0.5,
-          "ent_coef": 0.02,
-          "max_grad_norm": 0.5,
-          "rms_prop_eps": 1e-05
-        },
-        "error": "'batch_size'",
-        "success": false,
-        "training_time": 0.2080540657043457
-      }
-    ],
-    "total_models": 2,
-    "successful_models": 0
-  },
-  {
-    "batch_number": 3,
-    "timestamp": "2025-07-21T12:58:21.741852",
-    "symbol": "XAUUSD",
-    "results": [
-      {
-        "model_id": 1,
-        "hyperparameters": {
-          "algorithm": "SAC",
-          "learning_rate": 0.0007,
-          "gamma": 0.98,
-          "lookback_window": 100,
-          "transaction_cost": 5e-05,
-          "timesteps": 2000000,
-          "batch_size": 1024,
-          "buffer_size": 1000000,
-          "learning_starts": 1000,
-          "tau": 0.02,
-          "ent_coef": 0.3,
-          "target_update_interval": 1,
-          "gradient_steps": 1
-        },
-        "error": "The algorithm only supports (<class 'gymnasium.spaces.box.Box'>,) as action spaces but Discrete(4) was provided",
-        "success": false,
-        "training_time": 0.12809300422668457
-      },
-      {
-        "model_id": 2,
-        "hyperparameters": {
-          "algorithm": "SAC",
-          "learning_rate": 0.0007,
-          "gamma": 0.95,
-          "lookback_window": 100,
-          "transaction_cost": 5e-05,
-          "timesteps": 2000000,
-          "batch_size": 1024,
-          "buffer_size": 500000,
-          "learning_starts": 2000,
-          "tau": 0.01,
-          "ent_coef": 0.3,
-          "target_update_interval": 1,
-          "gradient_steps": 2
-        },
-        "error": "The algorithm only supports (<class 'gymnasium.spaces.box.Box'>,) as action spaces but Discrete(4) was provided",
-        "success": false,
-        "training_time": 0.21515583992004395
-      }
-    ],
-    "total_models": 2,
-    "successful_models": 0
-  },
-  {
-    "batch_number": 4,
-    "timestamp": "2025-07-21T12:58:21.959374",
-    "symbol": "XAUUSD",
-    "results": [
-      {
-        "model_id": 1,
-        "hyperparameters": {
-          "algorithm": "SAC",
-          "learning_rate": 0.001,
-          "gamma": 0.95,
-          "lookback_window": 100,
-          "transaction_cost": 0.0001,
-          "timesteps": 2000000,
-          "batch_size": 1024,
-          "buffer_size": 1000000,
-          "learning_starts": 1000,
-          "tau": 0.005,
-          "ent_coef": 0.2,
-          "target_update_interval": 1,
-          "gradient_steps": 2
-        },
-        "error": "The algorithm only supports (<class 'gymnasium.spaces.box.Box'>,) as action spaces but Discrete(4) was provided",
-        "success": false,
-        "training_time": 0.18620586395263672
-      },
-      {
-        "model_id": 2,
-        "hyperparameters": {
-          "algorithm": "SAC",
-          "learning_rate": 0.0007,
+          "algorithm": "PPO",
+          "learning_rate": 0.0002,
           "gamma": 0.99,
-          "lookback_window": 75,
+          "lookback_window": 50,
           "transaction_cost": 0.0001,
           "timesteps": 2000000,
+          "n_steps": 2048,
           "batch_size": 1024,
-          "buffer_size": 1000000,
-          "learning_starts": 1000,
-          "tau": 0.01,
-          "ent_coef": 0.2,
-          "target_update_interval": 1,
-          "gradient_steps": 1
-        },
-        "error": "The algorithm only supports (<class 'gymnasium.spaces.box.Box'>,) as action spaces but Discrete(4) was provided",
-        "success": false,
-        "training_time": 0.11083507537841797
-      }
-    ],
-    "total_models": 2,
-    "successful_models": 0
-  },
-  {
-    "batch_number": 5,
-    "timestamp": "2025-07-21T13:54:38.238690",
-    "symbol": "XAUUSD",
-    "results": [
-      {
-        "model_id": 2,
-        "hyperparameters": {
-          "algorithm": "TD3",
-          "learning_rate": 0.0003,
-          "gamma": 0.98,
-          "lookback_window": 150,
-          "transaction_cost": 5e-05,
-          "timesteps": 2000000,
-          "batch_size": 1024,
-          "buffer_size": 500000,
-          "learning_starts": 1000,
-          "tau": 0.01,
-          "noise_type": "normal",
-          "noise_std": 0.1
+          "n_epochs": 15,
+          "clip_range": 0.15,
+          "ent_coef": 0.01,
+          "vf_coef": 0.5,
+          "max_grad_norm": 0.5
         },
         "metrics": {
           "balance": 10000,
@@ -262,69 +115,7 @@
         "score": 10.0,
         "tier": "none",
         "emoji": "\u274c",
-        "training_time": 3376.1630334854126,
-        "success": true,
-        "data_size": 25000,
-        "test_size": 5000
-      },
-      {
-        "model_id": 1,
-        "hyperparameters": {
-          "algorithm": "A2C",
-          "learning_rate": 0.0008,
-          "gamma": 0.95,
-          "lookback_window": 50,
-          "transaction_cost": 0.0001,
-          "timesteps": 2000000,
-          "n_steps": 8,
-          "vf_coef": 0.5,
-          "ent_coef": 0.05,
-          "max_grad_norm": 0.5,
-          "rms_prop_eps": 1e-05
-        },
-        "error": "'batch_size'",
-        "success": false,
-        "training_time": 0.10389161109924316
-      }
-    ],
-    "total_models": 2,
-    "successful_models": 1
-  },
-  {
-    "batch_number": 6,
-    "timestamp": "2025-07-21T15:41:57.448621",
-    "symbol": "XAUUSD",
-    "results": [
-      {
-        "model_id": 1,
-        "hyperparameters": {
-          "algorithm": "TD3",
-          "learning_rate": 0.0003,
-          "gamma": 0.95,
-          "lookback_window": 150,
-          "transaction_cost": 0.00015,
-          "timesteps": 2000000,
-          "batch_size": 1024,
-          "buffer_size": 1000000,
-          "learning_starts": 1000,
-          "tau": 0.01,
-          "noise_type": "normal",
-          "noise_std": 0.1
-        },
-        "metrics": {
-          "balance": 9999.6976635835,
-          "equity": 9972.8411835835,
-          "total_return": 0,
-          "win_rate": 0,
-          "profit_factor": 0,
-          "max_drawdown": 0.00648234539435037,
-          "total_trades": 0,
-          "sharpe_ratio": 0
-        },
-        "score": 9.83794136514124,
-        "tier": "none",
-        "emoji": "\u274c",
-        "training_time": 6439.094310760498,
+        "training_time": 5092.5040283203125,
         "success": true,
         "data_size": 25000,
         "test_size": 5000
@@ -333,35 +124,35 @@
         "model_id": 2,
         "hyperparameters": {
           "algorithm": "PPO",
-          "learning_rate": 0.0007,
-          "gamma": 0.95,
+          "learning_rate": 0.0003,
+          "gamma": 0.97,
           "lookback_window": 100,
-          "transaction_cost": 5e-05,
+          "transaction_cost": 0.0001,
           "timesteps": 2000000,
-          "n_steps": 2048,
+          "n_steps": 8192,
           "batch_size": 1024,
-          "n_epochs": 15,
-          "clip_range": 0.15,
+          "n_epochs": 8,
+          "clip_range": 0.25,
           "ent_coef": 0.01,
           "vf_coef": 0.5,
           "max_grad_norm": 0.5
         },
         "metrics": {
-          "balance": 9914.618910585017,
-          "equity": 9918.885210585016,
-          "total_return": -0.008111478941498353,
-          "win_rate": 0.421875,
-          "profit_factor": 0.5555867833893341,
-          "max_drawdown": 0.008929746262410823,
-          "total_trades": 192,
-          "profitable_trades": 81,
-          "sharpe_ratio": -0.6499640691226717,
+          "balance": 9944.110025272998,
+          "equity": 9945.579495272998,
+          "total_return": -0.005442050472700248,
+          "win_rate": 0.4788732394366197,
+          "profit_factor": 0.8105907267378777,
+          "max_drawdown": 0.0064775350284879355,
+          "total_trades": 142,
+          "profitable_trades": 68,
+          "sharpe_ratio": -0.4463110804031215,
           "max_consecutive_losses": 8
         },
-        "score": 25,
+        "score": 60.391134955602936,
         "tier": "none",
         "emoji": "\u274c",
-        "training_time": 5361.19405579567,
+        "training_time": 5094.78698348999,
         "success": true,
         "data_size": 25000,
         "test_size": 5000
@@ -371,52 +162,84 @@
     "successful_models": 2
   },
   {
-    "batch_number": 1,
-    "timestamp": "2025-07-21T18:22:14.137046",
+    "batch_number": 3,
+    "timestamp": "2025-07-22T09:47:00.322538",
     "symbol": "XAUUSD",
     "results": [
       {
         "model_id": 1,
         "hyperparameters": {
-          "algorithm": "A2C",
+          "algorithm": "SAC",
           "learning_rate": 0.0005,
-          "gamma": 0.95,
-          "lookback_window": 75,
+          "gamma": 0.98,
+          "lookback_window": 150,
           "transaction_cost": 0.0001,
           "timesteps": 2000000,
-          "n_steps": 32,
-          "vf_coef": 0.7,
-          "ent_coef": 0.05,
-          "max_grad_norm": 0.5,
-          "rms_prop_eps": 1e-05
+          "batch_size": 1024,
+          "buffer_size": 1000000,
+          "learning_starts": 2000,
+          "tau": 0.02,
+          "ent_coef": 0.3,
+          "target_update_interval": 1,
+          "gradient_steps": 1
         },
-        "error": "'batch_size'",
-        "success": false,
-        "training_time": 0.18381214141845703
+        "metrics": {
+          "balance": 9876.4667405,
+          "equity": 9876.4667405,
+          "total_return": -0.012353325949999999,
+          "win_rate": 0.3674418604651163,
+          "profit_factor": 0.5893938042938801,
+          "max_drawdown": 0.01247945290280004,
+          "total_trades": 215,
+          "profitable_trades": 79,
+          "sharpe_ratio": -0.8881038334237393,
+          "max_consecutive_losses": 9
+        },
+        "score": 25,
+        "tier": "none",
+        "emoji": "\u274c",
+        "training_time": 22218.099057912827,
+        "success": true,
+        "data_size": 25000,
+        "test_size": 5000
       },
       {
         "model_id": 2,
         "hyperparameters": {
-          "algorithm": "SAC",
-          "learning_rate": 0.001,
-          "gamma": 0.98,
-          "lookback_window": 100,
+          "algorithm": "PPO",
+          "learning_rate": 0.0002,
+          "gamma": 0.97,
+          "lookback_window": 50,
           "transaction_cost": 5e-05,
           "timesteps": 2000000,
+          "n_steps": 8192,
           "batch_size": 1024,
-          "buffer_size": 500000,
-          "learning_starts": 2000,
-          "tau": 0.005,
-          "ent_coef": 0.2,
-          "target_update_interval": 1,
-          "gradient_steps": 2
+          "n_epochs": 8,
+          "clip_range": 0.25,
+          "ent_coef": 0.02,
+          "vf_coef": 0.5,
+          "max_grad_norm": 0.5
         },
-        "error": "The algorithm only supports (<class 'gymnasium.spaces.box.Box'>,) as action spaces but Discrete(4) was provided",
-        "success": false,
-        "training_time": 0.11758112907409668
+        "metrics": {
+          "balance": 9999.8995499615,
+          "equity": 9979.618409961498,
+          "total_return": 0,
+          "win_rate": 0,
+          "profit_factor": 0,
+          "max_drawdown": 0.0064779578799700165,
+          "total_trades": 0,
+          "sharpe_ratio": 0
+        },
+        "score": 9.83805105300075,
+        "tier": "none",
+        "emoji": "\u274c",
+        "training_time": 5043.568417787552,
+        "success": true,
+        "data_size": 25000,
+        "test_size": 5000
       }
     ],
     "total_models": 2,
-    "successful_models": 0
+    "successful_models": 2
   }
 ]

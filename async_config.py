@@ -47,14 +47,14 @@ class AsyncTrainingConfig:
     def set_optimal_config(self):
         """Set optimal configuration based on hardware"""
         
-        # RTX 5060 TI Specific Optimization - BALANCED GPU UTILIZATION
+        # RTX 5060 TI Specific Optimization - ENHANCED 4-MODEL CONCURRENT TRAINING
         if "RTX 5060" in self.gpu_name or "RTX 50" in self.gpu_name:
-            self.max_concurrent_models = 2  # ลดจาก 8 เป็น 2 เพื่อหลีกเลี่ยง memory conflict
-            self.memory_per_model = 0.45  # ลดจาก 0.85 เป็น 0.45 (45% per model × 2 = 90%)
-            self.batch_size_multiplier = 32  # เพิ่มจาก 24 เป็น 32
-            self.timesteps_multiplier = 10   # เพิ่มจาก 8 เป็น 10
-            self.neural_network_size = "ultra"  # [32768, 16384, 8192, 4096, 2048, 1024]
-            self.gpu_memory_fraction = 0.95  # ลดจาก 0.98 เป็น 0.95
+            self.max_concurrent_models = 4  # เพิ่มจาก 2 เป็น 4 เพื่อเทรน 4 models พร้อมกัน
+            self.memory_per_model = 0.25  # ลดจาก 0.45 เป็น 0.25 (25% per model × 4 = 100%)
+            self.batch_size_multiplier = 32  # คงเดิม
+            self.timesteps_multiplier = 10   # คงเดิม
+            self.neural_network_size = "ultra"  # คงเดิม
+            self.gpu_memory_fraction = 0.95  # คงเดิม
             
         # High-end GPUs (16GB+) - OPTIMIZED FOR RTX 5060 TI with sm_120 (Blackwell)  
         elif self.gpu_memory_gb >= 16:
@@ -96,9 +96,9 @@ class AsyncTrainingConfig:
         self.cpu_threads_training = min(16, max(4, self.cpu_cores))
         self.cpu_threads_interop = min(8, max(2, self.cpu_cores // 2))
         
-        # Async Batch Configuration - OPTIMIZED for GPU UTILIZATION
-        self.default_batch_size = min(self.max_concurrent_models, 2)  # ลดจาก 4 เป็น 2
-        self.max_batch_size = min(3, self.max_concurrent_models)      # ลดจาก 8 เป็น 3
+        # Async Batch Configuration - OPTIMIZED FOR 4-MODEL CONCURRENT TRAINING
+        self.default_batch_size = min(self.max_concurrent_models, 4)  # เพิ่มจาก 2 เป็น 4
+        self.max_batch_size = min(4, self.max_concurrent_models)      # เพิ่มจาก 3 เป็น 4
         
         # Training Timeouts (seconds)
         self.model_timeout = 900   # เพิ่มจาก 300 เป็น 900 (15 minutes)

@@ -425,7 +425,7 @@ class AdvancedForexEnv(gym.Env):
     """
     
     def __init__(self, data, symbol='XAUUSD', initial_balance=10000, lookback_window=50, 
-                 transaction_cost=0.0001, max_position_size=1.0):
+                 transaction_cost=0.0001, max_position_size=3.0):  # เพิ่มจาก 1.0 เป็น 3.0 เพื่อให้การเทรดมีผลมากขึ้น
         super().__init__()
         
         self.data = data.reset_index(drop=True)
@@ -674,21 +674,23 @@ class AdvancedForexEnv(gym.Env):
         if hasattr(self, '_last_action_reward'):
             reward += self._last_action_reward * 0.2  # Reduced from 0.3 to 0.2
         
-        # 2. 🎁 TRADING ACTIVITY INCENTIVE (Core Fix for Low Trading Issue)
+        # 2. 🎁 MASSIVE TRADING ACTIVITY INCENTIVE (Core Fix for Low Trading Issue)
         if self.current_step > self.lookback_window + 50:  # After warm-up
             progress = (self.current_step - self.lookback_window) / (self.max_steps - self.lookback_window)
-            expected_trades = max(20, int(50 * progress))  # Expect 20-50 trades by end
+            expected_trades = max(50, int(200 * progress))  # Expect 50-200 trades by end (4x increase)
             
             if self.total_trades >= expected_trades:
-                reward += 3.0  # Strong reward for active trading
+                reward += 10.0  # MASSIVE reward for active trading (3x increase)
             elif self.total_trades >= expected_trades * 0.7:
-                reward += 1.5  # Medium reward
+                reward += 6.0  # Strong reward (4x increase)
             elif self.total_trades >= expected_trades * 0.5:
-                reward += 0.5  # Small reward
+                reward += 3.0  # Medium reward (6x increase)
+            elif self.total_trades >= expected_trades * 0.3:
+                reward += 0.0  # Neutral zone
             else:
-                reward -= 2.0  # Penalty for insufficient trading
+                reward -= 10.0  # HEAVY penalty for insufficient trading (5x increase)
         
-        # 3. 🚫 CONSECUTIVE HOLD PENALTY (Anti-Hold Strategy)
+        # 3. 🚫 MASSIVE CONSECUTIVE HOLD PENALTY (Anti-Hold Strategy)
         # Track consecutive non-trading steps
         if not hasattr(self, 'consecutive_holds'):
             self.consecutive_holds = 0
@@ -698,10 +700,10 @@ class AdvancedForexEnv(gym.Env):
         else:
             self.consecutive_holds = 0
             
-        if self.consecutive_holds > 30:  # Don't hold for more than 30 steps
-            reward -= 1.5  # Increasing penalty for excessive holding
-        elif self.consecutive_holds > 20:
-            reward -= 0.5
+        if self.consecutive_holds > 20:  # Don't hold for more than 20 steps (reduced from 30)
+            reward -= 5.0  # HEAVY penalty for excessive holding (3x increase)
+        elif self.consecutive_holds > 10:  # More aggressive (reduced from 20)
+            reward -= 2.0  # Medium penalty (4x increase)
             
         # 4. 🎯 MARKET OPPORTUNITY REWARD (Encourage trading during volatility)
         if self.current_step > self.lookback_window + 1:
@@ -1441,7 +1443,7 @@ class AdaptiveTrainer:
                 'learning_rate': learning_rate,
                 'gamma': gamma,
                 'lookback_window': random.choice(smart_ranges['lookback_windows']),
-                'transaction_cost': random.choice([0.00005, 0.0001, 0.00015]),  # Lower transaction costs
+                'transaction_cost': random.choice([0.00001, 0.00002, 0.00003]),  # MUCH lower transaction costs (10x reduction)
                 'timesteps': optimal_timesteps
             }
             
@@ -1452,7 +1454,7 @@ class AdaptiveTrainer:
                     'batch_size': optimal_batch_size,
                     'n_epochs': random.choice([8, 10, 15]),  # More epochs
                     'clip_range': random.choice([0.15, 0.2, 0.25]),  # Higher clip for exploration
-                    'ent_coef': random.choice([0.01, 0.02, 0.03]),   # Higher entropy coefficient
+                    'ent_coef': random.choice([0.05, 0.08, 0.1]),   # MUCH higher entropy coefficient for more exploration
                     'vf_coef': 0.5,
                     'max_grad_norm': 0.5
                 })
@@ -1462,7 +1464,7 @@ class AdaptiveTrainer:
                     'buffer_size': random.choice([500000, 1000000]),
                     'learning_starts': random.choice([1000, 2000]),
                     'tau': random.choice([0.005, 0.01, 0.02]),
-                    'ent_coef': random.choice([0.2, 0.3, 0.5]),  # High entropy for exploration
+                    'ent_coef': random.choice([0.8, 1.0, 1.2]),  # VERY high entropy for maximum exploration
                     'target_update_interval': 1,
                     'gradient_steps': random.choice([1, 2])
                 })
@@ -1470,7 +1472,7 @@ class AdaptiveTrainer:
                 config.update({
                     'n_steps': random.choice([8, 16, 32]),
                     'vf_coef': random.choice([0.5, 0.7, 1.0]),
-                    'ent_coef': random.choice([0.01, 0.02, 0.05]),  # Higher entropy
+                    'ent_coef': random.choice([0.05, 0.1, 0.15]),  # MUCH higher entropy for A2C exploration
                     'max_grad_norm': 0.5,
                     'rms_prop_eps': 1e-5
                 })
@@ -1512,17 +1514,17 @@ class AdaptiveTrainer:
         # ULTIMATE ACTIVE TRADING configuration
         fallback_config = {
             'algorithm': 'SAC',  # SAC for maximum exploration
-            'learning_rate': 0.0005,  # Higher learning rate for active exploration
+            'learning_rate': 0.001,  # MUCH higher learning rate for aggressive exploration
             'batch_size': get_optimal_batch_size(DEVICE, 512),
             'buffer_size': 1000000,
             'learning_starts': 1000,
-            'gamma': 0.97,  # Shorter-term focus
+            'gamma': 0.95,  # Even shorter-term focus for active trading
             'tau': 0.01,
-            'ent_coef': 0.3,  # High entropy for exploration
+            'ent_coef': 1.5,  # VERY high entropy for maximum exploration
             'target_update_interval': 1,
             'gradient_steps': 1,
             'lookback_window': 100,
-            'transaction_cost': 0.00005,  # Very low transaction cost
+            'transaction_cost': 0.00001,  # EXTREMELY low transaction cost (10x reduction)
             'timesteps': get_optimal_timesteps(DEVICE, 5000000)  # 5M timesteps
         }
         
@@ -1531,9 +1533,10 @@ class AdaptiveTrainer:
         print(f"      ⚡ Learning Rate: {fallback_config['learning_rate']}")
         print(f"      🔥 Batch Size: {fallback_config['batch_size']}")
         print(f"      � Transaction Cost: {fallback_config['transaction_cost']}")
-        print(f"      🎁 Entropy Coef: {fallback_config['ent_coef']} (High Exploration)")
+        print(f"      🎁 Entropy Coef: {fallback_config['ent_coef']} (MAXIMUM Exploration)")
         print(f"      ⏱️ Timesteps: {fallback_config['timesteps']:,}")
-        print(f"      🎯 Focus: Active Trading & Market Exploration")
+        print(f"      🎯 Focus: AGGRESSIVE Active Trading & Market Exploration")
+        print(f"      💰 Position Size: 3.0x (Triple Impact)")
         
         return fallback_config
     
