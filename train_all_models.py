@@ -425,7 +425,8 @@ class AdvancedForexEnv(gym.Env):
     """
     
     def __init__(self, data, symbol='XAUUSD', initial_balance=10000, lookback_window=50, 
-                 transaction_cost=0.0001, max_position_size=3.0):  # เพิ่มจาก 1.0 เป็น 3.0 เพื่อให้การเทรดมีผลมากขึ้น
+                 transaction_cost=0.0001, max_position_size=5.0,  # เพิ่มจาก 3.0 เป็น 5.0 เพื่อกำไรที่ชัดเจนขึ้น
+                 stop_loss_pct=0.008, take_profit_pct=0.024):  # SL: 0.8%, TP: 2.4% (Risk:Reward = 1:3)
         super().__init__()
         
         self.data = data.reset_index(drop=True)
@@ -434,6 +435,8 @@ class AdvancedForexEnv(gym.Env):
         self.lookback_window = lookback_window
         self.transaction_cost = transaction_cost
         self.max_position_size = max_position_size
+        self.stop_loss_pct = stop_loss_pct
+        self.take_profit_pct = take_profit_pct
         
         # Calculate advanced indicators
         self._calculate_indicators()
@@ -582,24 +585,49 @@ class AdvancedForexEnv(gym.Env):
         else:
             discrete_action = 3  # Close
         
-        # Execute discrete action
+        # Execute discrete action with enhanced position sizing
         if discrete_action == 1 and self.position == 0:  # Buy
             self.position = 1
-            self.position_size = self.max_position_size
+            # Dynamic position sizing based on confidence (สมมุติ action_value เป็น confidence)
+            confidence = abs(action_value)  # 0.5-1.0 range
+            dynamic_size = min(3.0 + (confidence - 0.5) * 4.0, self.max_position_size)  # 3.0-5.0x based on confidence
+            self.position_size = dynamic_size
             self.entry_price = current_price
             # Transaction cost
             cost = current_price * self.position_size * self.transaction_cost
             self.balance -= cost
             
+        # 🎯 AUTOMATIC STOP LOSS & TAKE PROFIT CHECK (Before Action Execution)
+        auto_close_triggered = False
+        if self.position != 0:
+            current_return = (current_price - self.entry_price) / self.entry_price * self.position
+            
+            # Stop Loss Check (0.8% loss limit)
+            if abs(current_return) >= self.stop_loss_pct:
+                if (self.position > 0 and current_return <= -self.stop_loss_pct) or \
+                   (self.position < 0 and current_return <= -self.stop_loss_pct):
+                    discrete_action = 3  # Force close position (Stop Loss)
+                    auto_close_triggered = True
+                    
+            # Take Profit Check (2.4% profit target - 1:3 Risk:Reward)
+            elif current_return >= self.take_profit_pct:
+                discrete_action = 3  # Force close position (Take Profit)
+                auto_close_triggered = True
+        
         elif discrete_action == 2 and self.position == 0:  # Sell (Short)
             self.position = -1
-            self.position_size = self.max_position_size
+            # Dynamic position sizing based on confidence
+            confidence = abs(action_value)  # 0.5-1.0 range
+            dynamic_size = min(3.0 + (confidence - 0.5) * 4.0, self.max_position_size)  # 3.0-5.0x based on confidence
+            self.position_size = dynamic_size
             self.entry_price = current_price
             # Transaction cost
             cost = current_price * self.position_size * self.transaction_cost
             self.balance -= cost
             
-        elif discrete_action == 3 and self.position != 0:  # Close position
+        elif discrete_action == 3 and self.position != 0:  # Close position (Manual or Auto)
+            close_reason = "Auto SL/TP" if auto_close_triggered else "Manual Close"
+            
             if self.position == 1:  # Close long
                 profit = (current_price - self.entry_price) * self.position_size
             else:  # Close short
@@ -611,12 +639,15 @@ class AdvancedForexEnv(gym.Env):
             
             self.balance += profit
             
-            # Track trade
+            # Track trade with enhanced info
             self.trades.append({
                 'entry_price': self.entry_price,
                 'exit_price': current_price,
                 'position': self.position,
+                'position_size': self.position_size,
                 'profit': profit,
+                'profit_pct': profit / (self.entry_price * self.position_size),
+                'close_reason': close_reason,
                 'timestamp': self.data.iloc[self.current_step]['timestamp']
             })
             
@@ -625,27 +656,40 @@ class AdvancedForexEnv(gym.Env):
                 self.total_profit += profit
                 self.consecutive_losses = 0
                 
-                # Enhanced reward for profitable trades based on size
-                profit_ratio = profit / (self.entry_price * self.position_size * self.transaction_cost * 10)
-                if profit_ratio > 3:  # Very good profit (3x transaction cost)
-                    self._last_action_reward = 5
-                elif profit_ratio > 1:  # Good profit
+                # 🎯 ENHANCED REWARD SYSTEM - Focus on Risk-Reward Ratio
+                profit_pct = profit / (self.entry_price * self.position_size)
+                
+                # Reward based on actual profit percentage (not just transaction cost multiples)
+                if profit_pct >= 0.02:  # 2%+ profit (Excellent!)
+                    self._last_action_reward = 15 if close_reason == "Auto SL/TP" else 12  # Extra bonus for TP hits
+                elif profit_pct >= 0.015:  # 1.5%+ profit (Very Good)
+                    self._last_action_reward = 10 if close_reason == "Auto SL/TP" else 8
+                elif profit_pct >= 0.01:  # 1%+ profit (Good)
+                    self._last_action_reward = 6 if close_reason == "Auto SL/TP" else 5
+                elif profit_pct >= 0.005:  # 0.5%+ profit (Okay)
                     self._last_action_reward = 3
-                else:  # Small profit
+                else:  # Small profit (<0.5%)
                     self._last_action_reward = 1
+                    
             else:
                 self.total_loss += abs(profit)
                 self.consecutive_losses += 1
                 self.max_consecutive_losses = max(self.max_consecutive_losses, self.consecutive_losses)
                 
-                # Enhanced penalty for losses based on size
-                loss_ratio = abs(profit) / (self.entry_price * self.position_size * self.transaction_cost * 10)
-                if loss_ratio > 5:  # Very large loss
-                    self._last_action_reward = -8
-                elif loss_ratio > 2:  # Large loss
-                    self._last_action_reward = -4
-                else:  # Small loss
+                # 🎯 ENHANCED PENALTY SYSTEM - Reward good risk management
+                loss_pct = abs(profit) / (self.entry_price * self.position_size)
+                
+                # Less penalty for losses that hit stop loss (good risk management)
+                if close_reason == "Auto SL/TP" and loss_pct <= 0.01:  # SL hit with <1% loss
+                    self._last_action_reward = -2  # Small penalty for good risk management
+                elif loss_pct <= 0.005:  # <0.5% loss
                     self._last_action_reward = -1
+                elif loss_pct <= 0.01:  # <1% loss
+                    self._last_action_reward = -3
+                elif loss_pct <= 0.02:  # <2% loss
+                    self._last_action_reward = -6
+                else:  # >2% loss (Poor risk management)
+                    self._last_action_reward = -12
             
             self.total_trades += 1
             self.position = 0
@@ -674,12 +718,17 @@ class AdvancedForexEnv(gym.Env):
         if hasattr(self, '_last_action_reward'):
             reward += self._last_action_reward * 0.2  # Reduced from 0.3 to 0.2
         
-        # 2. 🎁 MASSIVE TRADING ACTIVITY INCENTIVE (Core Fix for Low Trading Issue)
+        # 2. � ENHANCED TRADING ACTIVITY INCENTIVE (Stricter Penalties)
         if self.current_step > self.lookback_window + 50:  # After warm-up
             progress = (self.current_step - self.lookback_window) / (self.max_steps - self.lookback_window)
             expected_trades = max(50, int(200 * progress))  # Expect 50-200 trades by end (4x increase)
             
-            if self.total_trades >= expected_trades:
+            # Immediate negative rewards for insufficient trading
+            if self.total_trades == 0 and progress > 0.2:  # If 20% through episode with no trades
+                reward -= 50.0  # Heavy immediate penalty
+            elif self.total_trades < 5 and progress > 0.5:  # If halfway through with <5 trades
+                reward -= 30.0  # Strong penalty
+            elif self.total_trades >= expected_trades:
                 reward += 10.0  # MASSIVE reward for active trading (3x increase)
             elif self.total_trades >= expected_trades * 0.7:
                 reward += 6.0  # Strong reward (4x increase)
@@ -717,18 +766,37 @@ class AdvancedForexEnv(gym.Env):
             elif price_change > 0.0005 and (not hasattr(self, '_last_action_reward') or self._last_action_reward == 0):
                 reward -= 0.5  # Small penalty for missing opportunities
         
-        # 5. BALANCED Profit Factor rewards (less aggressive than before)
+        # 5. 🎯 ENHANCED RISK-REWARD RATIO REWARD SYSTEM (NEW!)
         if self.total_trades >= 3:
             current_profit_factor = self.total_profit / max(self.total_loss, 1e-8)
             
+            # Calculate average profit per winning trade vs average loss per losing trade
+            if self.profitable_trades > 0 and (self.total_trades - self.profitable_trades) > 0:
+                avg_win = self.total_profit / self.profitable_trades
+                avg_loss = self.total_loss / (self.total_trades - self.profitable_trades)
+                risk_reward_ratio = avg_win / max(avg_loss, 1e-8)
+                
+                # Reward excellent risk-reward management
+                if risk_reward_ratio >= 3.0:  # 1:3 or better risk-reward
+                    reward += 15  # Massive bonus for excellent R:R
+                elif risk_reward_ratio >= 2.0:  # 1:2 risk-reward
+                    reward += 10  # Strong bonus
+                elif risk_reward_ratio >= 1.5:  # 1:1.5 risk-reward
+                    reward += 6   # Good bonus
+                elif risk_reward_ratio >= 1.0:  # Break-even R:R
+                    reward += 2   # Small bonus
+                else:  # Poor R:R
+                    reward -= 5   # Penalty for poor risk management
+            
+            # Traditional profit factor (reduced weight)
             if current_profit_factor > 2.0:
-                reward += 8   # Reduced from 12
+                reward += 4   # Reduced from 8
             elif current_profit_factor > 1.5:
-                reward += 6   # Reduced from 8
+                reward += 3   # Reduced from 6
             elif current_profit_factor > 1.2:
-                reward += 4   # Reduced from 5
+                reward += 2   # Reduced from 4
             elif current_profit_factor > 1.0:
-                reward += 2   # Same
+                reward += 1   # Reduced from 2
             elif current_profit_factor > 0.8:
                 reward += 0   # Neutral zone
             elif current_profit_factor > 0.6:
@@ -804,17 +872,19 @@ class AdvancedForexEnv(gym.Env):
             # 🎯 ACTIVE TRADING ENHANCED FINAL REWARD
             final_reward = 0
             
-            # 1. 🎁 TRADING ACTIVITY BONUS (Primary Focus)
-            if self.total_trades >= 50:
+            # 1. 🎁 TRADING ACTIVITY BONUS (Primary Focus) - STRICT NEGATIVE REWARDS
+            if self.total_trades == 0:
+                final_reward -= 100  # IMMEDIATE negative return for zero trades
+            elif self.total_trades < 10:
+                final_reward -= 50   # IMMEDIATE negative return for insufficient trades
+            elif self.total_trades >= 50:
                 final_reward += 25  # Major bonus for high activity
             elif self.total_trades >= 30:
                 final_reward += 15  # Good activity bonus
             elif self.total_trades >= 20:
                 final_reward += 10  # Decent activity bonus
-            elif self.total_trades >= 10:
-                final_reward += 5   # Minimum activity bonus
-            else:
-                final_reward -= 15  # Strong penalty for low activity
+            else:  # 10-19 trades
+                final_reward += 5   # Minimum acceptable activity bonus
             
             # 2. BALANCED Profit Factor (reduced importance)
             if final_profit_factor > 1.8:
@@ -931,6 +1001,26 @@ class AdvancedForexEnv(gym.Env):
         win_rate = self.profitable_trades / self.total_trades
         profit_factor = self.total_profit / max(self.total_loss, 1e-8)
         
+        # 🎯 ENHANCED RISK-REWARD METRICS
+        if self.profitable_trades > 0 and (self.total_trades - self.profitable_trades) > 0:
+            avg_win = self.total_profit / self.profitable_trades
+            avg_loss = self.total_loss / (self.total_trades - self.profitable_trades)
+            risk_reward_ratio = avg_win / max(avg_loss, 1e-8)
+        else:
+            avg_win = 0
+            avg_loss = 0
+            risk_reward_ratio = 0
+        
+        # Calculate Stop Loss/Take Profit hit rates
+        if hasattr(self, 'trades') and self.trades:
+            sl_hits = len([t for t in self.trades if t.get('close_reason') == 'Auto SL/TP' and t['profit'] < 0])
+            tp_hits = len([t for t in self.trades if t.get('close_reason') == 'Auto SL/TP' and t['profit'] > 0])
+            sl_hit_rate = sl_hits / len(self.trades) if self.trades else 0
+            tp_hit_rate = tp_hits / len(self.trades) if self.trades else 0
+        else:
+            sl_hit_rate = 0
+            tp_hit_rate = 0
+        
         # Calculate Sharpe ratio
         if len(self.equity_curve) > 1:
             returns = np.diff(self.equity_curve) / self.equity_curve[:-1]
@@ -948,7 +1038,14 @@ class AdvancedForexEnv(gym.Env):
             'total_trades': self.total_trades,
             'profitable_trades': self.profitable_trades,
             'sharpe_ratio': sharpe_ratio,
-            'max_consecutive_losses': self.max_consecutive_losses
+            'max_consecutive_losses': self.max_consecutive_losses,
+            # 🎯 NEW RISK-REWARD METRICS
+            'avg_win': avg_win,
+            'avg_loss': avg_loss,
+            'risk_reward_ratio': risk_reward_ratio,
+            'sl_hit_rate': sl_hit_rate,
+            'tp_hit_rate': tp_hit_rate,
+            'avg_profit_per_trade': total_return / max(self.total_trades, 1)
         }
 
 class AdaptiveTrainer:
@@ -1447,12 +1544,16 @@ class AdaptiveTrainer:
             base_timesteps = random.choice([4000000, 5000000, 6000000])  # 4-6M timesteps
             optimal_timesteps = get_optimal_timesteps(DEVICE, base_timesteps)
             
+            
+#             Phase 1: ใช้ transaction_cost = 0 เพื่อให้ AI เรียนรู้ที่จะเทรดโดยไม่มีอุปสรรค
+#             Phase 2: เมื่อ AI เทรดเป็นแล้ว ค่อยๆ เพิ่ม transaction_cost กลับมาเป็นค่าจริง
             config = {
                 'algorithm': algorithm,
                 'learning_rate': learning_rate,
                 'gamma': gamma,
                 'lookback_window': random.choice(smart_ranges['lookback_windows']),
-                'transaction_cost': random.choice([0.00001, 0.00002, 0.00003]),  # MUCH lower transaction costs (10x reduction)
+                # 'transaction_cost': random.choice([0.00001, 0.00002, 0.00003]),  # MUCH lower transaction costs (10x reduction)
+                'transaction_cost': 0, 
                 'timesteps': optimal_timesteps
             }
             
@@ -1463,7 +1564,7 @@ class AdaptiveTrainer:
                     'batch_size': optimal_batch_size,
                     'n_epochs': random.choice([8, 10, 15]),  # More epochs
                     'clip_range': random.choice([0.15, 0.2, 0.25]),  # Higher clip for exploration
-                    'ent_coef': random.choice([0.05, 0.08, 0.1]),   # MUCH higher entropy coefficient for more exploration
+                    'ent_coef': random.choice([0.1, 0.15, 0.2]),   # MUCH higher entropy coefficient for more exploration
                     'vf_coef': 0.5,
                     'max_grad_norm': 0.5
                 })
@@ -2467,7 +2568,7 @@ def main():
         print(f"   🎯 Target GPU utilization: 80-95%")
         
         # Optimal batch size for RTX 5060 Ti based on bottleneck analysis
-        batch_size = min(trainer.max_concurrent_models, 2)  # FIXED: ใช้ 2 models สำหรับ memory balance
+        batch_size = min(trainer.max_concurrent_models, 4)  # FIXED: ใช้ 2 models สำหรับ memory balance
         
         print(f"   🔧 CORRECTED batch size: {batch_size} (Memory conflict fix)")
         print(f"   🚀 Training {batch_size} models simultaneously")
