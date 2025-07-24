@@ -33,6 +33,19 @@ import warnings
 import time
 import random
 import asyncio
+
+# Helper function to format training time
+def format_training_time(seconds):
+    """Convert seconds to human readable format with hours"""
+    hours = seconds / 3600
+    minutes = (seconds % 3600) / 60
+    
+    if hours >= 1:
+        return f"{hours:.2f}h ({int(hours)}h {int(minutes):02d}m)"
+    elif minutes >= 1:
+        return f"{seconds/60:.1f}m ({int(minutes)}m {int(seconds%60):02d}s)"
+    else:
+        return f"{seconds:.1f}s"
 import concurrent.futures
 import threading
 import multiprocessing as mp
@@ -2134,6 +2147,7 @@ class AdaptiveTrainer:
                 'tier': tier,
                 'emoji': emoji,
                 'training_time': training_time,
+                'training_time_formatted': format_training_time(training_time),  # Human readable format
                 'success': True,
                 'data_size': len(data_chunk),
                 'test_size': test_size
@@ -2276,6 +2290,7 @@ class AdaptiveTrainer:
                         'score': result['score'],
                         'tier': result['tier'],
                         'training_time': result['training_time'],
+                        'training_time_formatted': format_training_time(result['training_time']),
                         'async_batch': batch_num,
                         'model_id': result['model_id']
                     }
@@ -2288,7 +2303,7 @@ class AdaptiveTrainer:
                     print(f"      📈 Win Rate: {result['metrics']['win_rate']:.1%}")
                     print(f"      💰 Profit Factor: {result['metrics']['profit_factor']:.2f}")
                     print(f"      📉 Max Drawdown: {result['metrics']['max_drawdown']:.1%}")
-                    print(f"      ⏱️ Training Time: {result['training_time']:.1f}s")
+                    print(f"      ⏱️ Training Time: {format_training_time(result['training_time'])}")
                     
                     # Check if this is the best so far
                     if result['score'] > self.best_score:
@@ -2442,7 +2457,8 @@ class AdaptiveTrainer:
                     'metrics': metrics,
                     'score': score,
                     'tier': tier,
-                    'training_time': training_time
+                    'training_time': training_time,
+                    'training_time_formatted': format_training_time(training_time)
                 }
                 
                 self.training_history.append(attempt_record)
@@ -2453,7 +2469,7 @@ class AdaptiveTrainer:
                 print(f"   📈 Win Rate: {metrics['win_rate']:.1%}")
                 print(f"   💰 Profit Factor: {metrics['profit_factor']:.2f}")
                 print(f"   📉 Max Drawdown: {metrics['max_drawdown']:.1%}")
-                print(f"   ⏱️ Training Time: {training_time:.1f}s")
+                print(f"   ⏱️ Training Time: {format_training_time(training_time)}")
                 
                 # Check if this is the best so far
                 if score > self.best_score:
@@ -2610,7 +2626,8 @@ def main():
             if total_training_time > 0:
                 estimated_sequential_time = total_training_time * trainer.max_concurrent_models
                 time_saved = estimated_sequential_time - total_training_time
-                print(f"   ⏱️ Estimated Time Saved: {time_saved/60:.1f} minutes")
+                print(f"   ⏱️ Total Training Time: {format_training_time(total_training_time)}")
+                print(f"   ⏱️ Estimated Time Saved: {format_training_time(time_saved)}")
                 print(f"   🔥 Speed Improvement: {trainer.max_concurrent_models:.1f}x faster")
         
     else:
