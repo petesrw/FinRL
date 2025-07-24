@@ -439,7 +439,7 @@ class AdvancedForexEnv(gym.Env):
     
     def __init__(self, data, symbol='XAUUSD', initial_balance=10000, lookback_window=50, 
                  transaction_cost=0.0001, max_position_size=5.0,  # เพิ่มจาก 3.0 เป็น 5.0 เพื่อกำไรที่ชัดเจนขึ้น
-                 stop_loss_pct=0.008, take_profit_pct=0.024):  # SL: 0.8%, TP: 2.4% (Risk:Reward = 1:3)
+                 stop_loss_pct=0.015, take_profit_pct=0.030):  # ผ่อนคลาย: SL: 1.5%, TP: 3.0% (Risk:Reward = 1:2)
         super().__init__()
         
         self.data = data.reset_index(drop=True)
@@ -584,19 +584,25 @@ class AdvancedForexEnv(gym.Env):
         else:
             action_value = float(action)
         
-        # Convert continuous to discrete:
-        # [-1, -0.5): Sell (Short) = 2
-        # [-0.5, 0.5): Hold = 0  
-        # [0.5, 0.75): Buy = 1
-        # [0.75, 1]: Close = 3
-        if action_value < -0.5:
+        # Convert continuous to discrete (ULTRA AGGRESSIVE TRADING MODE):
+        # บังคับให้เทรดมากขึ้นโดยการลด Hold zone ลงมาก
+        # [-1, -0.2): Sell (Short) = 2 (ขยายช่วงเทรด)
+        # [-0.2, 0.2): Hold = 0 (ลด Hold zone เหลือ 20% เท่านั้น!)
+        # [0.2, 0.6): Buy = 1 (ขยายช่วงเทรด)
+        # [0.6, 1]: Close = 3
+        if action_value < -0.2:  # ลดจาก -0.4 อีก
             discrete_action = 2  # Sell
-        elif action_value < 0.5:
-            discrete_action = 0  # Hold
-        elif action_value < 0.75:
+        elif action_value < 0.2:  # ลดจาก 0.4 อีก
+            discrete_action = 0  # Hold (เหลือแค่ 20% ของ action space!)
+        elif action_value < 0.6:  # ลดจาก 0.7
             discrete_action = 1  # Buy
         else:
             discrete_action = 3  # Close
+        
+        # 🚨 ULTRA AGGRESSIVE ANTI-HOLD SYSTEM
+        # ลงโทษ Hold action ทุกครั้ง!
+        if discrete_action == 0:  # Hold
+            reward -= 5.0  # Heavy penalty for holding!
         
         # Execute discrete action with enhanced position sizing
         if discrete_action == 1 and self.position == 0:  # Buy
@@ -610,19 +616,22 @@ class AdvancedForexEnv(gym.Env):
             cost = current_price * self.position_size * self.transaction_cost
             self.balance -= cost
             
-        # 🎯 AUTOMATIC STOP LOSS & TAKE PROFIT CHECK (Before Action Execution)
+            # 🎁 MASSIVE POSITION OPENING BONUS!
+            reward += 30.0  # Huge reward for opening Buy position!
+            
+        # 🎯 RELAXED AUTOMATIC STOP LOSS & TAKE PROFIT CHECK (More Trading-Friendly)
         auto_close_triggered = False
         if self.position != 0:
             current_return = (current_price - self.entry_price) / self.entry_price * self.position
             
-            # Stop Loss Check (0.8% loss limit)
+            # Relaxed Stop Loss Check (1.5% loss limit - สูงขึ้นเพื่อให้ AI กล้าเทรดมากขึ้น)
             if abs(current_return) >= self.stop_loss_pct:
                 if (self.position > 0 and current_return <= -self.stop_loss_pct) or \
                    (self.position < 0 and current_return <= -self.stop_loss_pct):
                     discrete_action = 3  # Force close position (Stop Loss)
                     auto_close_triggered = True
                     
-            # Take Profit Check (2.4% profit target - 1:3 Risk:Reward)
+            # Relaxed Take Profit Check (3.0% profit target - เข้าถึงได้ง่ายขึ้น)
             elif current_return >= self.take_profit_pct:
                 discrete_action = 3  # Force close position (Take Profit)
                 auto_close_triggered = True
@@ -637,6 +646,9 @@ class AdvancedForexEnv(gym.Env):
             # Transaction cost
             cost = current_price * self.position_size * self.transaction_cost
             self.balance -= cost
+            
+            # 🎁 MASSIVE POSITION OPENING BONUS!
+            reward += 30.0  # Huge reward for opening Sell position!
             
         elif discrete_action == 3 and self.position != 0:  # Close position (Manual or Auto)
             close_reason = "Auto SL/TP" if auto_close_triggered else "Manual Close"
@@ -669,40 +681,40 @@ class AdvancedForexEnv(gym.Env):
                 self.total_profit += profit
                 self.consecutive_losses = 0
                 
-                # 🎯 ENHANCED REWARD SYSTEM - Focus on Risk-Reward Ratio
+                # 🎯 SIMPLIFIED REWARD SYSTEM - Encourage ANY Trading Activity
                 profit_pct = profit / (self.entry_price * self.position_size)
                 
-                # Reward based on actual profit percentage (not just transaction cost multiples)
-                if profit_pct >= 0.02:  # 2%+ profit (Excellent!)
-                    self._last_action_reward = 15 if close_reason == "Auto SL/TP" else 12  # Extra bonus for TP hits
+                # Much more generous rewards to encourage trading
+                if profit_pct >= 0.025:  # 2.5%+ profit (Excellent!)
+                    self._last_action_reward = 20 if close_reason == "Auto SL/TP" else 15  # Extra bonus for TP hits
                 elif profit_pct >= 0.015:  # 1.5%+ profit (Very Good)
-                    self._last_action_reward = 10 if close_reason == "Auto SL/TP" else 8
+                    self._last_action_reward = 15 if close_reason == "Auto SL/TP" else 12
                 elif profit_pct >= 0.01:  # 1%+ profit (Good)
-                    self._last_action_reward = 6 if close_reason == "Auto SL/TP" else 5
+                    self._last_action_reward = 10 if close_reason == "Auto SL/TP" else 8
                 elif profit_pct >= 0.005:  # 0.5%+ profit (Okay)
+                    self._last_action_reward = 6
+                elif profit_pct > 0:  # ANY profit (Encourage even small profits)
                     self._last_action_reward = 3
-                else:  # Small profit (<0.5%)
-                    self._last_action_reward = 1
                     
             else:
                 self.total_loss += abs(profit)
                 self.consecutive_losses += 1
                 self.max_consecutive_losses = max(self.max_consecutive_losses, self.consecutive_losses)
                 
-                # 🎯 ENHANCED PENALTY SYSTEM - Reward good risk management
+                # 🎯 MUCH MORE LENIENT PENALTY SYSTEM - Don't Punish Trading Too Hard
                 loss_pct = abs(profit) / (self.entry_price * self.position_size)
                 
-                # Less penalty for losses that hit stop loss (good risk management)
-                if close_reason == "Auto SL/TP" and loss_pct <= 0.01:  # SL hit with <1% loss
-                    self._last_action_reward = -2  # Small penalty for good risk management
-                elif loss_pct <= 0.005:  # <0.5% loss
-                    self._last_action_reward = -1
-                elif loss_pct <= 0.01:  # <1% loss
-                    self._last_action_reward = -3
-                elif loss_pct <= 0.02:  # <2% loss
-                    self._last_action_reward = -6
-                else:  # >2% loss (Poor risk management)
-                    self._last_action_reward = -12
+                # Very gentle penalties to encourage trading attempts
+                if close_reason == "Auto SL/TP" and loss_pct <= 0.02:  # SL hit with <2% loss - GOOD Risk Management!
+                    self._last_action_reward = 1  # REWARD for using SL properly!
+                elif loss_pct <= 0.01:  # <1% loss - not bad
+                    self._last_action_reward = 0  # Neutral
+                elif loss_pct <= 0.02:  # <2% loss - acceptable
+                    self._last_action_reward = -1  # Small penalty
+                elif loss_pct <= 0.03:  # <3% loss - okay for learning
+                    self._last_action_reward = -3  # Mild penalty
+                else:  # >3% loss
+                    self._last_action_reward = -6  # Moderate penalty
             
             self.total_trades += 1
             self.position = 0
@@ -724,33 +736,45 @@ class AdvancedForexEnv(gym.Env):
         current_drawdown = (self.max_equity - self.equity) / self.max_equity
         self.max_drawdown = max(self.max_drawdown, current_drawdown)
         
-        # 🎯 ACTIVE TRADING ENHANCED REWARD FUNCTION
+        # 🎯 SUPER TRADING FRIENDLY REWARD FUNCTION
         reward = 0  # Reset base reward
         
-        # 1. Reduced immediate reward weight (prevent over-optimization on single trades)
+        # 🎁 ULTRA MASSIVE FIRST TRADE BONUS (บังคับให้เทรด!)
+        if self.total_trades == 0:
+            reward += 50.0  # MASSIVE bonus just for attempting ANY action that isn't hold
+        elif self.total_trades == 1:
+            reward += 40.0  # Massive bonus for first trade attempt!
+        elif self.total_trades == 2:
+            reward += 25.0  # Good bonus for second trade
+        elif self.total_trades == 3:
+            reward += 15.0  # Encourage early trading
+        elif self.total_trades <= 5:
+            reward += 10.0  # Keep encouraging
+        
+        # 1. ULTRA MASSIVE immediate reward weight (encourage ANY trading action)
         if hasattr(self, '_last_action_reward'):
-            reward += self._last_action_reward * 0.2  # Reduced from 0.3 to 0.2
+            reward += self._last_action_reward * 2.0  # เพิ่มจาก 0.4 เป็น 2.0 (5เท่า!)
         
         # 2. � ENHANCED TRADING ACTIVITY INCENTIVE (Stricter Penalties)
         if self.current_step > self.lookback_window + 50:  # After warm-up
             progress = (self.current_step - self.lookback_window) / (self.max_steps - self.lookback_window)
-            expected_trades = max(50, int(200 * progress))  # Expect 50-200 trades by end (4x increase)
+            expected_trades = max(20, int(100 * progress))  # ลดเป้าหมายลงมาก: 20-100 trades (จาก 50-200)
             
-            # Immediate negative rewards for insufficient trading
-            if self.total_trades == 0 and progress > 0.2:  # If 20% through episode with no trades
-                reward -= 50.0  # Heavy immediate penalty
-            elif self.total_trades < 5 and progress > 0.5:  # If halfway through with <5 trades
-                reward -= 30.0  # Strong penalty
+            # ลงโทษน้อยลง และให้รางวัลมากขึ้น
+            if self.total_trades == 0 and progress > 0.4:  # 40% ผ่านไปแล้วยังไม่เทรด (ผ่อนจาก 0.2)
+                reward -= 15.0  # ลดจาก 50 เป็น 15
+            elif self.total_trades < 2 and progress > 0.7:  # 70% ผ่านไปแล้วเทรดน้อยกว่า 2 ครั้ง (ลดจาก 5)
+                reward -= 8.0   # ลดจาก 30 เป็น 8
             elif self.total_trades >= expected_trades:
-                reward += 10.0  # MASSIVE reward for active trading (3x increase)
-            elif self.total_trades >= expected_trades * 0.7:
-                reward += 6.0  # Strong reward (4x increase)
-            elif self.total_trades >= expected_trades * 0.5:
-                reward += 3.0  # Medium reward (6x increase)
-            elif self.total_trades >= expected_trades * 0.3:
-                reward += 0.0  # Neutral zone
+                reward += 20.0  # เพิ่มรางวัลการเทรดแอคทีฟมาก (จาก 10)
+            elif self.total_trades >= expected_trades * 0.6:  # ผ่อนจาก 0.7
+                reward += 12.0  # เพิ่มรางวัล (จาก 6)
+            elif self.total_trades >= expected_trades * 0.3:  # ผ่อนจาก 0.5
+                reward += 8.0   # เพิ่มรางวัล (จาก 3)
+            elif self.total_trades >= expected_trades * 0.1:  # ผ่อนจาก 0.3
+                reward += 4.0   # รางวัลเล็กน้อย (จาก 0)
             else:
-                reward -= 10.0  # HEAVY penalty for insufficient trading (5x increase)
+                reward -= 2.0   # ลดโทษลงมาก (จาก 10)
         
         # 3. 🚫 MASSIVE CONSECUTIVE HOLD PENALTY (Anti-Hold Strategy)
         # Track consecutive non-trading steps
@@ -885,19 +909,19 @@ class AdvancedForexEnv(gym.Env):
             # 🎯 ACTIVE TRADING ENHANCED FINAL REWARD
             final_reward = 0
             
-            # 1. 🎁 TRADING ACTIVITY BONUS (Primary Focus) - STRICT NEGATIVE REWARDS
+            # 1. 🎁 VERY GENTLE TRADING ACTIVITY BONUS (สนับสนุนการเทรดทุกระดับ)
             if self.total_trades == 0:
-                final_reward -= 100  # IMMEDIATE negative return for zero trades
-            elif self.total_trades < 10:
-                final_reward -= 50   # IMMEDIATE negative return for insufficient trades
-            elif self.total_trades >= 50:
-                final_reward += 25  # Major bonus for high activity
-            elif self.total_trades >= 30:
-                final_reward += 15  # Good activity bonus
-            elif self.total_trades >= 20:
-                final_reward += 10  # Decent activity bonus
-            else:  # 10-19 trades
-                final_reward += 5   # Minimum acceptable activity bonus
+                final_reward -= 50   # ลดลงจาก 100 เป็น 50
+            elif self.total_trades < 5:   # ผ่อนจาก 10
+                final_reward -= 20   # ลดลงจาก 50 เป็น 20
+            elif self.total_trades >= 30:  # ลดจาก 50
+                final_reward += 40  # เพิ่มรางวัลมาก
+            elif self.total_trades >= 20:  # ลดจาก 30
+                final_reward += 25  # เพิ่มรางวัล
+            elif self.total_trades >= 10:  # ลดจาก 20
+                final_reward += 15  # เพิ่มรางวัล
+            else:  # 5-9 trades
+                final_reward += 8   # รางวัลสำหรับการเทรดเล็กน้อย
             
             # 2. BALANCED Profit Factor (reduced importance)
             if final_profit_factor > 1.8:
@@ -1577,7 +1601,7 @@ class AdaptiveTrainer:
                     'batch_size': optimal_batch_size,
                     'n_epochs': random.choice([8, 10, 15]),  # More epochs
                     'clip_range': random.choice([0.15, 0.2, 0.25]),  # Higher clip for exploration
-                    'ent_coef': random.choice([0.1, 0.15, 0.2]),   # MUCH higher entropy coefficient for more exploration
+                    'ent_coef': random.choice([0.3, 0.5, 0.8]),   # ULTRA high entropy coefficient for maximum exploration!
                     'vf_coef': 0.5,
                     'max_grad_norm': 0.5
                 })
