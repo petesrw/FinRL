@@ -586,15 +586,15 @@ class AdvancedForexEnv(gym.Env):
         
         # 🚨 NUCLEAR OPTION: FORCED TRADING MODE
         # บังคับให้ AI เทรดโดยการแทรก random trading actions
-        if not hasattr(self, 'force_trade_counter'):
-            self.force_trade_counter = 0
+        # if not hasattr(self, 'force_trade_counter'):
+        #     self.force_trade_counter = 0
             
         # ทุก 50 steps บังคับให้เทรด 1 ครั้ง
-        if self.current_step % 50 == 0 and self.position == 0:
-            import random
-            discrete_action = random.choice([1, 2])  # บังคับ Buy หรือ Sell
-            print(f"🚨 FORCED TRADE at step {self.current_step}: Action {discrete_action}")
-            self.force_trade_counter += 1
+        # if self.current_step % 50 == 0 and self.position == 0:
+        #     import random
+        #     discrete_action = random.choice([1, 2])  # บังคับ Buy หรือ Sell
+        #     print(f"🚨 FORCED TRADE at step {self.current_step}: Action {discrete_action}")
+        #     self.force_trade_counter += 1
         
         # Convert continuous to discrete (ULTRA AGGRESSIVE TRADING MODE):
         # บังคับให้เทรดมากขึ้นโดยการลด Hold zone ลงมาก
@@ -602,15 +602,15 @@ class AdvancedForexEnv(gym.Env):
         # [-0.1, 0.1): Hold = 0 (ลด Hold zone เหลือ 10% เท่านั้น!)
         # [0.1, 0.5): Buy = 1 (ขยายช่วงเทรดเพิ่ม!)
         # [0.5, 1]: Close = 3
+        # else:
+        if action_value < -0.1:  # ลดจาก -0.2 อีก
+            discrete_action = 2  # Sell
+        elif action_value < 0.1:  # ลดจาก 0.2 อีก
+            discrete_action = 0  # Hold (เหลือแค่ 10% ของ action space!)
+        elif action_value < 0.5:  # ลดจาก 0.6
+            discrete_action = 1  # Buy
         else:
-            if action_value < -0.1:  # ลดจาก -0.2 อีก
-                discrete_action = 2  # Sell
-            elif action_value < 0.1:  # ลดจาก 0.2 อีก
-                discrete_action = 0  # Hold (เหลือแค่ 10% ของ action space!)
-            elif action_value < 0.5:  # ลดจาก 0.6
-                discrete_action = 1  # Buy
-            else:
-                discrete_action = 3  # Close
+            discrete_action = 3  # Close
         
         # 🚨 DEBUG: Track action distribution AND position changes
         if not hasattr(self, 'action_counts'):
