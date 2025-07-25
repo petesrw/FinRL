@@ -438,7 +438,7 @@ class AdvancedForexEnv(gym.Env):
     """
     
     def __init__(self, data, symbol='XAUUSD', initial_balance=10000, lookback_window=50, 
-                 transaction_cost=0.0, max_position_size=100.0,  # เพิ่มเป็น 100.0 เพื่อกำไรเกิน $1 USD ต่อเทรด!
+                 transaction_cost=0.0, max_position_size=1000.0,  # 🚀 ULTRA MASSIVE 1000x เพื่อกำไรเกิน $1 USD ต่อเทรด!
                  stop_loss_pct=0.030, take_profit_pct=0.060):  # ผ่อนคลาย SL/TP: 3%, 6% (Risk:Reward = 1:2) เพิ่มจากเดิม
         super().__init__()
         
@@ -708,12 +708,12 @@ class AdvancedForexEnv(gym.Env):
         # Execute discrete action with enhanced position sizing
         if discrete_action == 1 and self.position == 0:  # Buy
             self.position = 1
-            # 🚀 MASSIVE POSITION SIZING - เพื่อกำไรเกิน $1 USD ต่อเทรด!
+            # 🚀 ULTRA MASSIVE POSITION SIZING - เพื่อกำไรเกิน $1 USD ต่อเทรด!
             confidence = abs(action_value)  # 0.4-1.0 range (from continuous action)
-            # ขยายขนาด position มหาศาล: 50.0-100.0x (เพิ่มจาก 8.0-15.0x)
-            base_size = 50.0  # เพิ่มจาก 8.0 เป็น 50.0 (6เท่า!)
-            confidence_multiplier = (confidence - 0.4) * 83.3  # 0.4-1.0 → 0-50.0
-            dynamic_size = min(base_size + confidence_multiplier, 100.0)  # 50.0-100.0x range
+            # ขยายขนาด position อย่างรุนแรง: 500.0-1000.0x (เพิ่มจาก 50.0-100.0x อีก 10เท่า!)
+            base_size = 500.0  # เพิ่มจาก 50.0 เป็น 500.0 (10เท่า!)
+            confidence_multiplier = (confidence - 0.4) * 833.3  # 0.4-1.0 → 0-500.0 (10x multiplier!)
+            dynamic_size = min(base_size + confidence_multiplier, 1000.0)  # 500.0-1000.0x range
             self.position_size = dynamic_size
             self.entry_price = current_price
             # Transaction cost
@@ -733,12 +733,12 @@ class AdvancedForexEnv(gym.Env):
             
         elif discrete_action == 2 and self.position == 0:  # Sell (Short)
             self.position = -1
-            # 🚀 MASSIVE POSITION SIZING - เพื่อกำไรเกิน $1 USD ต่อเทรด!
+            # 🚀 ULTRA MASSIVE POSITION SIZING - เพื่อกำไรเกิน $1 USD ต่อเทรด!
             confidence = abs(action_value)  # 0.4-1.0 range (from continuous action)
-            # ขยายขนาด position มหาศาล: 50.0-100.0x (เพิ่มจาก 8.0-15.0x)
-            base_size = 50.0  # เพิ่มจาก 8.0 เป็น 50.0 (6เท่า!)
-            confidence_multiplier = (confidence - 0.4) * 83.3  # 0.4-1.0 → 0-50.0
-            dynamic_size = min(base_size + confidence_multiplier, 100.0)  # 50.0-100.0x range
+            # ขยายขนาด position อย่างรุนแรง: 500.0-1000.0x (เพิ่มจาก 50.0-100.0x อีก 10เท่า!)
+            base_size = 500.0  # เพิ่มจาก 50.0 เป็น 500.0 (10เท่า!)
+            confidence_multiplier = (confidence - 0.4) * 833.3  # 0.4-1.0 → 0-500.0 (10x multiplier!)
+            dynamic_size = min(base_size + confidence_multiplier, 1000.0)  # 500.0-1000.0x range
             self.position_size = dynamic_size
             self.entry_price = current_price
             # Transaction cost
@@ -796,12 +796,16 @@ class AdvancedForexEnv(gym.Env):
                 # 🚀 ENHANCED PROFIT REWARD SYSTEM - ส่งเสริมกำไรขนาดใหญ่มากขึ้น
                 
                 # 💰 MASSIVE REWARDS for larger profits (เพิ่มรางวัลมากขึ้น) + BONUS for $1+ profits!
-                if profit >= 5.0:  # $5+ profit (ULTIMATE!)
-                    self._last_action_reward = 100  # ULTIMATE bonus for big dollar profits!
+                if profit >= 20.0:  # $20+ profit (NUCLEAR!)
+                    self._last_action_reward = 500  # NUCLEAR bonus for extreme profits!
+                elif profit >= 10.0:  # $10+ profit (LEGENDARY!)
+                    self._last_action_reward = 300  # LEGENDARY bonus!
+                elif profit >= 5.0:  # $5+ profit (ULTIMATE!)
+                    self._last_action_reward = 200  # DOUBLE ULTIMATE bonus for big dollar profits!
                 elif profit >= 3.0:  # $3+ profit (MASSIVE!)
-                    self._last_action_reward = 80 if close_reason == "Auto SL/TP" else 70  # HUGE bonus
+                    self._last_action_reward = 160 if close_reason == "Auto SL/TP" else 140  # DOUBLE HUGE bonus
                 elif profit >= 1.0:  # $1+ profit (TARGET ACHIEVED!)
-                    self._last_action_reward = 60 if close_reason == "Auto SL/TP" else 50  # MAJOR bonus for $1+ target!
+                    self._last_action_reward = 120 if close_reason == "Auto SL/TP" else 100  # DOUBLE MAJOR bonus for $1+ target!
                 elif profit_pct >= 0.05:  # 5%+ profit (MASSIVE!)
                     self._last_action_reward = 50 if close_reason == "Auto SL/TP" else 40  # HUGE bonus
                 elif profit_pct >= 0.035:  # 3.5%+ profit (EXCELLENT!)
@@ -848,8 +852,14 @@ class AdvancedForexEnv(gym.Env):
                 thread_id = threading.get_ident()
                 env_id = getattr(self, 'env_id', id(self) % 1000)
                 
-                # Special highlight for $1+ profits
-                if profit >= 1.0:
+                # Special highlight for massive profits with ultra position sizing
+                if profit >= 20.0:
+                    print(f"🚀 [{current_time}|ENV{env_id}|T{thread_id%1000}] NUCLEAR PROFIT! ${profit:.2f} ({profit_pct*100:.2f}%) Size:{self.position_size:.1f} Reward:{self._last_action_reward}")
+                elif profit >= 10.0:
+                    print(f"💥 [{current_time}|ENV{env_id}|T{thread_id%1000}] LEGENDARY PROFIT! ${profit:.2f} ({profit_pct*100:.2f}%) Size:{self.position_size:.1f} Reward:{self._last_action_reward}")
+                elif profit >= 5.0:
+                    print(f"⭐ [{current_time}|ENV{env_id}|T{thread_id%1000}] ULTIMATE PROFIT! ${profit:.2f} ({profit_pct*100:.2f}%) Size:{self.position_size:.1f} Reward:{self._last_action_reward}")
+                elif profit >= 1.0:
                     print(f"🎉 [{current_time}|ENV{env_id}|T{thread_id%1000}] TARGET ACHIEVED! ${profit:.2f} ({profit_pct*100:.2f}%) Size:{self.position_size:.1f} Reward:{self._last_action_reward}")
                 else:
                     print(f"💰 [{current_time}|ENV{env_id}|T{thread_id%1000}] TRADE: ${profit:.2f} ({profit_pct*100:.2f}%) Size:{self.position_size:.1f} Reward:{self._last_action_reward}")
