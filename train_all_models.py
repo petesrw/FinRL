@@ -623,10 +623,10 @@ class AdvancedForexEnv(gym.Env):
         self.action_counts[action_names[discrete_action]] += 1
         
         # 🚨 DEBUG EVERY CLOSE ACTION
-        if discrete_action == 3:
+        # if discrete_action == 3:
             # print(f"🔍 CLOSE ACTION ATTEMPTED: Position={self.position}, Step={self.current_step}, Action_Value={action_value:.3f}")
-            if self.position != 0:
-                print(f"   ✅ Close conditions met: Position={self.position}, will execute close logic")
+            # if self.position != 0:
+            #     print(f"   ✅ Close conditions met: Position={self.position}, will execute close logic")
             # else:
             #     print(f"   ❌ Close blocked: No position to close")
         
@@ -656,7 +656,7 @@ class AdvancedForexEnv(gym.Env):
         if self.position != 0:
             current_return = (current_price - self.entry_price) / self.entry_price * self.position
             
-            print(f"📊 SL/TP Check: Position={self.position}, Return={current_return:.4f}, SL={self.stop_loss_pct}, TP={self.take_profit_pct}")
+            # print(f"📊 SL/TP Check: Position={self.position}, Return={current_return:.4f}, SL={self.stop_loss_pct}, TP={self.take_profit_pct}")
             
             # Relaxed Stop Loss Check (1.5% loss limit - สูงขึ้นเพื่อให้ AI กล้าเทรดมากขึ้น)
             if abs(current_return) >= self.stop_loss_pct:
@@ -689,7 +689,7 @@ class AdvancedForexEnv(gym.Env):
             
             # 🚨 DEBUG: Track position opening
             self.position_opens += 1
-            print(f"🟢 POSITION OPENED: Buy at {current_price:.5f}, size: {dynamic_size:.2f}")
+            # print(f"🟢 POSITION OPENED: Buy at {current_price:.5f}, size: {dynamic_size:.2f}")
             
         elif discrete_action == 1 and self.position != 0:  # Try to Buy but already have position
             self.failed_actions['buy_blocked'] += 1
@@ -710,16 +710,16 @@ class AdvancedForexEnv(gym.Env):
             
             # 🚨 DEBUG: Track position opening
             self.position_opens += 1
-            print(f"🔴 POSITION OPENED: Sell at {current_price:.5f}, size: {dynamic_size:.2f}")
+            # print(f"🔴 POSITION OPENED: Sell at {current_price:.5f}, size: {dynamic_size:.2f}")
             
         elif discrete_action == 2 and self.position != 0:  # Try to Sell but already have position
             self.failed_actions['sell_blocked'] += 1
             
         elif discrete_action == 3 and self.position != 0:  # Close position (Manual or Auto)
-            print(f"🟡 EXECUTING CLOSE: About to close position {self.position}")
+            # print(f"🟡 EXECUTING CLOSE: About to close position {self.position}")
             close_reason = "Auto SL/TP" if auto_close_triggered else "Manual Close"
             
-            print(f"🔍 CLOSE DEBUG: Action=3, Position={self.position}, Entry={self.entry_price}, Current={current_price}")
+            # print(f"🔍 CLOSE DEBUG: Action=3, Position={self.position}, Entry={self.entry_price}, Current={current_price}")
             
             if self.position == 1:  # Close long
                 profit = (current_price - self.entry_price) * self.position_size
@@ -734,7 +734,7 @@ class AdvancedForexEnv(gym.Env):
             
             # 🚨 DEBUG: Track position closing  
             self.position_closes += 1
-            print(f"🟡 POSITION CLOSED: {close_reason}, profit: {profit:.5f}, new_balance: {self.balance:.2f}")
+            # print(f"🟡 POSITION CLOSED: {close_reason}, profit: {profit:.5f}, new_balance: {self.balance:.2f}")
             
             # Track trade with enhanced info
             self.trades.append({
@@ -789,13 +789,13 @@ class AdvancedForexEnv(gym.Env):
                     self._last_action_reward = -6  # Moderate penalty
             
             self.total_trades += 1
-            print(f"🎯 TRADE COMPLETED! Total trades now: {self.total_trades}")
+            # print(f"🎯 TRADE COMPLETED! Total trades now: {self.total_trades}")
             self.position = 0
             self.position_size = 0
             
         elif discrete_action == 3 and self.position == 0:  # Try to Close but no position
             self.failed_actions['close_blocked'] += 1
-            print(f"❌ CLOSE BLOCKED: No position to close (position={self.position})")
+            # print(f"❌ CLOSE BLOCKED: No position to close (position={self.position})")
         
         # Update equity
         if self.position != 0:
