@@ -584,25 +584,93 @@ class AdvancedForexEnv(gym.Env):
         else:
             action_value = float(action)
         
+        # 🚨 NUCLEAR OPTION: FORCED TRADING MODE
+        # บังคับให้ AI เทรดโดยการแทรก random trading actions
+        if not hasattr(self, 'force_trade_counter'):
+            self.force_trade_counter = 0
+            
+        # ทุก 50 steps บังคับให้เทรด 1 ครั้ง
+        if self.current_step % 50 == 0 and self.position == 0:
+            import random
+            discrete_action = random.choice([1, 2])  # บังคับ Buy หรือ Sell
+            print(f"🚨 FORCED TRADE at step {self.current_step}: Action {discrete_action}")
+            self.force_trade_counter += 1
+        
         # Convert continuous to discrete (ULTRA AGGRESSIVE TRADING MODE):
         # บังคับให้เทรดมากขึ้นโดยการลด Hold zone ลงมาก
-        # [-1, -0.2): Sell (Short) = 2 (ขยายช่วงเทรด)
-        # [-0.2, 0.2): Hold = 0 (ลด Hold zone เหลือ 20% เท่านั้น!)
-        # [0.2, 0.6): Buy = 1 (ขยายช่วงเทรด)
-        # [0.6, 1]: Close = 3
-        if action_value < -0.2:  # ลดจาก -0.4 อีก
-            discrete_action = 2  # Sell
-        elif action_value < 0.2:  # ลดจาก 0.4 อีก
-            discrete_action = 0  # Hold (เหลือแค่ 20% ของ action space!)
-        elif action_value < 0.6:  # ลดจาก 0.7
-            discrete_action = 1  # Buy
+        # [-1, -0.1): Sell (Short) = 2 (ขยายช่วงเทรดเพิ่ม!)
+        # [-0.1, 0.1): Hold = 0 (ลด Hold zone เหลือ 10% เท่านั้น!)
+        # [0.1, 0.5): Buy = 1 (ขยายช่วงเทรดเพิ่ม!)
+        # [0.5, 1]: Close = 3
         else:
-            discrete_action = 3  # Close
+            if action_value < -0.1:  # ลดจาก -0.2 อีก
+                discrete_action = 2  # Sell
+            elif action_value < 0.1:  # ลดจาก 0.2 อีก
+                discrete_action = 0  # Hold (เหลือแค่ 10% ของ action space!)
+            elif action_value < 0.5:  # ลดจาก 0.6
+                discrete_action = 1  # Buy
+            else:
+                discrete_action = 3  # Close
+        
+        # 🚨 DEBUG: Track action distribution AND position changes
+        if not hasattr(self, 'action_counts'):
+            self.action_counts = {'hold': 0, 'buy': 0, 'sell': 0, 'close': 0}
+            self.position_opens = 0
+            self.position_closes = 0
+            self.failed_actions = {'buy_blocked': 0, 'sell_blocked': 0, 'close_blocked': 0}
+        
+        action_names = {0: 'hold', 1: 'buy', 2: 'sell', 3: 'close'}
+        self.action_counts[action_names[discrete_action]] += 1
+        
+        # 🚨 DEBUG EVERY CLOSE ACTION
+        if discrete_action == 3:
+            # print(f"🔍 CLOSE ACTION ATTEMPTED: Position={self.position}, Step={self.current_step}, Action_Value={action_value:.3f}")
+            if self.position != 0:
+                print(f"   ✅ Close conditions met: Position={self.position}, will execute close logic")
+            # else:
+            #     print(f"   ❌ Close blocked: No position to close")
+        
+        # Print every 100 steps
+        if self.current_step % 100 == 0:
+            total_actions = sum(self.action_counts.values())
+            if total_actions > 0:
+                print(f"🎯 Step {self.current_step} Action Distribution:")
+                for action, count in self.action_counts.items():
+                    pct = (count / total_actions) * 100
+                    print(f"   {action}: {count} ({pct:.1f}%)")
+                print(f"   Total trades so far: {self.total_trades}")
+                print(f"   Position opens: {self.position_opens}")
+                print(f"   Position closes: {self.position_closes}")
+                print(f"   Current position: {self.position}")
+                print(f"   Failed actions: {self.failed_actions}")
+                print("   ---")
         
         # 🚨 ULTRA AGGRESSIVE ANTI-HOLD SYSTEM
         # ลงโทษ Hold action ทุกครั้ง!
         if discrete_action == 0:  # Hold
-            reward -= 5.0  # Heavy penalty for holding!
+            reward -= 20.0  # MASSIVE penalty for holding! (เพิ่มจาก 5.0)
+        
+        # 🎯 RELAXED AUTOMATIC STOP LOSS & TAKE PROFIT CHECK (More Trading-Friendly)
+        # CHECK THIS FIRST before any action execution!
+        auto_close_triggered = False
+        if self.position != 0:
+            current_return = (current_price - self.entry_price) / self.entry_price * self.position
+            
+            print(f"📊 SL/TP Check: Position={self.position}, Return={current_return:.4f}, SL={self.stop_loss_pct}, TP={self.take_profit_pct}")
+            
+            # Relaxed Stop Loss Check (1.5% loss limit - สูงขึ้นเพื่อให้ AI กล้าเทรดมากขึ้น)
+            if abs(current_return) >= self.stop_loss_pct:
+                if (self.position > 0 and current_return <= -self.stop_loss_pct) or \
+                   (self.position < 0 and current_return <= -self.stop_loss_pct):
+                    discrete_action = 3  # Force close position (Stop Loss)
+                    auto_close_triggered = True
+                    # print(f"🛑 STOP LOSS TRIGGERED! Forcing close action. Return: {current_return:.4f}")
+                    
+            # Relaxed Take Profit Check (3.0% profit target - เข้าถึงได้ง่ายขึ้น)
+            elif current_return >= self.take_profit_pct:
+                discrete_action = 3  # Force close position (Take Profit)
+                auto_close_triggered = True
+                # print(f"🎯 TAKE PROFIT TRIGGERED! Forcing close action. Return: {current_return:.4f}")
         
         # Execute discrete action with enhanced position sizing
         if discrete_action == 1 and self.position == 0:  # Buy
@@ -619,23 +687,13 @@ class AdvancedForexEnv(gym.Env):
             # 🎁 MASSIVE POSITION OPENING BONUS!
             reward += 30.0  # Huge reward for opening Buy position!
             
-        # 🎯 RELAXED AUTOMATIC STOP LOSS & TAKE PROFIT CHECK (More Trading-Friendly)
-        auto_close_triggered = False
-        if self.position != 0:
-            current_return = (current_price - self.entry_price) / self.entry_price * self.position
+            # 🚨 DEBUG: Track position opening
+            self.position_opens += 1
+            print(f"🟢 POSITION OPENED: Buy at {current_price:.5f}, size: {dynamic_size:.2f}")
             
-            # Relaxed Stop Loss Check (1.5% loss limit - สูงขึ้นเพื่อให้ AI กล้าเทรดมากขึ้น)
-            if abs(current_return) >= self.stop_loss_pct:
-                if (self.position > 0 and current_return <= -self.stop_loss_pct) or \
-                   (self.position < 0 and current_return <= -self.stop_loss_pct):
-                    discrete_action = 3  # Force close position (Stop Loss)
-                    auto_close_triggered = True
-                    
-            # Relaxed Take Profit Check (3.0% profit target - เข้าถึงได้ง่ายขึ้น)
-            elif current_return >= self.take_profit_pct:
-                discrete_action = 3  # Force close position (Take Profit)
-                auto_close_triggered = True
-        
+        elif discrete_action == 1 and self.position != 0:  # Try to Buy but already have position
+            self.failed_actions['buy_blocked'] += 1
+            
         elif discrete_action == 2 and self.position == 0:  # Sell (Short)
             self.position = -1
             # Dynamic position sizing based on confidence
@@ -650,8 +708,18 @@ class AdvancedForexEnv(gym.Env):
             # 🎁 MASSIVE POSITION OPENING BONUS!
             reward += 30.0  # Huge reward for opening Sell position!
             
+            # 🚨 DEBUG: Track position opening
+            self.position_opens += 1
+            print(f"🔴 POSITION OPENED: Sell at {current_price:.5f}, size: {dynamic_size:.2f}")
+            
+        elif discrete_action == 2 and self.position != 0:  # Try to Sell but already have position
+            self.failed_actions['sell_blocked'] += 1
+            
         elif discrete_action == 3 and self.position != 0:  # Close position (Manual or Auto)
+            print(f"🟡 EXECUTING CLOSE: About to close position {self.position}")
             close_reason = "Auto SL/TP" if auto_close_triggered else "Manual Close"
+            
+            print(f"🔍 CLOSE DEBUG: Action=3, Position={self.position}, Entry={self.entry_price}, Current={current_price}")
             
             if self.position == 1:  # Close long
                 profit = (current_price - self.entry_price) * self.position_size
@@ -663,6 +731,10 @@ class AdvancedForexEnv(gym.Env):
             profit -= cost
             
             self.balance += profit
+            
+            # 🚨 DEBUG: Track position closing  
+            self.position_closes += 1
+            print(f"🟡 POSITION CLOSED: {close_reason}, profit: {profit:.5f}, new_balance: {self.balance:.2f}")
             
             # Track trade with enhanced info
             self.trades.append({
@@ -717,8 +789,13 @@ class AdvancedForexEnv(gym.Env):
                     self._last_action_reward = -6  # Moderate penalty
             
             self.total_trades += 1
+            print(f"🎯 TRADE COMPLETED! Total trades now: {self.total_trades}")
             self.position = 0
             self.position_size = 0
+            
+        elif discrete_action == 3 and self.position == 0:  # Try to Close but no position
+            self.failed_actions['close_blocked'] += 1
+            print(f"❌ CLOSE BLOCKED: No position to close (position={self.position})")
         
         # Update equity
         if self.position != 0:
@@ -1307,15 +1384,15 @@ class AdaptiveTrainer:
         analysis = self.analyze_performance_patterns()
         
         if not analysis or not analysis.get('successful_ranges'):
-            # Optimized ranges based on analysis of best performing model (score: 33.58, profit_factor > 1)
+            # NUCLEAR OPTION: Ultra Fast Learning for Forced Trading
             return {
-                'learning_rates': [0.0005, 0.0008, 0.001],  # Focus on proven successful range
-                'gammas': [0.98, 0.99, 0.995],  # Higher gamma values work better
-                'algorithms': ['PPO'],  # PPO clearly outperforms A2C in this environment
-                'n_steps_ppo': [2048, 4096, 8192],  # Smaller n_steps work better than large ones
-                'batch_sizes': [512, 1024],  # Moderate batch sizes
-                'lookback_windows': [50, 75, 100, 150],  # Focus around successful 100 window
-                'transaction_costs': [0.0001, 0.0002]  # Lower transaction costs show better results
+                'learning_rates': [0.001, 0.002, 0.003],  # เพิ่ม learning rate มาก
+                'gammas': [0.90, 0.95, 0.98],  # ลด gamma เพื่อ short-term rewards
+                'algorithms': ['PPO'],  # Focus on PPO only
+                'n_steps_ppo': [1024, 2048],  # ลด n_steps for faster learning
+                'batch_sizes': [256, 512],  # ลด batch size for more frequent updates
+                'lookback_windows': [25, 50],  # ลด lookback for simpler learning
+                'transaction_costs': [0]  # Remove transaction cost completely
             }
         
         # Use successful ranges with some exploration
@@ -1601,7 +1678,7 @@ class AdaptiveTrainer:
                     'batch_size': optimal_batch_size,
                     'n_epochs': random.choice([8, 10, 15]),  # More epochs
                     'clip_range': random.choice([0.15, 0.2, 0.25]),  # Higher clip for exploration
-                    'ent_coef': random.choice([0.3, 0.5, 0.8]),   # ULTRA high entropy coefficient for maximum exploration!
+                    'ent_coef': random.choice([1.0, 1.5, 2.0]),   # INSANE entropy coefficient for FORCED exploration!
                     'vf_coef': 0.5,
                     'max_grad_norm': 0.5
                 })
