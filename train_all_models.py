@@ -438,7 +438,7 @@ class AdvancedForexEnv(gym.Env):
     """
     
     def __init__(self, data, symbol='XAUUSD', initial_balance=10000, lookback_window=50, 
-                 transaction_cost=0.0, max_position_size=15.0,  # เพิ่มจาก 5.0 เป็น 15.0 เพื่อกำไรมากขึ้น
+                 transaction_cost=0.0, max_position_size=100.0,  # เพิ่มเป็น 100.0 เพื่อกำไรเกิน $1 USD ต่อเทรด!
                  stop_loss_pct=0.030, take_profit_pct=0.060):  # ผ่อนคลาย SL/TP: 3%, 6% (Risk:Reward = 1:2) เพิ่มจากเดิม
         super().__init__()
         
@@ -708,12 +708,12 @@ class AdvancedForexEnv(gym.Env):
         # Execute discrete action with enhanced position sizing
         if discrete_action == 1 and self.position == 0:  # Buy
             self.position = 1
-            # 🚀 ENHANCED DYNAMIC POSITION SIZING - เพิ่มขนาดเพื่อกำไรมากขึ้น
+            # 🚀 MASSIVE POSITION SIZING - เพื่อกำไรเกิน $1 USD ต่อเทรด!
             confidence = abs(action_value)  # 0.4-1.0 range (from continuous action)
-            # ขยายขนาด position มากขึ้น: 8.0-15.0x (เพิ่มจาก 3.0-5.0x)
-            base_size = 8.0  # เพิ่มจาก 3.0 เป็น 8.0
-            confidence_multiplier = (confidence - 0.4) * 17.5  # 0.4-1.0 → 0-10.5
-            dynamic_size = min(base_size + confidence_multiplier, 15.0)  # 8.0-15.0x range
+            # ขยายขนาด position มหาศาล: 50.0-100.0x (เพิ่มจาก 8.0-15.0x)
+            base_size = 50.0  # เพิ่มจาก 8.0 เป็น 50.0 (6เท่า!)
+            confidence_multiplier = (confidence - 0.4) * 83.3  # 0.4-1.0 → 0-50.0
+            dynamic_size = min(base_size + confidence_multiplier, 100.0)  # 50.0-100.0x range
             self.position_size = dynamic_size
             self.entry_price = current_price
             # Transaction cost
@@ -733,12 +733,12 @@ class AdvancedForexEnv(gym.Env):
             
         elif discrete_action == 2 and self.position == 0:  # Sell (Short)
             self.position = -1
-            # 🚀 ENHANCED DYNAMIC POSITION SIZING - เพิ่มขนาดเพื่อกำไรมากขึ้น
+            # 🚀 MASSIVE POSITION SIZING - เพื่อกำไรเกิน $1 USD ต่อเทรด!
             confidence = abs(action_value)  # 0.4-1.0 range (from continuous action)
-            # ขยายขนาด position มากขึ้น: 8.0-15.0x (เพิ่มจาก 3.0-5.0x)
-            base_size = 8.0  # เพิ่มจาก 3.0 เป็น 8.0
-            confidence_multiplier = (confidence - 0.4) * 17.5  # 0.4-1.0 → 0-10.5
-            dynamic_size = min(base_size + confidence_multiplier, 15.0)  # 8.0-15.0x range
+            # ขยายขนาด position มหาศาล: 50.0-100.0x (เพิ่มจาก 8.0-15.0x)
+            base_size = 50.0  # เพิ่มจาก 8.0 เป็น 50.0 (6เท่า!)
+            confidence_multiplier = (confidence - 0.4) * 83.3  # 0.4-1.0 → 0-50.0
+            dynamic_size = min(base_size + confidence_multiplier, 100.0)  # 50.0-100.0x range
             self.position_size = dynamic_size
             self.entry_price = current_price
             # Transaction cost
@@ -795,8 +795,14 @@ class AdvancedForexEnv(gym.Env):
                 
                 # 🚀 ENHANCED PROFIT REWARD SYSTEM - ส่งเสริมกำไรขนาดใหญ่มากขึ้น
                 
-                # 💰 MASSIVE REWARDS for larger profits (เพิ่มรางวัลมากขึ้น)
-                if profit_pct >= 0.05:  # 5%+ profit (MASSIVE!)
+                # 💰 MASSIVE REWARDS for larger profits (เพิ่มรางวัลมากขึ้น) + BONUS for $1+ profits!
+                if profit >= 5.0:  # $5+ profit (ULTIMATE!)
+                    self._last_action_reward = 100  # ULTIMATE bonus for big dollar profits!
+                elif profit >= 3.0:  # $3+ profit (MASSIVE!)
+                    self._last_action_reward = 80 if close_reason == "Auto SL/TP" else 70  # HUGE bonus
+                elif profit >= 1.0:  # $1+ profit (TARGET ACHIEVED!)
+                    self._last_action_reward = 60 if close_reason == "Auto SL/TP" else 50  # MAJOR bonus for $1+ target!
+                elif profit_pct >= 0.05:  # 5%+ profit (MASSIVE!)
                     self._last_action_reward = 50 if close_reason == "Auto SL/TP" else 40  # HUGE bonus
                 elif profit_pct >= 0.035:  # 3.5%+ profit (EXCELLENT!)
                     self._last_action_reward = 35 if close_reason == "Auto SL/TP" else 30  # Very large bonus
@@ -834,13 +840,19 @@ class AdvancedForexEnv(gym.Env):
             self.total_trades += 1
             
             # 🚨 ENHANCED DEBUG: Track profit details (profit_pct now safely available)
-            if self.current_step % 100 == 0 or (profit > 0 and profit_pct >= 0.01):  # Debug significant profits or every 100 steps
+            # Show ALL trades that achieve $1+ profit target OR every 100 steps
+            if self.current_step % 100 == 0 or profit >= 1.0 or (profit > 0 and profit_pct >= 0.01):  # Debug $1+ profits or every 100 steps
                 import threading
                 import time
                 current_time = time.strftime("%H:%M:%S")
                 thread_id = threading.get_ident()
                 env_id = getattr(self, 'env_id', id(self) % 1000)
-                print(f"💰 [{current_time}|ENV{env_id}|T{thread_id%1000}] TRADE: ${profit:.2f} ({profit_pct*100:.2f}%) Size:{self.position_size:.1f} Reward:{self._last_action_reward}")
+                
+                # Special highlight for $1+ profits
+                if profit >= 1.0:
+                    print(f"🎉 [{current_time}|ENV{env_id}|T{thread_id%1000}] TARGET ACHIEVED! ${profit:.2f} ({profit_pct*100:.2f}%) Size:{self.position_size:.1f} Reward:{self._last_action_reward}")
+                else:
+                    print(f"💰 [{current_time}|ENV{env_id}|T{thread_id%1000}] TRADE: ${profit:.2f} ({profit_pct*100:.2f}%) Size:{self.position_size:.1f} Reward:{self._last_action_reward}")
             
             # print(f"🎯 TRADE COMPLETED! Total trades now: {self.total_trades}")
             self.position = 0
@@ -1121,24 +1133,41 @@ class AdvancedForexEnv(gym.Env):
             final_profit_factor = self.total_profit / max(self.total_loss, 1e-8) if self.total_trades > 0 else 0
             final_win_rate = self.profitable_trades / max(self.total_trades, 1)
             
-            # 🎯 ENHANCED FINAL REWARD SYSTEM - เน้นผลตอบแทนรวม
+            # 🎯 ENHANCED FINAL REWARD SYSTEM - เน้นกำไรเป็น Dollar Amount
             final_reward = 0
             
-            # 💰 MASSIVE TOTAL RETURN BONUS (NEW!)
-            if total_return >= 0.20:  # 20%+ return (AMAZING!)
+            # 💰 MASSIVE DOLLAR PROFIT BONUS (NEW PRIORITY!)
+            total_dollar_profit = self.total_profit - self.total_loss  # Net profit in dollars
+            if total_dollar_profit >= 100:    # $100+ profit (AMAZING!)
+                final_reward += 300  # ULTIMATE bonus
+            elif total_dollar_profit >= 50:   # $50+ profit (EXCELLENT!)
                 final_reward += 200  # MASSIVE bonus
-            elif total_return >= 0.15:  # 15%+ return (EXCELLENT!)
+            elif total_dollar_profit >= 20:   # $20+ profit (GREAT!)
                 final_reward += 150  # Very large bonus
-            elif total_return >= 0.10:  # 10%+ return (GREAT!)
+            elif total_dollar_profit >= 10:   # $10+ profit (GOOD!)
                 final_reward += 100  # Large bonus
-            elif total_return >= 0.05:  # 5%+ return (GOOD!)
+            elif total_dollar_profit >= 5:    # $5+ profit (Okay)
                 final_reward += 60   # Good bonus
-            elif total_return >= 0.02:  # 2%+ return (Okay)
+            elif total_dollar_profit >= 1:    # $1+ profit (Minimum target)
                 final_reward += 30   # Moderate bonus
+            elif total_dollar_profit > 0:     # ANY positive dollar profit
+                final_reward += 10   # Small bonus
+            
+            # 💰 TRADITIONAL PERCENTAGE RETURN BONUS (Secondary priority)
+            if total_return >= 0.20:  # 20%+ return (AMAZING!)
+                final_reward += 100  # MASSIVE bonus (reduced from 200)
+            elif total_return >= 0.15:  # 15%+ return (EXCELLENT!)
+                final_reward += 75   # Very large bonus (reduced from 150)
+            elif total_return >= 0.10:  # 10%+ return (GREAT!)
+                final_reward += 50   # Large bonus (reduced from 100)
+            elif total_return >= 0.05:  # 5%+ return (GOOD!)
+                final_reward += 30   # Good bonus (reduced from 60)
+            elif total_return >= 0.02:  # 2%+ return (Okay)
+                final_reward += 15   # Moderate bonus (reduced from 30)
             elif total_return >= 0.01:  # 1%+ return (Small)
-                final_reward += 15   # Small bonus
+                final_reward += 8    # Small bonus (reduced from 15)
             elif total_return > 0:     # ANY positive return
-                final_reward += 5    # Tiny bonus
+                final_reward += 3    # Tiny bonus (reduced from 5)
             
             # 1. 🎁 TRADING ACTIVITY BONUS (รองลงมา)
             if self.total_trades == 0:
