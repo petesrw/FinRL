@@ -603,11 +603,11 @@ class AdvancedForexEnv(gym.Env):
         # [0.1, 0.5): Buy = 1 (ขยายช่วงเทรดเพิ่ม!)
         # [0.5, 1]: Close = 3
         # else:
-        if action_value < -0.1:  # ลดจาก -0.2 อีก
+        if action_value < -0.2:  # ลดจาก -0.4 อีก
             discrete_action = 2  # Sell
-        elif action_value < 0.1:  # ลดจาก 0.2 อีก
-            discrete_action = 0  # Hold (เหลือแค่ 10% ของ action space!)
-        elif action_value < 0.5:  # ลดจาก 0.6
+        elif action_value < 0.2:  # ลดจาก 0.4 อีก
+            discrete_action = 0  # Hold (เหลือแค่ 20% ของ action space!)
+        elif action_value < 0.6:  # ลดจาก 0.7
             discrete_action = 1  # Buy
         else:
             discrete_action = 3  # Close
@@ -648,7 +648,23 @@ class AdvancedForexEnv(gym.Env):
         # 🚨 ULTRA AGGRESSIVE ANTI-HOLD SYSTEM
         # ลงโทษ Hold action ทุกครั้ง!
         if discrete_action == 0:  # Hold
-            reward -= 20.0  # MASSIVE penalty for holding! (เพิ่มจาก 5.0)
+            reward -= 5.0  # Heavy penalty for holding!
+        
+        # Execute discrete action with enhanced position sizing
+        if discrete_action == 1 and self.position == 0:  # Buy
+            self.position = 1
+            # Dynamic position sizing based on confidence (สมมุติ action_value เป็น confidence)
+            confidence = abs(action_value)  # 0.5-1.0 range
+            dynamic_size = min(3.0 + (confidence - 0.5) * 4.0, self.max_position_size)  # 3.0-5.0x based on confidence
+            self.position_size = dynamic_size
+            self.entry_price = current_price
+            # Transaction cost
+            cost = current_price * self.position_size * self.transaction_cost
+            self.balance -= cost
+            
+            # 🎁 MASSIVE POSITION OPENING BONUS!
+            reward += 30.0  # Huge reward for opening Buy position!
+            
         
         # 🎯 RELAXED AUTOMATIC STOP LOSS & TAKE PROFIT CHECK (More Trading-Friendly)
         # CHECK THIS FIRST before any action execution!
