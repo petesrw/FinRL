@@ -596,18 +596,17 @@ class AdvancedForexEnv(gym.Env):
         #     print(f"🚨 FORCED TRADE at step {self.current_step}: Action {discrete_action}")
         #     self.force_trade_counter += 1
         
-        # Convert continuous to discrete (ULTRA AGGRESSIVE TRADING MODE):
-        # บังคับให้เทรดมากขึ้นโดยการลด Hold zone ลงมาก
-        # [-1, -0.1): Sell (Short) = 2 (ขยายช่วงเทรดเพิ่ม!)
-        # [-0.1, 0.1): Hold = 0 (ลด Hold zone เหลือ 10% เท่านั้น!)
-        # [0.1, 0.5): Buy = 1 (ขยายช่วงเทรดเพิ่ม!)
-        # [0.5, 1]: Close = 3
-        # else:
-        if action_value < -0.2:  # ลดจาก -0.4 อีก
+        # Convert continuous to discrete (BALANCED TRADING MODE):
+        # Normal action space distribution for stable trading
+        # [-1, -0.4): Sell (Short) = 2 (30% of action space)
+        # [-0.4, 0.4): Hold = 0 (40% of action space - balanced)
+        # [0.4, 0.7): Buy = 1 (30% of action space)
+        # [0.7, 1]: Close = 3 (30% of action space)
+        if action_value < -0.4:
             discrete_action = 2  # Sell
-        elif action_value < 0.2:  # ลดจาก 0.4 อีก
-            discrete_action = 0  # Hold (เหลือแค่ 20% ของ action space!)
-        elif action_value < 0.6:  # ลดจาก 0.7
+        elif action_value < 0.4:
+            discrete_action = 0  # Hold (balanced zone)
+        elif action_value < 0.7:
             discrete_action = 1  # Buy
         else:
             discrete_action = 3  # Close
@@ -645,10 +644,10 @@ class AdvancedForexEnv(gym.Env):
                 print(f"   Failed actions: {self.failed_actions}")
                 print("   ---")
         
-        # 🚨 ULTRA AGGRESSIVE ANTI-HOLD SYSTEM
-        # ลงโทษ Hold action ทุกครั้ง!
+        # 🎯 BALANCED ANTI-HOLD SYSTEM
+        # Moderate penalty for excessive holding
         if discrete_action == 0:  # Hold
-            reward -= 5.0  # Heavy penalty for holding!
+            reward -= 2.0  # Balanced penalty for holding (reduced from 5.0)
         
         # Execute discrete action with enhanced position sizing
         if discrete_action == 1 and self.position == 0:  # Buy
@@ -700,8 +699,8 @@ class AdvancedForexEnv(gym.Env):
             cost = current_price * self.position_size * self.transaction_cost
             self.balance -= cost
             
-            # 🎁 MASSIVE POSITION OPENING BONUS!
-            reward += 30.0  # Huge reward for opening Buy position!
+            # 🎁 POSITION OPENING BONUS
+            reward += 15.0  # Good reward for opening Buy position (reduced from 30.0)
             
             # 🚨 DEBUG: Track position opening
             self.position_opens += 1
@@ -721,8 +720,8 @@ class AdvancedForexEnv(gym.Env):
             cost = current_price * self.position_size * self.transaction_cost
             self.balance -= cost
             
-            # 🎁 MASSIVE POSITION OPENING BONUS!
-            reward += 30.0  # Huge reward for opening Sell position!
+            # 🎁 POSITION OPENING BONUS
+            reward += 15.0  # Good reward for opening Sell position (reduced from 30.0)
             
             # 🚨 DEBUG: Track position opening
             self.position_opens += 1
