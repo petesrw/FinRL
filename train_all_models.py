@@ -689,19 +689,19 @@ class AdvancedForexEnv(gym.Env):
         if self.position != 0:
             current_return = (current_price - self.entry_price) / self.entry_price * self.position
             
-            # Relaxed Stop Loss Check (2% loss limit)
+            # FIXED Stop Loss Check - Proper logic for both Long and Short
             if abs(current_return) >= self.stop_loss_pct:
                 if (self.position > 0 and current_return <= -self.stop_loss_pct) or \
-                   (self.position < 0 and current_return <= -self.stop_loss_pct):
+                   (self.position < 0 and current_return >= self.stop_loss_pct):  # FIXED: Short SL when price goes UP
                     discrete_action = 3  # Force close position (Stop Loss)
                     auto_close_triggered = True
-                    
-            # Relaxed Take Profit Check (4% profit target)
-            elif current_return >= self.take_profit_pct:
-                discrete_action = 3  # Force close position (Take Profit)
-                auto_close_triggered = True
-        
-        # Execute discrete action with enhanced position sizing
+
+            # FIXED Take Profit Check - Proper logic for both Long and Short
+            elif abs(current_return) >= self.take_profit_pct:
+                if (self.position > 0 and current_return >= self.take_profit_pct) or \
+                   (self.position < 0 and current_return <= -self.take_profit_pct):  # FIXED: Short TP when price goes DOWN
+                    discrete_action = 3  # Force close position (Take Profit)
+                    auto_close_triggered = True        # Execute discrete action with enhanced position sizing
         if discrete_action == 1 and self.position == 0:  # Buy
             self.position = 1
             # 🚀 ULTRA MASSIVE POSITION SIZING - เพื่อกำไรเกิน $1 USD ต่อเทรด!
