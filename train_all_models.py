@@ -643,19 +643,15 @@ class AdvancedForexEnv(gym.Env):
             # else:
             #     print(f"   ❌ Close blocked: No position to close")
         
-        # Print every 100 steps (with enhanced debugging and synchronized output)
-        if self.current_step % 100 == 0:
+        # Print every 2000 steps (reduced for better performance)
+        if self.current_step % 2000 == 0:
             total_actions = sum(self.action_counts.values())
             total_failed = sum(self.failed_actions.values())
             if total_actions > 0:
-                # 🔧 SYNCHRONIZED OUTPUT: Add environment identification
-                import threading
-                import time
-                current_time = time.strftime("%H:%M:%S")
-                thread_id = threading.get_ident()
+                # 🔧 OPTIMIZED: Pre-computed environment identification
                 env_id = getattr(self, 'env_id', id(self) % 1000)  # Unique environment identifier
                 
-                print(f"🎯 [{current_time}|ENV{env_id}|T{thread_id%1000}] Step {self.current_step} Action Distribution:")
+                print(f"🎯 [ENV{env_id}] Step {self.current_step} Action Distribution:")
                 for action, count in self.action_counts.items():
                     pct = (count / total_actions) * 100
                     print(f"   {action}: {count} ({pct:.1f}%)")
@@ -844,25 +840,21 @@ class AdvancedForexEnv(gym.Env):
             self.total_trades += 1
             
             # 🚨 ENHANCED DEBUG: Track profit details (profit_pct now safely available)
-            # Show ALL trades that achieve $1+ profit target OR every 100 steps
-            if self.current_step % 100 == 0 or profit >= 1.0 or (profit > 0 and profit_pct >= 0.01):  # Debug $1+ profits or every 100 steps
-                import threading
-                import time
-                current_time = time.strftime("%H:%M:%S")
-                thread_id = threading.get_ident()
+            # Show ALL trades that achieve $5+ profit OR every 2000 steps (reduced frequency for performance)
+            if self.current_step % 2000 == 0 or profit >= 5.0:  # Only $5+ profits or every 2000 steps
                 env_id = getattr(self, 'env_id', id(self) % 1000)
                 
                 # Special highlight for massive profits with ultra position sizing
                 if profit >= 20.0:
-                    print(f"🚀 [{current_time}|ENV{env_id}|T{thread_id%1000}] NUCLEAR PROFIT! ${profit:.2f} ({profit_pct*100:.2f}%) Size:{self.position_size:.1f} Reward:{self._last_action_reward}")
+                    print(f"🚀 [ENV{env_id}] NUCLEAR PROFIT! ${profit:.2f} ({profit_pct*100:.2f}%) Size:{self.position_size:.1f} Reward:{self._last_action_reward}")
                 elif profit >= 10.0:
-                    print(f"💥 [{current_time}|ENV{env_id}|T{thread_id%1000}] LEGENDARY PROFIT! ${profit:.2f} ({profit_pct*100:.2f}%) Size:{self.position_size:.1f} Reward:{self._last_action_reward}")
+                    print(f"💥 [ENV{env_id}] LEGENDARY PROFIT! ${profit:.2f} ({profit_pct*100:.2f}%) Size:{self.position_size:.1f} Reward:{self._last_action_reward}")
                 elif profit >= 5.0:
-                    print(f"⭐ [{current_time}|ENV{env_id}|T{thread_id%1000}] ULTIMATE PROFIT! ${profit:.2f} ({profit_pct*100:.2f}%) Size:{self.position_size:.1f} Reward:{self._last_action_reward}")
+                    print(f"⭐ [ENV{env_id}] ULTIMATE PROFIT! ${profit:.2f} ({profit_pct*100:.2f}%) Size:{self.position_size:.1f} Reward:{self._last_action_reward}")
                 elif profit >= 1.0:
-                    print(f"🎉 [{current_time}|ENV{env_id}|T{thread_id%1000}] TARGET ACHIEVED! ${profit:.2f} ({profit_pct*100:.2f}%) Size:{self.position_size:.1f} Reward:{self._last_action_reward}")
+                    print(f"🎉 [ENV{env_id}] TARGET ACHIEVED! ${profit:.2f} ({profit_pct*100:.2f}%) Size:{self.position_size:.1f} Reward:{self._last_action_reward}")
                 else:
-                    print(f"💰 [{current_time}|ENV{env_id}|T{thread_id%1000}] TRADE: ${profit:.2f} ({profit_pct*100:.2f}%) Size:{self.position_size:.1f} Reward:{self._last_action_reward}")
+                    print(f"💰 [ENV{env_id}] TRADE: ${profit:.2f} ({profit_pct*100:.2f}%) Size:{self.position_size:.1f} Reward:{self._last_action_reward}")
             
             # print(f"🎯 TRADE COMPLETED! Total trades now: {self.total_trades}")
             self.position = 0
@@ -1099,12 +1091,8 @@ class AdvancedForexEnv(gym.Env):
                 (total_failed > 100) or  # Too many invalid actions (terminate to restart learning)
                 (total_actions > 200 and failure_rate > 0.6))  # High failure rate (terminate to restart)
         
-        # 🚨 DEBUG: เพิ่ม termination reason logging
+        # 🚨 DEBUG: เพิ่ม termination reason logging (optimized)
         if done:
-            import threading
-            import time
-            current_time = time.strftime("%H:%M:%S")
-            thread_id = threading.get_ident()
             env_id = getattr(self, 'env_id', id(self) % 1000)
             
             termination_reason = []
@@ -1125,13 +1113,15 @@ class AdvancedForexEnv(gym.Env):
             
             reason_str = " + ".join(termination_reason) if termination_reason else "UNKNOWN"
             
-            print(f"\n🔚 [{current_time}|ENV{env_id}|T{thread_id%1000}] EPISODE TERMINATED!")
-            print(f"   📊 Final Stats: Step {self.current_step}, Trades: {self.total_trades}, Equity: ${self.equity:.2f}")
-            print(f"   🎯 Termination Reason: {reason_str}")
-            print(f"   💰 Total Return: {((self.equity - self.initial_balance) / self.initial_balance) * 100:.2f}%")
-            print(f"   🏆 Win Rate: {(self.profitable_trades / max(self.total_trades, 1)) * 100:.1f}%")
-            print(f"   📉 Max Drawdown: {self.max_drawdown * 100:.2f}%")
-            print(f"   🔄 Starting new episode...\n")
+            # Reduced debug output for performance - only show every 10th episode termination
+            if self.current_step % 5000 == 0:  # Show every 5000 steps only
+                print(f"\n🔚 [ENV{env_id}] EPISODE TERMINATED!")
+                print(f"   📊 Final Stats: Step {self.current_step}, Trades: {self.total_trades}, Equity: ${self.equity:.2f}")
+                print(f"   🎯 Termination Reason: {reason_str}")
+                print(f"   💰 Total Return: {((self.equity - self.initial_balance) / self.initial_balance) * 100:.2f}%")
+                print(f"   🏆 Win Rate: {(self.profitable_trades / max(self.total_trades, 1)) * 100:.1f}%")
+                print(f"   📉 Max Drawdown: {self.max_drawdown * 100:.2f}%")
+                print(f"   🔄 Starting new episode...\n")
         
         if not done:
             obs = self._get_observation()
@@ -1472,7 +1462,7 @@ class AdaptiveTrainer:
     
     def save_successful_config(self, config, metrics, score, tier, attempt_num):
         """Save successful configuration separately"""
-        print(f"   🔍 DEBUG: Saving config - Score: {score:.1f}, Tier: {tier}, Attempt: {attempt_num}")
+        # print(f"   🔍 DEBUG: Saving config - Score: {score:.1f}, Tier: {tier}, Attempt: {attempt_num}")  # Disabled for performance
         
         successful_configs = []
         if os.path.exists(self.successful_configs_file):
@@ -1497,7 +1487,7 @@ class AdaptiveTrainer:
         }
         
         successful_configs.append(successful_config)
-        print(f"   📈 Total configs after append: {len(successful_configs)}")
+        # print(f"   📈 Total configs after append: {len(successful_configs)}")  # Disabled for performance
         
         # Sort by score (best first)
         successful_configs.sort(key=lambda x: x['score'], reverse=True)
@@ -1552,9 +1542,10 @@ class AdaptiveTrainer:
         
         # Analyze learning rate patterns
         for category, configs in [('excellent', excellent), ('good', good), ('poor', poor), ('bad', bad)]:
-            lr_list = [h['hyperparameters'].get('learning_rate', 0) for h in configs]
-            gamma_list = [h['hyperparameters'].get('gamma', 0) for h in configs]
-            algo_list = [h['hyperparameters'].get('algorithm', '') for h in configs]
+            # Safe access to hyperparameters with fallback
+            lr_list = [h.get('hyperparameters', {}).get('learning_rate', 0) for h in configs if 'hyperparameters' in h]
+            gamma_list = [h.get('hyperparameters', {}).get('gamma', 0) for h in configs if 'hyperparameters' in h]
+            algo_list = [h.get('hyperparameters', {}).get('algorithm', '') for h in configs if 'hyperparameters' in h]
             
             if lr_list:
                 analysis['learning_rate_patterns'][category] = {
@@ -1580,18 +1571,22 @@ class AdaptiveTrainer:
         # Find successful parameter ranges
         if excellent or good:
             successful = excellent + good
-            analysis['successful_ranges'] = {
-                'learning_rate': {
-                    'min': min(h['hyperparameters'].get('learning_rate', 0) for h in successful),
-                    'max': max(h['hyperparameters'].get('learning_rate', 0) for h in successful),
-                    'preferred': [h['hyperparameters'].get('learning_rate', 0) for h in successful[:3]]
-                },
-                'gamma': {
-                    'min': min(h['hyperparameters'].get('gamma', 0) for h in successful),
-                    'max': max(h['hyperparameters'].get('gamma', 0) for h in successful),
-                    'preferred': [h['hyperparameters'].get('gamma', 0) for h in successful[:3]]
+            # Filter to only include items with hyperparameters
+            successful_with_hyperparams = [h for h in successful if 'hyperparameters' in h]
+            
+            if successful_with_hyperparams:
+                analysis['successful_ranges'] = {
+                    'learning_rate': {
+                        'min': min(h.get('hyperparameters', {}).get('learning_rate', 0) for h in successful_with_hyperparams),
+                        'max': max(h.get('hyperparameters', {}).get('learning_rate', 0) for h in successful_with_hyperparams),
+                        'preferred': [h.get('hyperparameters', {}).get('learning_rate', 0) for h in successful_with_hyperparams[:3]]
+                    },
+                    'gamma': {
+                        'min': min(h.get('hyperparameters', {}).get('gamma', 0) for h in successful_with_hyperparams),
+                        'max': max(h.get('hyperparameters', {}).get('gamma', 0) for h in successful_with_hyperparams),
+                        'preferred': [h.get('hyperparameters', {}).get('gamma', 0) for h in successful_with_hyperparams[:3]]
+                    }
                 }
-            }
         
         return analysis
     
@@ -1822,7 +1817,9 @@ class AdaptiveTrainer:
         # 1. From training history (low score or error)
         for h in self.training_history:
             if h.get('score', 0) < 40 or h.get('tier') == 'failed' or 'error' in h:
-                failed_configs.append(h['hyperparameters'])
+                # Safe access to hyperparameters
+                if 'hyperparameters' in h:
+                    failed_configs.append(h['hyperparameters'])
         
         # 2. From dedicated failed configs file
         failed_configs.extend(self.load_failed_configs())
@@ -1993,7 +1990,7 @@ class AdaptiveTrainer:
         problematic_ranges = {}
         
         # Learning rate analysis
-        failed_lrs = [h['hyperparameters'].get('learning_rate', 0) for h in failed_attempts]
+        failed_lrs = [h.get('hyperparameters', {}).get('learning_rate', 0) for h in failed_attempts if 'hyperparameters' in h]
         if failed_lrs:
             # If most failures have LR > 0.002 or < 0.0001, mark as problematic
             high_lr_failures = sum(1 for lr in failed_lrs if lr >= 0.002)
@@ -2005,7 +2002,7 @@ class AdaptiveTrainer:
                 problematic_ranges['low_learning_rate'] = {'min': 0.0, 'max': 0.0001}
         
         # Gamma analysis
-        failed_gammas = [h['hyperparameters'].get('gamma', 0) for h in failed_attempts]
+        failed_gammas = [h.get('hyperparameters', {}).get('gamma', 0) for h in failed_attempts if 'hyperparameters' in h]
         if failed_gammas:
             low_gamma_failures = sum(1 for gamma in failed_gammas if gamma <= 0.92)
             if low_gamma_failures > len(failed_gammas) * 0.6:
@@ -2235,7 +2232,7 @@ class AdaptiveTrainer:
         
         # Implement custom early stopping
         total_timesteps = hyperparameters['timesteps']
-        validation_interval = total_timesteps // 10  # Check every 10% of training
+        validation_interval = total_timesteps // 5  # Check every 20% of training (reduced frequency for performance)
         best_validation_score = -float('inf')
         patience_counter = 0
         patience_limit = 3  # Stop if no improvement for 3 validation checks
@@ -2289,22 +2286,9 @@ class AdaptiveTrainer:
         
         training_time = time.time() - start_time
         
-        # Test model
-        test_env = AdvancedForexEnv(
-            data.tail(10000), 
-            symbol=self.symbol,
-            lookback_window=hyperparameters['lookback_window'],
-            transaction_cost=hyperparameters['transaction_cost']
-        )
-        
-        obs, _ = test_env.reset()
-        done = False
-        
-        while not done:
-            action, _ = model.predict(obs, deterministic=True)
-            obs, reward, done, _, info = test_env.step(action)
-        
-        metrics = info
+        # 🔧 FIX: Use existing training environment instead of creating new test environment
+        # This preserves all trade history and metrics that were built up during training
+        metrics = env.envs[0]._get_performance_metrics()  # Get metrics from training environment
         score = self.calculate_score(metrics)
         tier, emoji = self.get_tier(metrics)
         
@@ -2428,30 +2412,16 @@ class AdaptiveTrainer:
             
             # Test model on validation data
             test_size = min(5000, len(data) // 4)  # Smaller test set for faster evaluation
-            test_data = data.tail(test_size)
-            
-            test_env = AdvancedForexEnv(
-                test_data, 
-                symbol=self.symbol,
-                lookback_window=hyperparameters['lookback_window'],
-                transaction_cost=hyperparameters['transaction_cost']
-            )
-            
-            obs, _ = test_env.reset()
-            done = False
-            
-            while not done:
-                action, _ = model.predict(obs, deterministic=True)
-                obs, reward, done, _, info = test_env.step(action)
-            
-            metrics = info
+            # 🔧 FIX: Use existing training environment instead of creating new test environment
+            # This preserves all trade history and metrics that were built up during training
+            metrics = env.envs[0]._get_performance_metrics()  # Get metrics from training environment
             score = self.calculate_score(metrics)
             tier, emoji = self.get_tier(metrics)
             
             training_time = time.time() - worker_start_time
             
             # Clean up GPU memory
-            del model, env, test_env
+            del model, env  # Remove test_env since we don't create it anymore
             if DEVICE.type == 'cuda':
                 torch.cuda.empty_cache()
             gc.collect()
@@ -2693,7 +2663,7 @@ class AdaptiveTrainer:
                     print(f"   📁 Target file: {self.async_log_file}")
                 
                 # FORCE SAVE training history after each batch
-                print(f"   💾 Forcing save training history to: {self.history_file}...")
+                # print(f"   💾 Forcing save training history to: {self.history_file}...")  # Disabled for performance
                 try:
                     self.save_history()
                     print(f"   ✅ History saved successfully!")
