@@ -687,19 +687,22 @@ class AdvancedForexEnv(gym.Env):
         # CHECK THIS FIRST before any action execution!
         auto_close_triggered = False
         if self.position != 0:
-            current_return = (current_price - self.entry_price) / self.entry_price * self.position
+            # FIXED: Calculate pure price return without position multiplication
+            price_return = (current_price - self.entry_price) / self.entry_price
             
-            # FIXED Stop Loss Check - Proper logic for both Long and Short
-            if abs(current_return) >= self.stop_loss_pct:
-                if (self.position > 0 and current_return <= -self.stop_loss_pct) or \
-                   (self.position < 0 and current_return >= self.stop_loss_pct):  # FIXED: Short SL when price goes UP
+            # FIXED Stop Loss Check - Proper logic for both Long and Short (with tolerance)
+            if self.position > 0:  # Long position
+                if price_return <= -self.stop_loss_pct + 1e-8:  # Price dropped by SL% (with tolerance)
                     discrete_action = 3  # Force close position (Stop Loss)
                     auto_close_triggered = True
-
-            # FIXED Take Profit Check - Proper logic for both Long and Short
-            elif abs(current_return) >= self.take_profit_pct:
-                if (self.position > 0 and current_return >= self.take_profit_pct) or \
-                   (self.position < 0 and current_return <= -self.take_profit_pct):  # FIXED: Short TP when price goes DOWN
+                elif price_return >= self.take_profit_pct - 1e-8:  # Price rose by TP% (with tolerance)
+                    discrete_action = 3  # Force close position (Take Profit)
+                    auto_close_triggered = True
+            elif self.position < 0:  # Short position  
+                if price_return >= self.stop_loss_pct - 1e-8:  # Price rose by SL% (loss for short, with tolerance)
+                    discrete_action = 3  # Force close position (Stop Loss)
+                    auto_close_triggered = True
+                elif price_return <= -self.take_profit_pct + 1e-8:  # Price dropped by TP% (profit for short, with tolerance)
                     discrete_action = 3  # Force close position (Take Profit)
                     auto_close_triggered = True        # Execute discrete action with enhanced position sizing
         if discrete_action == 1 and self.position == 0:  # Buy
