@@ -1472,10 +1472,19 @@ class AdaptiveTrainer:
     
     def save_successful_config(self, config, metrics, score, tier, attempt_num):
         """Save successful configuration separately"""
+        print(f"   🔍 DEBUG: Saving config - Score: {score:.1f}, Tier: {tier}, Attempt: {attempt_num}")
+        
         successful_configs = []
         if os.path.exists(self.successful_configs_file):
-            with open(self.successful_configs_file, 'r') as f:
-                successful_configs = json.load(f)
+            try:
+                with open(self.successful_configs_file, 'r') as f:
+                    successful_configs = json.load(f)
+                print(f"   📊 Loaded {len(successful_configs)} existing configs")
+            except Exception as e:
+                print(f"   ⚠️ Error loading existing configs: {e}")
+                successful_configs = []
+        else:
+            print(f"   📄 Creating new successful configs file")
         
         successful_config = {
             'attempt': attempt_num,
@@ -1488,14 +1497,28 @@ class AdaptiveTrainer:
         }
         
         successful_configs.append(successful_config)
+        print(f"   📈 Total configs after append: {len(successful_configs)}")
         
         # Sort by score (best first)
         successful_configs.sort(key=lambda x: x['score'], reverse=True)
         
-        with open(self.successful_configs_file, 'w') as f:
-            json.dump(successful_configs, f, indent=2)
+        try:
+            with open(self.successful_configs_file, 'w') as f:
+                json.dump(successful_configs, f, indent=2)
+            
+            # Verify save
+            if os.path.exists(self.successful_configs_file):
+                file_size = os.path.getsize(self.successful_configs_file)
+                print(f"   ✅ Successful config saved! File size: {file_size} bytes")
+                print(f"   📁 Path: {self.successful_configs_file}")
+            else:
+                print(f"   ❌ File doesn't exist after save!")
+                
+        except Exception as e:
+            print(f"   ❌ Error saving successful config: {e}")
+            print(f"   📁 Target path: {self.successful_configs_file}")
         
-        print(f"   📝 Successful config saved to: {self.successful_configs_file}")
+        print(f"   📝 Successful config processing completed")
     
     def load_failed_configs(self):
         """Load previously failed configurations"""
@@ -1871,7 +1894,7 @@ class AdaptiveTrainer:
                     'batch_size': optimal_batch_size,
                     'n_epochs': random.choice([8, 10, 15]),  # More epochs
                     'clip_range': random.choice([0.15, 0.2, 0.25]),  # Higher clip for exploration
-                    'ent_coef': random.choice([1.0, 1.5, 2.0]),   # INSANE entropy coefficient for FORCED exploration!
+                    'ent_coef': random.choice([2.0, 3.0, 5.0]),   # EXTREME entropy coefficient for FORCED exploration!
                     'vf_coef': 0.5,
                     'max_grad_norm': 0.5
                 })
@@ -1881,7 +1904,7 @@ class AdaptiveTrainer:
                     'buffer_size': random.choice([500000, 1000000]),
                     'learning_starts': random.choice([1000, 2000]),
                     'tau': random.choice([0.005, 0.01, 0.02]),
-                    'ent_coef': random.choice([0.8, 1.0, 1.2]),  # VERY high entropy for maximum exploration
+                    'ent_coef': random.choice([1.5, 2.0, 3.0]),  # EXTREME high entropy for maximum exploration
                     'target_update_interval': 1,
                     'gradient_steps': random.choice([1, 2])
                 })
@@ -2622,7 +2645,8 @@ class AdaptiveTrainer:
                         
                         return attempt_record
                     
-                    # Save successful config
+                    # 🎯 FORCE SAVE ALL CONFIGS for debugging
+                    print(f"      💾 Saving config with score {result['score']:.1f}...")
                     self.save_successful_config(
                         result['hyperparameters'], 
                         result['metrics'], 
@@ -2657,9 +2681,40 @@ class AdaptiveTrainer:
                     }
                     self.training_history.append(failed_record)
                 
-                # Save async batch results
+                # Save async batch results (FORCE SAVE WITH DEBUG)
                 all_batch_results = successful_results + failed_results
-                self.save_async_training_log(all_batch_results, batch_num)
+                print(f"   💾 Saving async batch {batch_num} with {len(all_batch_results)} results...")
+                
+                try:
+                    self.save_async_training_log(all_batch_results, batch_num)
+                    print(f"   ✅ Async log saved successfully to: {self.async_log_file}")
+                except Exception as e:
+                    print(f"   ❌ Failed to save async log: {e}")
+                    print(f"   📁 Target file: {self.async_log_file}")
+                
+                # FORCE SAVE training history after each batch
+                print(f"   💾 Forcing save training history to: {self.history_file}...")
+                try:
+                    self.save_history()
+                    print(f"   ✅ History saved successfully!")
+                    
+                    # Verify files exist
+                    import os
+                    if os.path.exists(self.history_file):
+                        file_size = os.path.getsize(self.history_file)
+                        print(f"   📊 History file size: {file_size} bytes")
+                    else:
+                        print(f"   ❌ History file not found after save!")
+                        
+                    if os.path.exists(self.async_log_file):
+                        file_size = os.path.getsize(self.async_log_file)
+                        print(f"   📊 Async log file size: {file_size} bytes")
+                    else:
+                        print(f"   ❌ Async log file not found after save!")
+                        
+                except Exception as e:
+                    print(f"   ❌ Failed to save history: {e}")
+                    print(f"   📁 Target file: {self.history_file}")
                 
                 # Print batch summary
                 print(f"\n📊 Batch {batch_num} Summary:")
