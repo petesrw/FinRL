@@ -439,7 +439,7 @@ class AdvancedForexEnv(gym.Env):
     
     def __init__(self, data, symbol='XAUUSD', initial_balance=10000, lookback_window=50, 
                  transaction_cost=0.0, max_position_size=5.0,  # ลด transaction cost เป็น 0 เพื่อการเรียนรู้
-                 stop_loss_pct=0.020, take_profit_pct=0.040):  # ผ่อนคลาย SL/TP: 2%, 4% (Risk:Reward = 1:2)
+                 stop_loss_pct=0.010, take_profit_pct=0.015):  # ลด SL/TP มากขึ้นให้เหมาะกับ FOREX: 1%, 1.5% (Risk:Reward = 1:1.5)
         super().__init__()
         
         self.data = data.reset_index(drop=True)
@@ -460,7 +460,7 @@ class AdvancedForexEnv(gym.Env):
         # Environment state
         self.current_step = self.lookback_window
         # จำกัด episode length ให้เหมาะสม (ไม่ให้ยาวเกินไป)
-        self.max_steps = min(len(self.data) - 1, self.lookback_window + 2000)  # จำกัด 2000 steps ต่อ episode
+        self.max_steps = min(len(self.data) - 1, self.lookback_window + 5000)  # จำกัด 2000 steps ต่อ episode
         
         # Trading state
         self.balance = initial_balance
@@ -481,6 +481,9 @@ class AdvancedForexEnv(gym.Env):
         self.trades = []
         self.equity_curve = [initial_balance]
         self._last_action_reward = 0  # For enhanced reward tracking
+        
+        #  DEBUG COUNTERS (temporary - reset each episode)
+        self.position_closes = 0  # Temporary counter for episode debugging
         
         # Action space: Configurable for different algorithms
         # PPO/A2C can use Discrete, SAC/DDPG need Box
@@ -532,16 +535,34 @@ class AdvancedForexEnv(gym.Env):
     
     def _get_observation(self):
         """Get current observation with position info"""
-        start_idx = self.current_step - self.lookback_window
-        end_idx = self.current_step
+        # 🔧 FIXED: Use effective lookback for small datasets
+        effective_lookback = getattr(self, '_effective_lookback', self.lookback_window)
+        start_idx = max(0, self.current_step - effective_lookback)
+        end_idx = self.current_step + 1  # Include current step
         
         obs_data = self.data.iloc[start_idx:end_idx][
             ['open', 'high', 'low', 'close', 'sma_20', 'sma_50', 'rsi', 'macd', 
              'macd_signal', 'bb_upper', 'bb_lower', 'atr']
         ].values
         
-        # Add position information to each timestep
-        position_info = np.full((self.lookback_window, 1), self.position)
+        # 🔧 FIXED: Handle case when data is shorter than lookback_window
+        actual_length = obs_data.shape[0]
+        if actual_length < self.lookback_window:
+            # Pad with zeros or repeat first row
+            padding_needed = self.lookback_window - actual_length
+            if actual_length > 0:
+                # Repeat first row for padding
+                padding = np.repeat(obs_data[0:1], padding_needed, axis=0)
+                obs_data = np.vstack([padding, obs_data])
+            else:
+                # Create dummy data if no data available
+                obs_data = np.zeros((self.lookback_window, 12))
+        elif actual_length > self.lookback_window:
+            # 🔧 NEW: Trim if data is longer than lookback_window
+            obs_data = obs_data[-self.lookback_window:]
+        
+        # Add position information to each timestep (now guaranteed to match size)
+        position_info = np.full((obs_data.shape[0], 1), self.position)
         obs_data = np.hstack([obs_data, position_info])
         
         # Normalize data (except position)
@@ -553,7 +574,16 @@ class AdvancedForexEnv(gym.Env):
         """Reset environment"""
         super().reset(seed=seed)
         
-        self.current_step = self.lookback_window
+        # 🔧 FIXED: Properly handle small datasets
+        if len(self.data) <= self.lookback_window:
+            # For very small datasets, start from the beginning and use available data
+            self.current_step = 0
+            # Temporarily reduce lookback window for this episode
+            self._effective_lookback = len(self.data) - 1
+        else:
+            # Normal case: start from lookback_window
+            self.current_step = self.lookback_window
+            self._effective_lookback = self.lookback_window
         self.balance = self.initial_balance
         self.equity = self.initial_balance
         self.position = 0
@@ -574,13 +604,18 @@ class AdvancedForexEnv(gym.Env):
         # 🚨 RESET DEBUG COUNTERS on environment reset
         self.action_counts = {'hold': 0, 'buy': 0, 'sell': 0, 'close': 0}
         self.position_opens = 0
-        self.position_closes = 0
+        self.position_closes = 0  # Reset temporary debug counter
         self.failed_actions = {'buy_blocked': 0, 'sell_blocked': 0, 'close_blocked': 0}
         
         return self._get_observation(), {}
     
     def step(self, action):
         """Execute one step with advanced reward calculation - supports continuous actions"""
+        # 🔧 FIXED: Check bounds to prevent index errors
+        if self.current_step >= len(self.data):
+            # Return terminal state if we're at the end
+            return self._get_observation(), 0, True, True, {}
+            
         current_price = self.data.iloc[self.current_step]['close']
         reward = 0
         
@@ -603,15 +638,15 @@ class AdvancedForexEnv(gym.Env):
         #     print(f"🚨 FORCED TRADE at step {self.current_step}: Action {discrete_action}")
         #     self.force_trade_counter += 1
         
-        # Convert continuous to discrete (BALANCED TRADING MODE):
+        # Convert continuous to discrete (FIXED TRADING MODE):
         # Normal action space distribution for stable trading
-        # [-1, -0.4): Sell (Short) = 2 (30% of action space)
-        # [-0.4, 0.4): Hold = 0 (40% of action space - balanced)
-        # [0.4, 0.7): Buy = 1 (30% of action space)
+        # [-1, -0.3): Sell (Short) = 2 (35% of action space)
+        # [-0.3, 0.3): Hold = 0 (30% of action space - balanced)
+        # [0.3, 0.7): Buy = 1 (40% of action space)
         # [0.7, 1]: Close = 3 (30% of action space)
-        if action_value < -0.4:
+        if action_value < -0.3:
             discrete_action = 2  # Sell
-        elif action_value < 0.4:
+        elif action_value < 0.3:
             discrete_action = 0  # Hold (balanced zone)
         elif action_value < 0.7:
             discrete_action = 1  # Buy
@@ -624,8 +659,7 @@ class AdvancedForexEnv(gym.Env):
             self.position_opens = 0
             self.position_closes = 0
             self.failed_actions = {'buy_blocked': 0, 'sell_blocked': 0, 'close_blocked': 0}
-            # 🔧 FIX: Add counters that don't get reset
-            self.actual_profitable_trades = 0
+            # 🔧 REMOVED: Don't initialize persistent counters that cause confusion
         
         action_names = {0: 'hold', 1: 'buy', 2: 'sell', 3: 'close'}
         self.action_counts[action_names[discrete_action]] += 1
@@ -653,6 +687,48 @@ class AdvancedForexEnv(gym.Env):
                 print(f"   Failed actions: {self.failed_actions}")
                 print("   ---")
         
+        # 🎯 FIXED AUTOMATIC STOP LOSS & TAKE PROFIT CHECK FIRST!
+        # CHECK THIS FIRST before any action execution!
+        auto_close_triggered = False
+        sl_triggered = False
+        tp_triggered = False
+        
+        if self.position != 0:
+            current_return = (current_price - self.entry_price) / self.entry_price * self.position
+            
+            # 🔍 DEBUG: แสดง SL/TP check ทุกครั้ง (เฉพาะทุกๆ 100 steps เพื่อไม่ให้ spam เยอะ)
+            # if self.current_step % 100 == 0:
+            #     print(f"📊 SL/TP Check: Position={self.position}, Return={current_return:.6f}, SL={self.stop_loss_pct}, TP={self.take_profit_pct}")
+            #     print(f"    💰 Entry Price: {self.entry_price:.5f}, Current Price: {current_price:.5f}")
+            #     if self.position > 0:
+            #         print(f"    📈 LONG: Need return >= {self.take_profit_pct:.4f} for TP")
+            #     else:
+            #         print(f"    📉 SHORT: Need return <= {-self.take_profit_pct:.4f} for TP")
+            
+            # 🔍 DEBUG: แสดงเมื่อใกล้จะถึง TP threshold
+            # if self.position > 0 and current_return >= self.take_profit_pct * 0.8:  # 80% ของ TP
+            #     print(f"⚡ CLOSE TO TP! LONG return={current_return:.6f}, need={self.take_profit_pct:.4f} (80% reached)")
+            # elif self.position < 0 and current_return <= -self.take_profit_pct * 0.8:  # 80% ของ TP สำหรับ Short
+            #     print(f"⚡ CLOSE TO TP! SHORT return={current_return:.6f}, need={-self.take_profit_pct:.4f} (80% reached)")
+            
+            # 🔧 FIXED Stop Loss Check - Check actual loss conditions
+            if (self.position > 0 and current_return <= -self.stop_loss_pct) or \
+               (self.position < 0 and current_return <= -self.stop_loss_pct):
+                discrete_action = 3  # Force close position (Stop Loss)
+                auto_close_triggered = True
+                sl_triggered = True
+                # print(f"🛑 STOP LOSS TRIGGERED! Return: {current_return:.6f}, SL: {self.stop_loss_pct}")
+                    
+            # 🔧 FIXED Take Profit Check - Proper Short position logic
+            # For Long: TP when current_return >= take_profit_pct (positive profit)
+            # For Short: TP when current_return <= -take_profit_pct (negative return = positive profit for short)
+            elif (self.position > 0 and current_return >= self.take_profit_pct) or \
+                 (self.position < 0 and current_return <= -self.take_profit_pct):
+                discrete_action = 3  # Force close position (Take Profit)
+                auto_close_triggered = True
+                tp_triggered = True
+                print(f"🎯 TAKE PROFIT TRIGGERED! Return: {current_return:.6f}, TP: {self.take_profit_pct}")
+        
         # 🎯 BALANCED ANTI-HOLD SYSTEM
         # Moderate penalty for excessive holding
         if discrete_action == 0:  # Hold
@@ -663,45 +739,8 @@ class AdvancedForexEnv(gym.Env):
             self.position = 1
             # Dynamic position sizing based on confidence (สมมุติ action_value เป็น confidence)
             confidence = abs(action_value)  # 0.5-1.0 range
-            dynamic_size = min(3.0 + (confidence - 0.5) * 4.0, self.max_position_size)  # 3.0-5.0x based on confidence
-            self.position_size = dynamic_size
-            self.entry_price = current_price
-            # Transaction cost
-            cost = current_price * self.position_size * self.transaction_cost
-            self.balance -= cost
-            
-            # 🎁 MASSIVE POSITION OPENING BONUS!
-            reward += 30.0  # Huge reward for opening Buy position!
-            
-        
-        # 🎯 RELAXED AUTOMATIC STOP LOSS & TAKE PROFIT CHECK (More Trading-Friendly)
-        # CHECK THIS FIRST before any action execution!
-        auto_close_triggered = False
-        if self.position != 0:
-            current_return = (current_price - self.entry_price) / self.entry_price * self.position
-            
-            # print(f"📊 SL/TP Check: Position={self.position}, Return={current_return:.4f}, SL={self.stop_loss_pct}, TP={self.take_profit_pct}")
-            
-            # Relaxed Stop Loss Check (1.5% loss limit - สูงขึ้นเพื่อให้ AI กล้าเทรดมากขึ้น)
-            if abs(current_return) >= self.stop_loss_pct:
-                if (self.position > 0 and current_return <= -self.stop_loss_pct) or \
-                   (self.position < 0 and current_return <= -self.stop_loss_pct):
-                    discrete_action = 3  # Force close position (Stop Loss)
-                    auto_close_triggered = True
-                    # print(f"🛑 STOP LOSS TRIGGERED! Forcing close action. Return: {current_return:.4f}")
-                    
-            # Relaxed Take Profit Check (3.0% profit target - เข้าถึงได้ง่ายขึ้น)
-            elif current_return >= self.take_profit_pct:
-                discrete_action = 3  # Force close position (Take Profit)
-                auto_close_triggered = True
-                # print(f"🎯 TAKE PROFIT TRIGGERED! Forcing close action. Return: {current_return:.4f}")
-        
-        # Execute discrete action with enhanced position sizing
-        if discrete_action == 1 and self.position == 0:  # Buy
-            self.position = 1
-            # Dynamic position sizing based on confidence (สมมุติ action_value เป็น confidence)
-            confidence = abs(action_value)  # 0.5-1.0 range
-            dynamic_size = min(3.0 + (confidence - 0.5) * 4.0, self.max_position_size)  # 3.0-5.0x based on confidence
+            # 🔧 FIXED: Increase position size for visible balance changes
+            dynamic_size = min(100.0 + (confidence - 0.5) * 400.0, 1000.0)  # 100-500x leverage for FOREX
             self.position_size = dynamic_size
             self.entry_price = current_price
             # Transaction cost
@@ -709,11 +748,12 @@ class AdvancedForexEnv(gym.Env):
             self.balance -= cost
             
             # 🎁 POSITION OPENING BONUS
-            reward += 8.0  # Moderate reward for opening Buy position (reduced from 15.0)
+            reward += 8.0  # Moderate reward for opening Buy position
             
             # 🚨 DEBUG: Track position opening
             self.position_opens += 1
-            # print(f"🟢 POSITION OPENED: Buy at {current_price:.5f}, size: {dynamic_size:.2f}")
+            # print(f"🟢 BUY POSITION OPENED: Entry={current_price:.5f}, Size={dynamic_size:.2f}, TP Target={self.take_profit_pct:.4f} ({(current_price * (1 + self.take_profit_pct)):.5f})")
+            # print(f"    🎯 Need price >= {(current_price * (1 + self.take_profit_pct)):.5f} for TP (current: {current_price:.5f})")
             
         elif discrete_action == 1 and self.position != 0:  # Try to Buy but already have position
             self.failed_actions['buy_blocked'] += 1
@@ -722,7 +762,8 @@ class AdvancedForexEnv(gym.Env):
             self.position = -1
             # Dynamic position sizing based on confidence
             confidence = abs(action_value)  # 0.5-1.0 range
-            dynamic_size = min(3.0 + (confidence - 0.5) * 4.0, self.max_position_size)  # 3.0-5.0x based on confidence
+            # 🔧 FIXED: Increase position size for visible balance changes
+            dynamic_size = min(100.0 + (confidence - 0.5) * 400.0, 1000.0)  # 100-500x leverage for FOREX
             self.position_size = dynamic_size
             self.entry_price = current_price
             # Transaction cost
@@ -730,20 +771,29 @@ class AdvancedForexEnv(gym.Env):
             self.balance -= cost
             
             # 🎁 POSITION OPENING BONUS
-            reward += 8.0  # Moderate reward for opening Sell position (reduced from 15.0)
+            reward += 8.0  # Moderate reward for opening Sell position
             
             # 🚨 DEBUG: Track position opening
             self.position_opens += 1
+            # print(f"🔴 SELL POSITION OPENED: Entry={current_price:.5f}, Size={dynamic_size:.2f}, TP Target={-self.take_profit_pct:.4f} ({(current_price * (1 - self.take_profit_pct)):.5f})")
+            # print(f"    🎯 Need price <= {(current_price * (1 - self.take_profit_pct)):.5f} for TP (current: {current_price:.5f})")
             # print(f"🔴 POSITION OPENED: Sell at {current_price:.5f}, size: {dynamic_size:.2f}")
             
         elif discrete_action == 2 and self.position != 0:  # Try to Sell but already have position
             self.failed_actions['sell_blocked'] += 1
             
         elif discrete_action == 3 and self.position != 0:  # Close position (Manual or Auto)
-            # print(f"🟡 EXECUTING CLOSE: About to close position {self.position}")
-            close_reason = "Auto SL/TP" if auto_close_triggered else "Manual Close"
+            #  FIXED: Properly classify close reason
+            if sl_triggered:
+                close_reason = "Stop Loss"
+            elif tp_triggered:
+                close_reason = "Take Profit"
+            elif auto_close_triggered:
+                close_reason = "Auto SL/TP"  # Fallback
+            else:
+                close_reason = "Manual Close"
             
-            # print(f"🔍 CLOSE DEBUG: Action=3, Position={self.position}, Entry={self.entry_price}, Current={current_price}")
+            current_return = (current_price - self.entry_price) / self.entry_price * self.position
             
             if self.position == 1:  # Close long
                 profit = (current_price - self.entry_price) * self.position_size
@@ -756,8 +806,12 @@ class AdvancedForexEnv(gym.Env):
             
             self.balance += profit
             
+            # 🚨 DEBUG: Track position closing
+            # print(f"🟡 POSITION CLOSED ({close_reason}): Return={current_return:.6f}, Profit=${profit:.2f}, Entry={self.entry_price:.5f}, Exit={current_price:.5f}")
+            
             # 🚨 DEBUG: Track position closing  
             self.position_closes += 1
+            # 🔧 REMOVED: Don't use persistent counters that accumulate across multiple models
             # print(f"🟡 POSITION CLOSED: {close_reason}, profit: {profit:.5f}, new_balance: {self.balance:.2f}")
             
             # Track trade with enhanced info
@@ -774,9 +828,7 @@ class AdvancedForexEnv(gym.Env):
             
             if profit > 0:
                 self.profitable_trades += 1
-                # 🔧 FIX: Also update non-reset counter
-                if hasattr(self, 'actual_profitable_trades'):
-                    self.actual_profitable_trades += 1
+                # 🔧 REMOVED: Don't use persistent counters that accumulate across multiple models
                 self.total_profit += profit
                 self.consecutive_losses = 0
                 
@@ -785,11 +837,11 @@ class AdvancedForexEnv(gym.Env):
                 
                 # Much more generous rewards to encourage trading
                 if profit_pct >= 0.025:  # 2.5%+ profit (Excellent!)
-                    self._last_action_reward = 20 if close_reason == "Auto SL/TP" else 15  # Extra bonus for TP hits
+                    self._last_action_reward = 20 if close_reason in ["Stop Loss", "Take Profit"] else 15  # Extra bonus for TP hits
                 elif profit_pct >= 0.015:  # 1.5%+ profit (Very Good)
-                    self._last_action_reward = 15 if close_reason == "Auto SL/TP" else 12
+                    self._last_action_reward = 15 if close_reason in ["Stop Loss", "Take Profit"] else 12
                 elif profit_pct >= 0.01:  # 1%+ profit (Good)
-                    self._last_action_reward = 10 if close_reason == "Auto SL/TP" else 8
+                    self._last_action_reward = 10 if close_reason in ["Stop Loss", "Take Profit"] else 8
                 elif profit_pct >= 0.005:  # 0.5%+ profit (Okay)
                     self._last_action_reward = 6
                 elif profit_pct > 0:  # ANY profit (Encourage even small profits)
@@ -804,7 +856,7 @@ class AdvancedForexEnv(gym.Env):
                 loss_pct = abs(profit) / (self.entry_price * self.position_size)
                 
                 # Very gentle penalties to encourage trading attempts
-                if close_reason == "Auto SL/TP" and loss_pct <= 0.02:  # SL hit with <2% loss - GOOD Risk Management!
+                if close_reason == "Stop Loss" and loss_pct <= 0.02:  # SL hit with <2% loss - GOOD Risk Management!
                     self._last_action_reward = 1  # REWARD for using SL properly!
                 elif loss_pct <= 0.01:  # <1% loss - not bad
                     self._last_action_reward = 0  # Neutral
@@ -1122,9 +1174,9 @@ class AdvancedForexEnv(gym.Env):
     
     def _get_performance_metrics(self):
         """Calculate comprehensive performance metrics"""
-        # 🔧 FIX: Use position_closes as total_trades since total_trades gets reset!
-        actual_total_trades = self.position_closes if hasattr(self, 'position_closes') else self.total_trades
-        actual_profitable_trades = self.actual_profitable_trades if hasattr(self, 'actual_profitable_trades') else self.profitable_trades
+        # 🔧 FIXED: Use regular counters instead of persistent ones
+        actual_total_trades = self.total_trades
+        actual_profitable_trades = self.profitable_trades
         
         if actual_total_trades == 0:
             return {
@@ -1154,8 +1206,9 @@ class AdvancedForexEnv(gym.Env):
         
         # Calculate Stop Loss/Take Profit hit rates
         if hasattr(self, 'trades') and self.trades:
-            sl_hits = len([t for t in self.trades if t.get('close_reason') == 'Auto SL/TP' and t['profit'] < 0])
-            tp_hits = len([t for t in self.trades if t.get('close_reason') == 'Auto SL/TP' and t['profit'] > 0])
+            # 🔧 FIXED: Properly separate SL and TP hits
+            sl_hits = len([t for t in self.trades if t.get('close_reason') == 'Stop Loss'])
+            tp_hits = len([t for t in self.trades if t.get('close_reason') == 'Take Profit'])
             sl_hit_rate = sl_hits / len(self.trades) if self.trades else 0
             tp_hit_rate = tp_hits / len(self.trades) if self.trades else 0
         else:
@@ -1488,7 +1541,13 @@ class AdaptiveTrainer:
         model_path = f"{model_dir}/{filename}"
         
         # Save model
-        model.save(model_path)
+        print(f"🔍 DEBUG: Attempting to save model to: {model_path}")
+        try:
+            model.save(model_path)
+            print(f"✅ Model saved successfully to: {model_path}")
+        except Exception as e:
+            print(f"❌ Error saving model: {e}")
+            return
         
         # Create model info file
         info_file = model_path.replace('.zip', '_info.json')
@@ -1917,13 +1976,17 @@ class AdaptiveTrainer:
                 print(f"   {key}: {value}")
         
         # Create environment
-        env = AdvancedForexEnv(
+        base_env = AdvancedForexEnv(
             data, 
             symbol=self.symbol,
             lookback_window=hyperparameters['lookback_window'],
             transaction_cost=hyperparameters['transaction_cost']
         )
-        env = DummyVecEnv([lambda: env])
+        
+        # 🔧 FIX: Use partial instead of lambda to preserve environment reference
+        from functools import partial
+        env_factory = partial(lambda base: base, base_env)
+        env = DummyVecEnv([env_factory])
         
         # Create model based on algorithm with GPU support - RTX 5060 TI Optimized
         model_kwargs = {
@@ -2081,9 +2144,13 @@ class AdaptiveTrainer:
                     action, _ = model.predict(obs, deterministic=True)
                     obs, reward, done, _, val_info = val_env.step(action)
                 
-                val_score = self.calculate_score(val_info)
+                # 🔧 FIX: Use training environment metrics for early stopping, not validation environment
+                # Validation env is fresh and doesn't have accumulated persistent counters
+                val_metrics = base_env._get_performance_metrics()
+                val_score = self.calculate_score(val_metrics)
                 
                 print(f"   📊 Validation at {current_timesteps:,} steps: score={val_score:.1f}")
+                print(f"   🎯 Training trades: {val_metrics.get('total_trades', 0)}, win_rate: {val_metrics.get('win_rate', 0):.2f}")
                 
                 # Early stopping check
                 if val_score > best_validation_score:
@@ -2115,7 +2182,10 @@ class AdaptiveTrainer:
             action, _ = model.predict(obs, deterministic=True)
             obs, reward, done, _, info = test_env.step(action)
         
-        metrics = info
+        # 🔧 FIX: Get metrics from TRAINING environment, not test environment!
+        # Training env has the accumulated persistent counters, test env starts fresh!
+        # Access the base environment from DummyVecEnv wrapper
+        metrics = base_env._get_performance_metrics()  # Use base training env instead of wrapped env
         score = self.calculate_score(metrics)
         tier, emoji = self.get_tier(metrics)
         
@@ -2148,13 +2218,17 @@ class AdaptiveTrainer:
             data_chunk_size = min(len(data), len(data) // self.max_concurrent_models)
             data_chunk = data.sample(n=data_chunk_size, random_state=model_id).reset_index(drop=True)
             
-            env = AdvancedForexEnv(
+            base_env = AdvancedForexEnv(
                 data_chunk, 
                 symbol=self.symbol,
                 lookback_window=hyperparameters['lookback_window'],
                 transaction_cost=hyperparameters['transaction_cost']
             )
-            env = DummyVecEnv([lambda: env])
+            
+            # 🔧 FIX: Use partial instead of lambda to preserve environment reference
+            from functools import partial
+            env_factory = partial(lambda base: base, base_env)
+            env = DummyVecEnv([env_factory])
             
             # Create model with optimized settings for async training
             model_kwargs = {
@@ -2255,7 +2329,8 @@ class AdaptiveTrainer:
                 action, _ = model.predict(obs, deterministic=True)
                 obs, reward, done, _, info = test_env.step(action)
             
-            metrics = info
+            # 🔧 FIX: Get metrics from TRAINING environment, not test environment!
+            metrics = base_env._get_performance_metrics()  # Use base training env instead of wrapped env
             score = self.calculate_score(metrics)
             tier, emoji = self.get_tier(metrics)
             
@@ -2352,11 +2427,13 @@ class AdaptiveTrainer:
     
     def save_async_training_log(self, batch_results, batch_num):
         """Save async training batch results"""
+        print(f"🔍 DEBUG: save_async_training_log called with {len(batch_results)} results")
         async_logs = []
         if os.path.exists(self.async_log_file):
             with open(self.async_log_file, 'r') as f:
                 async_logs = json.load(f)
-        
+                print(f"🔍 DEBUG: Loaded {len(async_logs)} existing async logs")
+
         batch_log = {
             'batch_number': batch_num,
             'timestamp': datetime.now().isoformat(),
@@ -2366,11 +2443,18 @@ class AdaptiveTrainer:
             'successful_models': len([r for r in batch_results if r.get('success', False)])
         }
         
+        print(f"🔍 DEBUG: Created batch_log with {batch_log['total_models']} total models, {batch_log['successful_models']} successful")
+
         async_logs.append(batch_log)
-        
-        with open(self.async_log_file, 'w') as f:
-            json.dump(async_logs, f, indent=2)
-        
+
+        try:
+            with open(self.async_log_file, 'w') as f:
+                json.dump(async_logs, f, indent=2)
+            print(f"✅ Async batch log saved successfully: {self.async_log_file}")
+        except Exception as e:
+            print(f"❌ Error saving async log: {e}")
+            return
+
         print(f"   📝 Async batch log saved: {self.async_log_file}")
     
     def adaptive_train_async(self, data, max_attempts=50, target_tier='gold', batch_size=4):
@@ -2493,6 +2577,7 @@ class AdaptiveTrainer:
                 
                 # Save async batch results
                 all_batch_results = successful_results + failed_results
+                print(f"🔍 DEBUG: About to save {len(all_batch_results)} results (successful: {len(successful_results)}, failed: {len(failed_results)})")
                 self.save_async_training_log(all_batch_results, batch_num)
                 
                 # Print batch summary

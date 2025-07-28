@@ -1,57 +1,62 @@
+# Market data & trading APIs
 alpaca-py
 alpaca_trade_api>=2.1.0
 ccxt>=1.66.32
+yfinance
+
+# Core ML libraries
 elegantrl
-
-gputil
+stable-baselines3[extra]
 gymnasium
-importlib-metadata==4.13.0
-jqdatasdk
+ray[default]
+ray[tune]
 
-lz4
-# plot
-matplotlib
-# data handling
+# GPU monitoring (for our fixes)
+gputil
+
+# Data handling
 numpy>=1.17.3
 pandas>=1.1.5
 pandas_market_calendars  # calendars
+stockstats>=0.4.0
 
-#hooks
-pre-commit
-pyfolio-reloaded
+# Technical analysis
+TA-lib  # conda install -c conda-forge ta-lib
 
-# testing requirements
-pytest
-ray[default]
-ray[tune]
-recommonmark
-
-# Model Building Requirements
+# Scientific computing
+scipy
 scikit-learn>=0.21.0
 
-scipy
+# Database
+jqdatasdk
+SQLAlchemy
+wrds
 
+# Visualization & monitoring
+matplotlib
+tensorboard
+
+# Compression & utilities
+lz4
+importlib-metadata==4.13.0
+
+# Web scraping
 selenium
+webdriver-manager
 
-# packaging
-setuptools>=65.5.0
+# Finance analysis
+pyfolio-reloaded
 
-# to build docs using sphinx
+# Testing & development
+pytest
+pre-commit
+
+# Documentation
+recommonmark
 sphinx
 sphinx_rtd_theme
 
-SQLAlchemy
-stable-baselines3[extra]
-stockstats>=0.4.0
-swig
-
-TA-lib # conda install -c conda-forge ta-lib
-
-tensorboard
-webdriver-manager
+# Packaging
+setuptools>=65.5.0
 wheel>=0.33.6
-wrds
-
-
-# market data & paper trading API
-yfinance
+swig
