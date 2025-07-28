@@ -435,14 +435,57 @@ class ForexLauncher:
         print("=" * 50)
         
         try:
-            # Import and run the main system
-            from forex_system_with_config import main as forex_main
-            forex_main()
+            # Import and run the main system with specific model
+            from forex_system_with_config import ConfigurableForexBot
+            
+            print(f"🤖 Creating trading bot with DIAMOND model...")
+            bot = ConfigurableForexBot(symbol=symbol)
+            
+            # Load the specific model we selected
+            if bot.load_model(model_file):
+                print(f"✅ Loaded selected model: {model_file}")
+                
+                # Test the model first
+                print("🧪 Quick model validation...")
+                if bot.test_model(episodes=3):
+                    print("✅ Model validation passed")
+                else:
+                    print("⚠️ Model validation warning - continuing anyway")
+                
+                # Start live trading
+                print(f"🚀 Starting {mode_name} trading...")
+                if bot.start_live_trading():
+                    print(f"✅ Trading started successfully!")
+                    
+                    # Monitor the trading
+                    try:
+                        print("📊 Monitoring trading activity...")
+                        print("💡 Press Ctrl+C to stop")
+                        
+                        import time
+                        while True:
+                            time.sleep(60)  # Check every minute
+                            report = bot.get_performance_report()
+                            if report and 'performance' in report:
+                                stats = report['performance']
+                                print(f"📈 Trades: {stats.get('total_trades', 0)}, "
+                                      f"Win Rate: {stats.get('win_rate', 0):.1%}, "
+                                      f"P&L: ${stats.get('total_profit', 0):.2f}")
+                    except KeyboardInterrupt:
+                        print("\n🛑 Stopping trading...")
+                        bot.stop_live_trading()
+                        print("✅ Trading stopped successfully")
+                else:
+                    print("❌ Failed to start trading")
+            else:
+                print(f"❌ Failed to load model: {model_file}")
             
         except KeyboardInterrupt:
             print("\n🛑 Trading stopped by user")
         except Exception as e:
             print(f"\n❌ Trading system error: {e}")
+            import traceback
+            traceback.print_exc()
         
         input("\n👉 Press Enter to continue...")
     

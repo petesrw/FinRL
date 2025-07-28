@@ -8,11 +8,16 @@ import os
 import json
 import time
 import pandas as pd
-import numpy as np
+import numpy as np,sys
 from datetime import datetime, timedelta
 import MetaTrader5 as mt5
 from stable_baselines3 import PPO, SAC, A2C
 import warnings
+
+# monkey-patch ก่อน import โมเดล
+sys.modules['numpy._core']              = np.core
+sys.modules['numpy._core.multiarray']   = np.core.multiarray
+sys.modules['numpy._core.umath']        = np.core.umath
 warnings.filterwarnings('ignore')
 
 class ModelLoader:
@@ -85,23 +90,54 @@ class ModelLoader:
             with open(info_path, 'r') as f:
                 self.model_info = json.load(f)
         
-        # Determine algorithm from filename or info
-        if '_ppo_' in model_path.lower() or (self.model_info and self.model_info.get('algorithm') == 'PPO'):
-            self.model = PPO.load(model_path)
-            print(f"✅ Loaded PPO model from: {model_path}")
-        elif '_sac_' in model_path.lower() or (self.model_info and self.model_info.get('algorithm') == 'SAC'):
-            self.model = SAC.load(model_path)
-            print(f"✅ Loaded SAC model from: {model_path}")
-        elif '_a2c_' in model_path.lower() or (self.model_info and self.model_info.get('algorithm') == 'A2C'):
-            self.model = A2C.load(model_path)
-            print(f"✅ Loaded A2C model from: {model_path}")
-        else:
-            # Try to load as PPO by default
+        # Try to determine algorithm and load model
+        algorithm = None
+        
+        # Check filename first
+        if '_ppo_' in model_path.lower():
+            algorithm = 'PPO'
+        elif '_sac_' in model_path.lower():
+            algorithm = 'SAC'
+        elif '_a2c_' in model_path.lower():
+            algorithm = 'A2C'
+        elif self.model_info and self.model_info.get('algorithm'):
+            algorithm = self.model_info.get('algorithm')
+        
+        # Try to load with specific algorithm first, then try all algorithms
+        algorithms_to_try = []
+        if algorithm:
+            algorithms_to_try.append(algorithm)
+        
+        # Add all algorithms to try if specific one fails
+        for alg in ['PPO', 'SAC', 'A2C']:
+            if alg not in algorithms_to_try:
+                algorithms_to_try.append(alg)
+        
+        loaded = False
+        for alg in algorithms_to_try:
+            try:
+                if alg == 'PPO':
+                    self.model = PPO.load(model_path)
+                elif alg == 'SAC':
+                    self.model = SAC.load(model_path)
+                elif alg == 'A2C':
+                    self.model = A2C.load(model_path)
+                
+                print(f"✅ Loaded {alg} model from: {model_path}")
+                loaded = True
+                break
+            except Exception as e:
+                print(f"⚠️ Failed to load as {alg}: {e}")
+                continue
+        
+        if not loaded:
+            # Final fallback - try PPO
             try:
                 self.model = PPO.load(model_path)
-                print(f"✅ Loaded model as PPO from: {model_path}")
-            except:
-                raise ValueError(f"Unable to determine model algorithm for: {model_path}")
+                print(f"✅ Loaded model as PPO from: {model_path} (fallback)")
+                loaded = True
+            except Exception as e:
+                raise ValueError(f"Unable to load model from {model_path}. Tried all algorithms: {e}")
         
         return self.model
 
@@ -144,25 +180,90 @@ class MT5Interface:
         print("🔌 Disconnected from MT5")
     
     def get_symbol_info(self, symbol):
-        """Get symbol information"""
-        symbol_info = mt5.symbol_info(symbol)
-        if symbol_info is None:
-            print(f"❌ Failed to get symbol info for {symbol}")
-            return None
+        """Get symbol information with format detection"""
+        # Try different symbol formats
+        symbol_variants = [
+            symbol,
+            f"{symbol}.m",
+            f"{symbol}m", 
+            f"{symbol}.c",
+            f"{symbol}c",
+            f"{symbol}.",
+            symbol.replace("USD", "usd"),
+            symbol.lower()
+        ]
         
-        if not symbol_info.visible:
-            if not mt5.symbol_select(symbol, True):
-                print(f"❌ Failed to select symbol {symbol}")
-                return None
+        for variant in symbol_variants:
+            symbol_info = mt5.symbol_info(variant)
+            if symbol_info is not None:
+                print(f"✅ Found symbol: {variant}")
+                # Make sure symbol is visible in Market Watch
+                if not mt5.symbol_select(variant, True):
+                    print(f"⚠️ Warning: Could not add {variant} to Market Watch")
+                return symbol_info, variant
         
-        return symbol_info
-    
+        print(f"❌ Symbol {symbol} not found in any format")
+        # List available symbols for debugging
+        symbols = mt5.symbols_get()
+        if symbols:
+            forex_symbols = [s.name for s in symbols if 'USD' in s.name or 'EUR' in s.name][:10]
+            print(f"💡 Available forex symbols: {forex_symbols}")
+        
+        return None, symbol
+
     def get_rates(self, symbol, timeframe, count=1000):
-        """Get historical rates"""
-        rates = mt5.copy_rates_from_pos(symbol, timeframe, 0, count)
-        if rates is None:
-            print(f"❌ Failed to get rates for {symbol}")
+        """Get historical rates with enhanced error handling"""
+        print(f"🔍 Getting rates for {symbol}...")
+        
+        # First, ensure symbol is available
+        symbol_info, actual_symbol = self.get_symbol_info(symbol)
+        if symbol_info is None:
+            print(f"❌ Symbol {symbol} not available")
             return None
+        
+        print(f"✅ Using symbol: {actual_symbol}")
+        
+        # Check if market is open
+        if not symbol_info.trade_mode:
+            print(f"⚠️ Trading disabled for {actual_symbol}")
+        
+        # Check current time and market session
+        import datetime
+        current_time = datetime.datetime.now()
+        print(f"🕐 Current time: {current_time}")
+        
+        # Try to get rates
+        print(f"📊 Requesting {count} bars on timeframe {timeframe}")
+        rates = mt5.copy_rates_from_pos(actual_symbol, timeframe, 0, count)
+        
+        if rates is None or len(rates) == 0:
+            print(f"❌ Failed to get rates for {actual_symbol}")
+            error = mt5.last_error()
+            print(f"   Error code: {error}")
+            
+            # Try alternative timeframes
+            alternative_timeframes = [mt5.TIMEFRAME_M15, mt5.TIMEFRAME_M5, mt5.TIMEFRAME_H1, mt5.TIMEFRAME_H4]
+            for alt_tf in alternative_timeframes:
+                if alt_tf != timeframe:
+                    print(f"🔄 Trying alternative timeframe {alt_tf}...")
+                    rates = mt5.copy_rates_from_pos(actual_symbol, alt_tf, 0, min(count, 100))
+                    if rates is not None and len(rates) > 0:
+                        print(f"✅ Got {len(rates)} rates with alternative timeframe {alt_tf}")
+                        timeframe = alt_tf  # Use the working timeframe
+                        break
+            
+            if rates is None or len(rates) == 0:
+                print(f"❌ No market data available for {actual_symbol}")
+                # Try to get at least some historical data
+                print(f"🔄 Trying to get minimal historical data...")
+                rates = mt5.copy_rates_from_pos(actual_symbol, mt5.TIMEFRAME_H1, 0, 10)
+                if rates is None or len(rates) == 0:
+                    print(f"❌ Cannot get any data for {actual_symbol}")
+                    return None
+                else:
+                    print(f"✅ Got minimal data: {len(rates)} records")
+        
+        print(f"✅ Retrieved {len(rates)} price records for {actual_symbol}")
         
         df = pd.DataFrame(rates)
         df['time'] = pd.to_datetime(df['time'], unit='s')
@@ -175,23 +276,31 @@ class MT5Interface:
             'tick_volume': 'volume'
         }, inplace=True)
         
+        print(f"📈 Latest price: {df['close'].iloc[-1]:.5f}")
+        
         return df
     
     def send_order(self, symbol, order_type, volume, price=None, sl=None, tp=None, comment="RL Bot"):
-        """Send trading order"""
-        symbol_info = self.get_symbol_info(symbol)
+        """Send trading order with symbol format detection"""
+        symbol_info, actual_symbol = self.get_symbol_info(symbol)
         if symbol_info is None:
+            print(f"❌ Cannot get symbol info for {symbol}")
             return None
         
         if price is None:
+            tick = mt5.symbol_info_tick(actual_symbol)
+            if tick is None:
+                print(f"❌ Cannot get current price for {actual_symbol}")
+                return None
+            
             if order_type == mt5.ORDER_TYPE_BUY:
-                price = mt5.symbol_info_tick(symbol).ask
+                price = tick.ask
             else:
-                price = mt5.symbol_info_tick(symbol).bid
+                price = tick.bid
         
         request = {
             "action": mt5.TRADE_ACTION_DEAL,
-            "symbol": symbol,
+            "symbol": actual_symbol,
             "volume": volume,
             "type": order_type,
             "price": price,
@@ -238,9 +347,14 @@ class MT5Interface:
         return result
     
     def get_positions(self, symbol=None):
-        """Get current positions"""
+        """Get current positions with symbol format detection"""
         if symbol:
-            positions = mt5.positions_get(symbol=symbol)
+            # Try to get symbol info to find correct format
+            symbol_info, actual_symbol = self.get_symbol_info(symbol)
+            if symbol_info is not None:
+                positions = mt5.positions_get(symbol=actual_symbol)
+            else:
+                positions = mt5.positions_get(symbol=symbol)  # Fallback to original
         else:
             positions = mt5.positions_get()
         
@@ -260,7 +374,7 @@ class TradingBot:
         # Trading parameters
         self.min_confidence = 0.6  # Minimum confidence for trade execution
         self.max_positions = 1     # Maximum concurrent positions
-        self.lookback_window = 50  # Must match training
+        self.lookback_window = 50  # Default, will be updated based on model
         
         # Load model
         if model_path:
@@ -268,10 +382,29 @@ class TradingBot:
         else:
             self.model = self.model_loader.load_best_model(symbol)
         
-        # Get model parameters from info
+        # Get model parameters from info and detect observation shape
         if self.model_loader.model_info:
             self.lookback_window = self.model_loader.model_info.get('lookback_window', 50)
             self.transaction_cost = self.model_loader.model_info.get('transaction_cost', 0.0)
+        
+        # Detect model's expected observation shape
+        if hasattr(self.model, 'observation_space'):
+            obs_shape = self.model.observation_space.shape
+            print(f"🔍 Model expects observation shape: {obs_shape}")
+            
+            if len(obs_shape) == 2:  # 2D observation like (25, 13)
+                self.obs_rows, self.obs_cols = obs_shape
+                self.observation_type = '2d'
+                print(f"✅ Using 2D observation: {self.obs_rows} x {self.obs_cols}")
+            else:  # 1D observation like (50,)
+                self.obs_size = obs_shape[0]
+                self.observation_type = '1d'
+                print(f"✅ Using 1D observation: {self.obs_size} features")
+        else:
+            # Default to 1D if we can't detect
+            self.obs_size = 50
+            self.observation_type = '1d'
+            print("⚠️ Could not detect model observation space, using 1D default")
     
     def connect_mt5(self, login=None, password=None, server=None):
         """Connect to MT5"""
@@ -343,13 +476,96 @@ class TradingBot:
         return df
     
     def prepare_observation(self, df, current_position=0):
-        """Prepare observation for model (must match training format)"""
+        """Prepare observation for model (auto-detects 1D vs 2D format)"""
+        if self.observation_type == '2d':
+            return self._prepare_2d_observation(df, current_position)
+        else:
+            return self._prepare_1d_observation(df, current_position)
+    
+    def _prepare_2d_observation(self, df, current_position=0):
+        """Prepare 2D observation for models expecting (rows, cols) shape"""
+        rows, cols = self.obs_rows, self.obs_cols
+        
+        # Get recent price data for sliding window
+        window_size = rows
+        
+        # Extract price data
+        price_data = df['close'].tail(window_size).values
+        high_data = df['high'].tail(window_size).values
+        low_data = df['low'].tail(window_size).values
+        volume_data = df['volume'].tail(window_size).values if 'volume' in df.columns else np.ones(len(price_data))
+        
+        # Pad if insufficient data
+        if len(price_data) < window_size:
+            padding_size = window_size - len(price_data)
+            price_data = np.pad(price_data, (padding_size, 0), 'edge')
+            high_data = np.pad(high_data, (padding_size, 0), 'edge')
+            low_data = np.pad(low_data, (padding_size, 0), 'edge')
+            volume_data = np.pad(volume_data, (padding_size, 0), 'edge')
+        
+        # Normalize data
+        base_price = price_data[-1]
+        price_returns = np.diff(price_data) / price_data[:-1]
+        price_returns = np.append(price_returns, 0)  # Add current step
+        
+        # Create feature matrix
+        features = np.zeros((rows, cols))
+        
+        for i in range(rows):
+            if i < len(price_data):
+                features[i, 0] = price_returns[i] * 100  # Price return
+                features[i, 1] = (high_data[i] - price_data[i]) / price_data[i] * 100  # High-Close
+                features[i, 2] = (price_data[i] - low_data[i]) / price_data[i] * 100   # Close-Low
+                features[i, 3] = volume_data[i] / np.mean(volume_data) if np.mean(volume_data) > 0 else 1.0
+                
+                # Add technical indicators if available
+                idx = len(df) - window_size + i
+                if idx >= 0 and idx < len(df):
+                    # RSI
+                    if 'rsi' in df.columns:
+                        rsi_val = df['rsi'].iloc[idx] if not pd.isna(df['rsi'].iloc[idx]) else 50.0
+                        features[i, 4] = (rsi_val - 50) / 50
+                    
+                    # MACD
+                    if 'macd' in df.columns:
+                        macd_val = df['macd'].iloc[idx] if not pd.isna(df['macd'].iloc[idx]) else 0.0
+                        features[i, 5] = macd_val / base_price * 10000
+                    
+                    # Bollinger Bands
+                    if 'bb_upper' in df.columns and 'bb_lower' in df.columns:
+                        bb_upper = df['bb_upper'].iloc[idx] if not pd.isna(df['bb_upper'].iloc[idx]) else price_data[i]
+                        bb_lower = df['bb_lower'].iloc[idx] if not pd.isna(df['bb_lower'].iloc[idx]) else price_data[i]
+                        features[i, 6] = (bb_upper - price_data[i]) / price_data[i] * 100
+                        features[i, 7] = (price_data[i] - bb_lower) / price_data[i] * 100
+                    
+                    # Stochastic and ATR
+                    if 'atr' in df.columns:
+                        atr_val = df['atr'].iloc[idx] if not pd.isna(df['atr'].iloc[idx]) else 0.001
+                        features[i, 8] = atr_val / price_data[i] * 100
+                
+                # Position information on last row
+                if i == rows - 1:
+                    features[i, 9] = float(current_position)
+                    features[i, 10] = 0.0  # Entry price difference (simplified)
+                    features[i, 11] = 0.0  # Trade count (simplified)
+                    if cols > 12:
+                        features[i, 12] = 0.0  # Additional feature if needed
+        
+        # Clip extreme values
+        features = np.clip(features, -10, 10)
+        return features.astype(np.float32)
+    
+    def _prepare_1d_observation(self, df, current_position=0):
+        """Prepare 1D observation for models expecting (features,) shape"""
         # Get required columns (must match training)
         feature_cols = ['open', 'high', 'low', 'close', 'sma_20', 'sma_50', 'rsi', 'macd', 
                        'macd_signal', 'bb_upper', 'bb_lower', 'atr']
         
+        # Filter only available columns
+        available_cols = [col for col in feature_cols if col in df.columns]
+        
         # Get last lookback_window rows
-        obs_data = df[feature_cols].tail(self.lookback_window).values
+        obs_data = df[available_cols].tail(self.lookback_window).values
         
         # Handle insufficient data
         if len(obs_data) < self.lookback_window:
@@ -452,6 +668,81 @@ class TradingBot:
         
         return result
     
+    def run_single_iteration(self):
+        """Execute one trading iteration (for integration with other systems)"""
+        if not self.mt5.connected:
+            print("❌ MT5 not connected")
+            return None
+        
+        try:
+            # Get latest market data with symbol format detection
+            df = self.mt5.get_rates(self.symbol, mt5.TIMEFRAME_M5, 200)
+            if df is None:
+                print(f"❌ Failed to get market data")
+                return None
+            
+            # Calculate indicators
+            df = self.calculate_indicators(df)
+            df = df.dropna()
+            
+            if len(df) < self.lookback_window:
+                print(f"⚠️ Insufficient data ({len(df)} < {self.lookback_window})")
+                return None
+            
+            # Get current position (try different symbol formats)
+            symbol_info, actual_symbol = self.mt5.get_symbol_info(self.symbol)
+            if symbol_info is None:
+                print(f"❌ Cannot get symbol info for {self.symbol}")
+                return None
+            
+            positions = self.mt5.get_positions(actual_symbol)
+            current_position = 0
+            if positions:
+                current_position = 1 if positions[0].type == mt5.POSITION_TYPE_BUY else -1
+            
+            # Prepare observation
+            observation = self.prepare_observation(df, current_position)
+            
+            # Get model prediction
+            action, confidence, raw_action = self.predict_action(observation)
+            
+            # Log prediction
+            action_names = {0: 'HOLD', 1: 'BUY', 2: 'SELL', 3: 'CLOSE'}
+            current_time = datetime.now().strftime('%H:%M:%S')
+            
+            # Get current price using the correct symbol format
+            tick = mt5.symbol_info_tick(actual_symbol)
+            if tick is None:
+                print(f"⚠️ Cannot get current price for {actual_symbol}")
+                current_price = df['close'].iloc[-1]  # Use last close price
+            else:
+                current_price = tick.bid
+            
+            print(f"🕐 {current_time} | {actual_symbol} @ {current_price:.5f}")
+            print(f"   🤖 Prediction: {action_names[action]} (confidence: {confidence:.2f}, raw: {raw_action:.3f})")
+            print(f"   📊 Position: {current_position} | Positions: {len(positions) if positions else 0}")
+            
+            # Execute trade if conditions are met
+            result = None
+            if action != 0:  # Not hold
+                result = self.execute_trade(action, confidence)
+                if result is not None:
+                    print(f"   ✅ Trade executed: {action_names[action]}")
+                else:
+                    print(f"   ⚠️ Trade not executed (low confidence or conditions not met)")
+            
+            return {
+                'action': action,
+                'confidence': confidence,
+                'raw_action': raw_action,
+                'current_price': current_price,
+                'result': result
+            }
+            
+        except Exception as e:
+            print(f"❌ Single iteration error: {e}")
+            return None
+    
     def run_trading_loop(self, interval_minutes=5):
         """Main trading loop"""
         if not self.mt5.connected:
@@ -539,7 +830,7 @@ def main():
     print("=" * 50)
     
     # Configuration
-    SYMBOL = "XAUUSD"  # Change to your symbol
+    SYMBOL = "EURUSDm"  # Change to your symbol
     RISK_PERCENT = 1.0  # Risk per trade in %
     CHECK_INTERVAL = 5  # Minutes between checks
     

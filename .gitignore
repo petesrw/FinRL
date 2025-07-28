@@ -139,7 +139,6 @@ dmypy.json
 
 *events.out.tfevents.*
 *.csv
-*.zip
 *.png
 finrl_test.py
 test_plugplay.py
@@ -147,3 +146,4 @@ papertrading_test.py
 alpaca_processor_test.py
 /finrl/config_private.py
 .history/
+myenv/
