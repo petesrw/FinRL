@@ -407,30 +407,23 @@ def get_gpu_optimized_model_config():
         "verbose": 0
     }
 
-# Setup device globally - will be initialized in main()
+# Setup device globally - initialize immediately for import compatibility
 DEVICE = None
 
 def initialize_gpu_setup():
     """Initialize GPU setup - called from main() to avoid module-level execution"""
     global DEVICE
-    DEVICE = detect_and_setup_gpu()
-    
-    # Apply additional GPU boost if RTX 5060 TI detected
-    if torch.cuda.is_available():
-        gpu_name = torch.cuda.get_device_name(0)
-        if "RTX 5060" in gpu_name or "RTX 50" in gpu_name:
-            # The boost is already applied if the card is detected.
-            # We only need to apply the final async boost.
-            print("🚀 Applying final integrated async GPU utilization boost...")
-            try:
-                asyncio.run(apply_maximum_gpu_utilization_async())
-            except RuntimeError as e:
-                if "cannot run loop while another loop is running" in str(e):
-                    print("   ⚠️ Async loop already running, skipping separate boost application.")
-                else:
-                    raise e
-    
+    if DEVICE is None:
+        DEVICE = detect_and_setup_gpu()
     return DEVICE
+
+# Initialize GPU immediately for import compatibility
+try:
+    if DEVICE is None:
+        DEVICE = detect_and_setup_gpu()
+except Exception as e:
+    print(f"⚠️ GPU setup failed during import: {e}")
+    DEVICE = torch.device('cpu')
 
 class AdvancedForexEnv(gym.Env):
     """
@@ -2348,13 +2341,7 @@ class AdaptiveTrainer:
             
             training_time = time.time() - worker_start_time
             
-            # Clean up GPU memory
-            del model, env, test_env
-            if DEVICE.type == 'cuda':
-                torch.cuda.empty_cache()
-            gc.collect()
-            
-            # 🔧 FIX: Save model before deleting it!
+            # 🔧 FIX: Save model BEFORE deleting it!
             if tier in ['bronze', 'silver', 'gold', 'diamond']:
                 try:
                     print(f"💾 Saving {tier.upper()} tier model...")
@@ -2365,6 +2352,12 @@ class AdaptiveTrainer:
                     model_path = None
             else:
                 model_path = None
+            
+            # Clean up GPU memory AFTER saving model
+            del model, env, test_env
+            if DEVICE.type == 'cuda':
+                torch.cuda.empty_cache()
+            gc.collect()
             
             result = {
                 'model_id': model_id,

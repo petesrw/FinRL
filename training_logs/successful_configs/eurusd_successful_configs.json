@@ -1,2 +1,42 @@
 [
+  {
+    "attempt": 1,
+    "timestamp": "2025-07-28T18:44:25.111102",
+    "config": {
+      "algorithm": "PPO",
+      "learning_rate": 0.0002,
+      "gamma": 0.99,
+      "lookback_window": 25,
+      "transaction_cost": 0,
+      "timesteps": 2000000,
+      "n_steps": 8192,
+      "batch_size": 1024,
+      "n_epochs": 8,
+      "clip_range": 0.15,
+      "ent_coef": 1.5,
+      "vf_coef": 0.5,
+      "max_grad_norm": 0.5
+    },
+    "metrics": {
+      "balance": 9952.448434919363,
+      "equity": 9952.448434919363,
+      "total_return": -0.004755156508063738,
+      "win_rate": 0.5045871559633027,
+      "profit_factor": 0.89207578984288,
+      "max_drawdown": 0.006598458928291643,
+      "total_trades": 545,
+      "profitable_trades": 275,
+      "sharpe_ratio": -0.201634851304417,
+      "max_consecutive_losses": 10,
+      "avg_win": 1.429272362549523,
+      "avg_loss": 1.631857276969483,
+      "risk_reward_ratio": 0.875856230027555,
+      "sl_hit_rate": 0.22018348623853212,
+      "tp_hit_rate": 0.022018348623853212,
+      "avg_profit_per_trade": -8.725057812960987e-06
+    },
+    "score": 62.71616515000513,
+    "tier": "none",
+    "symbol": "EURUSD"
+  }
 ]

@@ -160,5 +160,129 @@
     ],
     "total_models": 2,
     "successful_models": 2
+  },
+  {
+    "batch_number": 1,
+    "timestamp": "2025-07-28T16:14:14.329876",
+    "symbol": "XAUUSD",
+    "results": [
+      {
+        "model_id": 1,
+        "hyperparameters": {
+          "algorithm": "PPO",
+          "learning_rate": 0.001,
+          "gamma": 0.99,
+          "batch_size": 1024,
+          "timesteps": 1000000
+        },
+        "metrics": {
+          "win_rate": 0.735,
+          "profit_factor": 4.76,
+          "max_drawdown": 0.15,
+          "total_return": 0.85,
+          "sharpe_ratio": 2.1,
+          "total_trades": 125
+        },
+        "score": 93.1,
+        "tier": "diamond",
+        "success": true,
+        "training_time": 1800.5
+      }
+    ],
+    "total_models": 1,
+    "successful_models": 1
+  },
+  {
+    "batch_number": 1,
+    "timestamp": "2025-07-28T16:15:57.251269",
+    "symbol": "XAUUSD",
+    "results": [
+      {
+        "model_id": 1,
+        "hyperparameters": {
+          "algorithm": "PPO",
+          "learning_rate": 0.001,
+          "gamma": 0.99,
+          "batch_size": 1024,
+          "timesteps": 1000000
+        },
+        "metrics": {
+          "win_rate": 0.735,
+          "profit_factor": 4.76,
+          "max_drawdown": 0.15,
+          "total_return": 0.85,
+          "sharpe_ratio": 2.1,
+          "total_trades": 125
+        },
+        "score": 93.1,
+        "tier": "diamond",
+        "success": true,
+        "training_time": 1800.5
+      }
+    ],
+    "total_models": 1,
+    "successful_models": 1
+  },
+  {
+    "batch_number": 1,
+    "timestamp": "2025-07-28T19:37:53.408997",
+    "symbol": "XAUUSD",
+    "results": [
+      {
+        "model_id": 1,
+        "hyperparameters": {
+          "algorithm": "PPO",
+          "learning_rate": 0.001,
+          "gamma": 0.99,
+          "batch_size": 1024,
+          "timesteps": 1000000
+        },
+        "metrics": {
+          "win_rate": 0.735,
+          "profit_factor": 4.76,
+          "max_drawdown": 0.15,
+          "total_return": 0.85,
+          "sharpe_ratio": 2.1,
+          "total_trades": 125
+        },
+        "score": 93.1,
+        "tier": "diamond",
+        "success": true,
+        "training_time": 1800.5
+      }
+    ],
+    "total_models": 1,
+    "successful_models": 1
+  },
+  {
+    "batch_number": 1,
+    "timestamp": "2025-07-28T19:45:51.838230",
+    "symbol": "XAUUSD",
+    "results": [
+      {
+        "model_id": 1,
+        "hyperparameters": {
+          "algorithm": "PPO",
+          "learning_rate": 0.001,
+          "gamma": 0.99,
+          "batch_size": 1024,
+          "timesteps": 1000000
+        },
+        "metrics": {
+          "win_rate": 0.735,
+          "profit_factor": 4.76,
+          "max_drawdown": 0.15,
+          "total_return": 0.85,
+          "sharpe_ratio": 2.1,
+          "total_trades": 125
+        },
+        "score": 93.1,
+        "tier": "diamond",
+        "success": true,
+        "training_time": 1800.5
+      }
+    ],
+    "total_models": 1,
+    "successful_models": 1
   }
 ]

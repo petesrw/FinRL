@@ -60,3 +60,5 @@ sphinx_rtd_theme
 setuptools>=65.5.0
 wheel>=0.33.6
 swig
+# Core MT5 integration
+MetaTrader5>=5.0.45

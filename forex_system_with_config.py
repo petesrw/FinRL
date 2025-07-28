@@ -21,8 +21,8 @@ from typing import Dict, List, Optional
 import threading
 import sqlite3
 import smtplib
-from email.mime.text import MimeText
-from email.mime.multipart import MimeMultipart
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
 import requests
 import os
 
@@ -457,6 +457,9 @@ class ForexEnvironment(gym.Env):
         self.config = config
         self.indicator_manager = indicator_manager
         
+        # Initialize logger
+        self.logger = logging.getLogger(__name__)
+        
         # Environment parameters from config
         self.initial_balance = config.model.initial_balance
         self.current_balance = self.initial_balance
@@ -864,12 +867,12 @@ class NotificationManager:
             return False
         
         try:
-            msg = MimeMultipart()
+            msg = MIMEMultipart()
             msg['From'] = self.config.notifications.email_username
             msg['To'] = self.config.notifications.email_to
             msg['Subject'] = subject
             
-            msg.attach(MimeText(message, 'plain'))
+            msg.attach(MIMEText(message, 'plain'))
             
             server = smtplib.SMTP(
                 self.config.notifications.email_smtp_server,

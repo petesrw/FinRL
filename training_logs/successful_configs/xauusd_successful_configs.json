@@ -1,6 +1,94 @@
 [
   {
     "attempt": 1,
+    "timestamp": "2025-07-28T16:14:14.327255",
+    "config": {
+      "algorithm": "PPO",
+      "learning_rate": 0.001,
+      "gamma": 0.99,
+      "batch_size": 1024,
+      "timesteps": 1000000
+    },
+    "metrics": {
+      "win_rate": 0.735,
+      "profit_factor": 4.76,
+      "max_drawdown": 0.15,
+      "total_return": 0.85,
+      "sharpe_ratio": 2.1,
+      "total_trades": 125
+    },
+    "score": 93.1,
+    "tier": "diamond",
+    "symbol": "XAUUSD"
+  },
+  {
+    "attempt": 1,
+    "timestamp": "2025-07-28T16:15:57.250268",
+    "config": {
+      "algorithm": "PPO",
+      "learning_rate": 0.001,
+      "gamma": 0.99,
+      "batch_size": 1024,
+      "timesteps": 1000000
+    },
+    "metrics": {
+      "win_rate": 0.735,
+      "profit_factor": 4.76,
+      "max_drawdown": 0.15,
+      "total_return": 0.85,
+      "sharpe_ratio": 2.1,
+      "total_trades": 125
+    },
+    "score": 93.1,
+    "tier": "diamond",
+    "symbol": "XAUUSD"
+  },
+  {
+    "attempt": 1,
+    "timestamp": "2025-07-28T19:37:53.402886",
+    "config": {
+      "algorithm": "PPO",
+      "learning_rate": 0.001,
+      "gamma": 0.99,
+      "batch_size": 1024,
+      "timesteps": 1000000
+    },
+    "metrics": {
+      "win_rate": 0.735,
+      "profit_factor": 4.76,
+      "max_drawdown": 0.15,
+      "total_return": 0.85,
+      "sharpe_ratio": 2.1,
+      "total_trades": 125
+    },
+    "score": 93.1,
+    "tier": "diamond",
+    "symbol": "XAUUSD"
+  },
+  {
+    "attempt": 1,
+    "timestamp": "2025-07-28T19:45:51.837198",
+    "config": {
+      "algorithm": "PPO",
+      "learning_rate": 0.001,
+      "gamma": 0.99,
+      "batch_size": 1024,
+      "timesteps": 1000000
+    },
+    "metrics": {
+      "win_rate": 0.735,
+      "profit_factor": 4.76,
+      "max_drawdown": 0.15,
+      "total_return": 0.85,
+      "sharpe_ratio": 2.1,
+      "total_trades": 125
+    },
+    "score": 93.1,
+    "tier": "diamond",
+    "symbol": "XAUUSD"
+  },
+  {
+    "attempt": 1,
     "timestamp": "2025-07-22T18:34:56.644949",
     "config": {
       "algorithm": "SAC",
