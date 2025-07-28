@@ -1332,8 +1332,14 @@ class AdaptiveTrainer:
     
     def save_history(self):
         """Save training history"""
-        with open(self.history_file, 'w') as f:
-            json.dump(self.training_history, f, indent=2)
+        print(f"🔍 DEBUG: save_history called with {len(self.training_history)} records")
+        try:
+            with open(self.history_file, 'w') as f:
+                json.dump(self.training_history, f, indent=2)
+            print(f"✅ Training history saved successfully to: {self.history_file}")
+        except Exception as e:
+            print(f"❌ Error saving training history: {e}")
+            return
     
     def save_failed_config(self, config, error_msg, attempt_num):
         """Save failed configuration separately"""
@@ -1359,11 +1365,14 @@ class AdaptiveTrainer:
     
     def save_successful_config(self, config, metrics, score, tier, attempt_num):
         """Save successful configuration separately"""
+        print(f"🔍 DEBUG: save_successful_config called - attempt {attempt_num}, tier {tier}, score {score:.1f}")
+        
         successful_configs = []
         if os.path.exists(self.successful_configs_file):
             with open(self.successful_configs_file, 'r') as f:
                 successful_configs = json.load(f)
-        
+                print(f"🔍 DEBUG: Loaded {len(successful_configs)} existing successful configs")
+
         successful_config = {
             'attempt': attempt_num,
             'timestamp': datetime.now().isoformat(),
@@ -1373,17 +1382,20 @@ class AdaptiveTrainer:
             'tier': tier,
             'symbol': self.symbol
         }
-        
+
         successful_configs.append(successful_config)
-        
+
         # Sort by score (best first)
         successful_configs.sort(key=lambda x: x['score'], reverse=True)
-        
-        with open(self.successful_configs_file, 'w') as f:
-            json.dump(successful_configs, f, indent=2)
-        
-        print(f"   📝 Successful config saved to: {self.successful_configs_file}")
-    
+
+        try:
+            with open(self.successful_configs_file, 'w') as f:
+                json.dump(successful_configs, f, indent=2)
+            print(f"   📝 Successful config saved to: {self.successful_configs_file}")
+        except Exception as e:
+            print(f"❌ Error saving successful config: {e}")
+            return
+
     def load_failed_configs(self):
         """Load previously failed configurations"""
         if os.path.exists(self.failed_configs_file):
@@ -2342,6 +2354,18 @@ class AdaptiveTrainer:
                 torch.cuda.empty_cache()
             gc.collect()
             
+            # 🔧 FIX: Save model before deleting it!
+            if tier in ['bronze', 'silver', 'gold', 'diamond']:
+                try:
+                    print(f"💾 Saving {tier.upper()} tier model...")
+                    model_path = self._save_model_by_tier(model, tier, score, model_id, is_best=False)
+                    print(f"✅ Model saved successfully: {model_path}")
+                except Exception as save_error:
+                    print(f"❌ Error saving model: {save_error}")
+                    model_path = None
+            else:
+                model_path = None
+            
             result = {
                 'model_id': model_id,
                 'hyperparameters': hyperparameters,
@@ -2353,7 +2377,8 @@ class AdaptiveTrainer:
                 'training_time_formatted': format_training_time(training_time),  # Human readable format
                 'success': True,
                 'data_size': len(data_chunk),
-                'test_size': test_size
+                'test_size': test_size,
+                'model_path': model_path  # Add model path to result
             }
             
             print(f"✅ Model {model_id} completed: {emoji} {tier.upper()} (Score: {score:.1f})")
@@ -2541,6 +2566,7 @@ class AdaptiveTrainer:
                         return attempt_record
                     
                     # Save successful config
+                    print(f"🔍 DEBUG: About to save successful config for Model {result['model_id']}")
                     self.save_successful_config(
                         result['hyperparameters'], 
                         result['metrics'], 
@@ -2592,7 +2618,9 @@ class AdaptiveTrainer:
                 batch_num += 1
                 
                 # Save history after each batch
+                print(f"🔍 DEBUG: About to save training history with {len(self.training_history)} records")
                 self.save_history()
+                print(f"✅ Training history saved successfully")
                 
             except Exception as e:
                 print(f"   ❌ Batch {batch_num} failed: {e}")
