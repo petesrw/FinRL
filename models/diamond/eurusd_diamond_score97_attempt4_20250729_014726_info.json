@@ -1,0 +1,9 @@
+{
+  "symbol": "EURUSD",
+  "tier": "diamond",
+  "score": 96.74812080974326,
+  "attempt": 4,
+  "timestamp": "20250729_014726",
+  "is_best": false,
+  "model_path": "models/diamond/eurusd_diamond_score97_attempt4_20250729_014726.zip"
+}
