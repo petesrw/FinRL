@@ -1738,29 +1738,29 @@ class AdaptiveTrainer:
             #     algorithm = random.choice(['DDPG', 'TD3'])
             algorithm = 'PPO'
             
-            # 🚀 ACTIVE TRADING OPTIMIZED LEARNING RATES
+            # 🚀 OPTIMIZED PROFITABILITY LEARNING RATES
             if algorithm == 'PPO':
-                learning_rate = random.choice([0.0002, 0.0003, 0.0005, 0.0007])  # Slightly higher for exploration
+                learning_rate = random.choice([0.0004, 0.0005, 0.0006, 0.0007, 0.0008])  # เพิ่มสำหรับ exploration
             elif algorithm == 'SAC':
-                learning_rate = random.choice([0.0003, 0.0005, 0.0007, 0.001])  # Higher for SAC exploration
+                learning_rate = random.choice([0.0005, 0.0007, 0.0008, 0.001, 0.0012])  # เพิ่มสำหรับ SAC exploration
             else:  # A2C, DDPG, etc.
-                learning_rate = random.choice([0.0003, 0.0005, 0.0008])
+                learning_rate = random.choice([0.0004, 0.0005, 0.0007, 0.0008])
             
-            # 📊 ACTIVE TRADING GAMMA (Allow shorter-term focus)
-            gamma = random.choice([0.95, 0.97, 0.98, 0.99])  # More variety including shorter-term
+            # 📊 OPTIMIZED GAMMA for Better Profitability (เน้น short-term rewards มากขึ้น)
+            gamma = random.choice([0.94, 0.95, 0.96, 0.97, 0.98])  # ลด long-term focus เล็กน้อย
             
-            # ⚡ ACTIVE TRADING OPTIMIZED BATCH SIZES
+            # ⚡ OPTIMIZED PROFITABILITY BATCH SIZES
             if algorithm == 'PPO':
-                base_batch_size = random.choice([1024, 2048, 4096])  # Larger batches for stability
+                base_batch_size = random.choice([1536, 2048, 3072, 4096])  # เพิ่ม intermediate sizes
             elif algorithm == 'SAC':
-                base_batch_size = random.choice([256, 512, 1024])   # Smaller for SAC
+                base_batch_size = random.choice([512, 768, 1024, 1536])   # เพิ่ม sizes สำหรับ SAC
             else:
-                base_batch_size = random.choice([512, 1024, 2048])
+                base_batch_size = random.choice([1024, 1536, 2048, 3072])
                 
             optimal_batch_size = get_optimal_batch_size(DEVICE, base_batch_size)
             
             # 🕰️ EXTENDED TRAINING TIME (Key for Active Trading)
-            base_timesteps = random.choice([4000000, 5000000, 6000000])  # 4-6M timesteps
+            base_timesteps = random.choice([2500000, 3000000, 3500000, 4000000])  # ลดลงเล็กน้อยแต่เพิ่ม variety
             optimal_timesteps = get_optimal_timesteps(DEVICE, base_timesteps)
             
             
@@ -1779,30 +1779,30 @@ class AdaptiveTrainer:
             # 🎁 ALGORITHM-SPECIFIC ACTIVE TRADING PARAMETERS
             if algorithm == 'PPO':
                 config.update({
-                    'n_steps': random.choice([2048, 4096, 8192]),
+                    'n_steps': random.choice([3072, 4096, 6144, 8192]),  # เพิ่ม options และ higher values
                     'batch_size': optimal_batch_size,
-                    'n_epochs': random.choice([8, 10, 15]),  # More epochs
-                    'clip_range': random.choice([0.1, 0.15, 0.2]),  # FIXED: Safe clip range
-                    'ent_coef': random.choice([0.01, 0.02, 0.05]),   # FIXED: Safe entropy coefficient
-                    'vf_coef': 0.5,
-                    'max_grad_norm': 0.5
+                    'n_epochs': random.choice([10, 12, 15]),  # เพิ่ม minimum epochs
+                    'clip_range': random.choice([0.15, 0.17, 0.18, 0.2]),  # เพิ่ม range สำหรับ exploration
+                    'ent_coef': random.choice([0.02, 0.03, 0.04, 0.05, 0.06]),   # เพิ่ม exploration มากขึ้น
+                    'vf_coef': random.choice([0.5, 0.6]),  # เพิ่ม value function weight
+                    'max_grad_norm': random.choice([0.5, 0.6])  # เพิ่มความยืดหยุ่น
                 })
             elif algorithm == 'SAC':
                 config.update({
                     'batch_size': optimal_batch_size,
-                    'buffer_size': random.choice([500000, 1000000]),
-                    'learning_starts': random.choice([1000, 2000]),
-                    'tau': random.choice([0.005, 0.01, 0.02]),
-                    'ent_coef': random.choice([0.1, 0.2, 0.3]),  # FIXED: Safe SAC entropy
+                    'buffer_size': random.choice([800000, 1000000, 1200000]),  # เพิ่ม buffer size
+                    'learning_starts': random.choice([1000, 1500, 2000]),
+                    'tau': random.choice([0.008, 0.01, 0.012, 0.015]),  # เพิ่ม target network update rate
+                    'ent_coef': random.choice([0.2, 0.3, 0.4, 0.5]),  # เพิ่ม exploration สำหรับ SAC
                     'target_update_interval': 1,
-                    'gradient_steps': random.choice([1, 2])
+                    'gradient_steps': random.choice([1, 2, 3])  # เพิ่ม gradient steps
                 })
             elif algorithm == 'A2C':
                 config.update({
-                    'n_steps': random.choice([8, 16, 32]),
-                    'vf_coef': random.choice([0.5, 0.7, 1.0]),
-                    'ent_coef': random.choice([0.01, 0.02, 0.03]),  # FIXED: Safe A2C entropy
-                    'max_grad_norm': 0.5,
+                    'n_steps': random.choice([16, 32, 64]),  # เพิ่ม step sizes
+                    'vf_coef': random.choice([0.5, 0.6, 0.7]),  # เพิ่ม value function weight
+                    'ent_coef': random.choice([0.02, 0.03, 0.04, 0.05]),  # เพิ่ม exploration สำหรับ A2C
+                    'max_grad_norm': random.choice([0.5, 0.6]),
                     'rms_prop_eps': 1e-5
                 })
             elif algorithm in ['DDPG', 'TD3']:
