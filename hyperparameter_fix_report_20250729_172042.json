@@ -1,0 +1,49 @@
+{
+  "timestamp": "2025-07-29T17:20:42.372492",
+  "file_fixed": "train_all_models.py",
+  "fixes_applied": [
+    {
+      "issue": "PPO ent_coef too high (1.0-2.0)",
+      "fix": "Reduced to 0.01-0.05",
+      "impact": "Reduces random action selection"
+    },
+    {
+      "issue": "SAC ent_coef too high (0.8-1.2)",
+      "fix": "Reduced to 0.1-0.3",
+      "impact": "Better exploration-exploitation balance"
+    },
+    {
+      "issue": "PPO clip_range too high (0.25)",
+      "fix": "Reduced to 0.1-0.2",
+      "impact": "More stable policy updates"
+    },
+    {
+      "issue": "Learning rate too high (0.001)",
+      "fix": "Reduced to 0.0003",
+      "impact": "Prevents overshooting and instability"
+    },
+    {
+      "issue": "Extreme reward values (±50)",
+      "fix": "Reduced to ±15",
+      "impact": "Balanced learning signals"
+    },
+    {
+      "issue": "Forced trading logic",
+      "fix": "Disabled/commented out",
+      "impact": "Natural behavior learning"
+    }
+  ],
+  "expected_improvements": [
+    "Models will learn stable trading patterns",
+    "Reduced bias toward extreme actions",
+    "Better convergence during training",
+    "More realistic trading behavior",
+    "Elimination of model collapse"
+  ],
+  "next_steps": [
+    "Stop any current training",
+    "Use retrain_fresh_model.py with new hyperparameters",
+    "Monitor bias_counter during training",
+    "Validate models thoroughly before live trading"
+  ]
+}

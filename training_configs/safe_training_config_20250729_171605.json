@@ -1,0 +1,76 @@
+{
+  "meta": {
+    "created": "2025-07-29T17:16:05.392972",
+    "purpose": "Safe hyperparameters to prevent model collapse",
+    "fixes_applied": [
+      "Reduced entropy coefficient from 1.0-2.0 to 0.01-0.2",
+      "Reduced clip_range from 0.25 to 0.2",
+      "Reduced learning_rate from 0.001 to 0.0003",
+      "Reduced batch_size for stability",
+      "Removed forced trading logic",
+      "Balanced reward function"
+    ]
+  },
+  "recommended_configs": {
+    "ppo_safe": {
+      "algorithm": "PPO",
+      "learning_rate": 0.0003,
+      "gamma": 0.99,
+      "n_steps": 2048,
+      "batch_size": 256,
+      "n_epochs": 4,
+      "clip_range": 0.2,
+      "ent_coef": 0.01,
+      "vf_coef": 0.5,
+      "max_grad_norm": 0.5,
+      "lookback_window": 50,
+      "transaction_cost": 0.0001,
+      "timesteps": 1000000
+    },
+    "sac_safe": {
+      "algorithm": "SAC",
+      "learning_rate": 0.0003,
+      "gamma": 0.99,
+      "batch_size": 256,
+      "buffer_size": 100000,
+      "learning_starts": 1000,
+      "tau": 0.005,
+      "ent_coef": 0.2,
+      "target_update_interval": 1,
+      "gradient_steps": 1,
+      "lookback_window": 50,
+      "transaction_cost": 0.0001,
+      "timesteps": 1000000
+    }
+  },
+  "reward_guidelines": {
+    "reward_principles": {
+      "1_balanced_range": "Reward ควรอยู่ในช่วง -10 ถึง +10 ไม่ควรเกิน ±50",
+      "2_gradual_penalties": "Penalty ค่อยเป็นค่อยไป ไม่ควร jump จาก 0 → -50",
+      "3_positive_reinforcement": "ใช้ positive reward มากกว่า negative penalty",
+      "4_realistic_goals": "ตั้งเป้าหมายที่สมเหตุสมผล ไม่บังคับเทรดทุก step",
+      "5_stability_first": "เน้น stability ก่อน aggressive trading"
+    },
+    "reward_ranges": {
+      "profitable_trade": "+2 ถึง +8 (ไม่ควรเกิน +10)",
+      "losing_trade": "-1 ถึง -5 (ไม่ควรเกิน -10)",
+      "hold_action": "-0.1 ถึง -1 (เล็กน้อย)",
+      "invalid_action": "-2 ถึง -5",
+      "episode_bonus": "+5 ถึง +15 (สำหรับ final performance)"
+    },
+    "avoid_patterns": [
+      "ห้าม reward/penalty เกิน ±20 ใน single step",
+      "ห้าม forced random trading",
+      "ห้าม massive penalty สำหรับ hold",
+      "ห้าม extreme win rate requirements (>80%)",
+      "ห้าม unrealistic profit targets"
+    ]
+  },
+  "training_recommendations": {
+    "start_with": "PPO with safe config",
+    "training_duration": "1M timesteps first, then extend if stable",
+    "monitoring": "Watch for bias_counter and model variance",
+    "early_stopping": "Stop if win_rate < 40% after 500k timesteps",
+    "validation": "Test on paper trading before live deployment"
+  }
+}

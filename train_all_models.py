@@ -399,7 +399,7 @@ def get_gpu_optimized_model_config():
         "gamma": 0.99,
         "gae_lambda": 0.95,
         "clip_range": 0.2,
-        "ent_coef": 0.01,
+        "ent_coef": 0.01,  # SAFE: Standard entropy coefficient  # SAFE: Standard entropy coefficient
         "vf_coef": 0.5,
         "max_grad_norm": 0.5,
         "target_kl": 0.01,
@@ -430,7 +430,7 @@ class AdvancedForexEnv(gym.Env):
     Advanced Forex Environment with comprehensive metrics
     """
     
-    def __init__(self, data, symbol='XAUUSD', initial_balance=10000, lookback_window=50, 
+    def __init__(self, data, symbol='EURUSD', initial_balance=10000, lookback_window=50, 
                  transaction_cost=0.0, max_position_size=5.0,  # ลด transaction cost เป็น 0 เพื่อการเรียนรู้
                  stop_loss_pct=0.010, take_profit_pct=0.015):  # ลด SL/TP มากขึ้นให้เหมาะกับ FOREX: 1%, 1.5% (Risk:Reward = 1:1.5)
         super().__init__()
@@ -619,7 +619,7 @@ class AdvancedForexEnv(gym.Env):
         else:
             action_value = float(action)
         
-        # 🚨 NUCLEAR OPTION: FORCED TRADING MODE
+        # 🚫 DISABLED: FORCED TRADING MODE (causes model collapse)
         # บังคับให้ AI เทรดโดยการแทรก random trading actions
         # if not hasattr(self, 'force_trade_counter'):
         #     self.force_trade_counter = 0
@@ -1070,11 +1070,11 @@ class AdvancedForexEnv(gym.Env):
             
             # 1. 🎁 VERY GENTLE TRADING ACTIVITY BONUS (สนับสนุนการเทรดทุกระดับ)
             if self.total_trades == 0:
-                final_reward -= 50   # ลดลงจาก 100 เป็น 50
+                final_reward -= 15   # FIXED: Reduced extreme penalty
             elif self.total_trades < 5:   # ผ่อนจาก 10
                 final_reward -= 20   # ลดลงจาก 50 เป็น 20
             elif self.total_trades >= 30:  # ลดจาก 50
-                final_reward += 40  # เพิ่มรางวัลมาก
+                final_reward += 15  # FIXED: Reduced bonus  # เพิ่มรางวัลมาก
             elif self.total_trades >= 20:  # ลดจาก 30
                 final_reward += 25  # เพิ่มรางวัล
             elif self.total_trades >= 10:  # ลดจาก 20
@@ -1254,7 +1254,7 @@ class AdaptiveTrainer:
     Adaptive trainer that learns from previous attempts with Async Multi-Model Training
     """
     
-    def __init__(self, symbol='XAUUSD'):
+    def __init__(self, symbol='EURUSD'):
         self.symbol = symbol
         self.training_history = []
         self.best_model = None
@@ -1782,8 +1782,8 @@ class AdaptiveTrainer:
                     'n_steps': random.choice([2048, 4096, 8192]),
                     'batch_size': optimal_batch_size,
                     'n_epochs': random.choice([8, 10, 15]),  # More epochs
-                    'clip_range': random.choice([0.15, 0.2, 0.25]),  # Higher clip for exploration
-                    'ent_coef': random.choice([1.0, 1.5, 2.0]),   # INSANE entropy coefficient for FORCED exploration!
+                    'clip_range': random.choice([0.1, 0.15, 0.2]),  # FIXED: Safe clip range
+                    'ent_coef': random.choice([0.01, 0.02, 0.05]),   # FIXED: Safe entropy coefficient
                     'vf_coef': 0.5,
                     'max_grad_norm': 0.5
                 })
@@ -1793,7 +1793,7 @@ class AdaptiveTrainer:
                     'buffer_size': random.choice([500000, 1000000]),
                     'learning_starts': random.choice([1000, 2000]),
                     'tau': random.choice([0.005, 0.01, 0.02]),
-                    'ent_coef': random.choice([0.8, 1.0, 1.2]),  # VERY high entropy for maximum exploration
+                    'ent_coef': random.choice([0.1, 0.2, 0.3]),  # FIXED: Safe SAC entropy
                     'target_update_interval': 1,
                     'gradient_steps': random.choice([1, 2])
                 })
@@ -1801,7 +1801,7 @@ class AdaptiveTrainer:
                 config.update({
                     'n_steps': random.choice([8, 16, 32]),
                     'vf_coef': random.choice([0.5, 0.7, 1.0]),
-                    'ent_coef': random.choice([0.05, 0.1, 0.15]),  # MUCH higher entropy for A2C exploration
+                    'ent_coef': random.choice([0.01, 0.02, 0.03]),  # FIXED: Safe A2C entropy
                     'max_grad_norm': 0.5,
                     'rms_prop_eps': 1e-5
                 })
@@ -1843,13 +1843,13 @@ class AdaptiveTrainer:
         # ULTIMATE ACTIVE TRADING configuration
         fallback_config = {
             'algorithm': 'SAC',  # SAC for maximum exploration
-            'learning_rate': 0.001,  # MUCH higher learning rate for aggressive exploration
+            'learning_rate': 0.0003,  # FIXED: Safe learning rate
             'batch_size': get_optimal_batch_size(DEVICE, 512),
             'buffer_size': 1000000,
             'learning_starts': 1000,
             'gamma': 0.95,  # Even shorter-term focus for active trading
             'tau': 0.01,
-            'ent_coef': 1.5,  # VERY high entropy for maximum exploration
+            'ent_coef': 0.2,  # FIXED: Safe entropy for SAC
             'target_update_interval': 1,
             'gradient_steps': 1,
             'lookback_window': 100,
@@ -2035,7 +2035,7 @@ class AdaptiveTrainer:
                         "n_steps": max(hyperparameters.get('n_steps', 8192), high_util_config["n_steps"]),
                         "gae_lambda": 0.95,
                         "clip_range": 0.2,
-                        "ent_coef": 0.01,
+                        "ent_coef": 0.01,  # SAFE: Standard entropy coefficient  # SAFE: Standard entropy coefficient
                         "vf_coef": 0.5,
                         "max_grad_norm": 0.5,
                         "target_kl": 0.01
@@ -2272,7 +2272,7 @@ class AdaptiveTrainer:
                         "n_steps": min(hyperparameters.get('n_steps', 2048), 8192),  # Smaller steps for concurrency
                         "gae_lambda": 0.95,
                         "clip_range": 0.2,
-                        "ent_coef": 0.01,
+                        "ent_coef": 0.01,  # SAFE: Standard entropy coefficient  # SAFE: Standard entropy coefficient
                         "vf_coef": 0.5,
                         "max_grad_norm": 0.5,
                         "target_kl": 0.01
@@ -2792,7 +2792,7 @@ def main():
     print("🔧 Initializing GPU configuration...")
     initialize_gpu_setup()
     
-    symbol = 'XAUUSD'
+    symbol = 'EURUSD'
     
     # Load data
     data_file = f"train_data/{symbol}/{symbol}_M5_real.csv"

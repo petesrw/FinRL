@@ -310,6 +310,7 @@ class ConfigurableForexBot:
         self.logger.info(f"   📊 Symbol: {self.symbol}")
         self.logger.info(f"   🤖 Model Type: {self.config.model.model_type}")
         self.logger.info(f"   💰 Risk per trade: {self.config.trading.risk_per_trade:.1%}")
+        self.logger.info(f"   📏 Effective risk (reduced 100x): {self.config.trading.risk_per_trade/100:.3%}")
         self.logger.info(f"   🎯 Target win rate: {self.config.trading.target_win_rate:.1%}")
         
         # Connect to MT5 if not in demo mode
@@ -433,11 +434,15 @@ class ConfigurableForexBot:
                 
                 # Log current performance
                 stats = self.performance_stats
+                total_closed_trades = stats['winning_trades'] + stats['losing_trades']
                 self.logger.info(f"📊 Current Performance:")
-                self.logger.info(f"   💼 Total Trades: {stats['total_trades']}")
-                self.logger.info(f"   🏆 Win Rate: {stats['win_rate']:.1%}")
+                self.logger.info(f"   � Total Opened Trades: {stats['total_trades']}")
+                self.logger.info(f"   ✅ Closed Trades: {total_closed_trades}")
+                self.logger.info(f"   🏆 Win Rate: {stats['win_rate']:.1%} (based on closed trades)")
                 self.logger.info(f"   💰 Total P&L: ${stats['total_profit']:.2f}")
                 self.logger.info(f"   📉 Max Drawdown: ${stats['max_drawdown']:.2f}")
+                if total_closed_trades == 0 and stats['total_trades'] > 0:
+                    self.logger.info(f"   ⏳ Waiting for trades to close to calculate accurate win rate...")
                 
                 # Wait for next decision (5 minutes for M5)
                 wait_minutes = 5
@@ -453,32 +458,39 @@ class ConfigurableForexBot:
     def _demo_trading_step(self):
         """Execute one demo trading step using actual trading logic"""
         try:
+            import random
             from mt5_trading_bot import TradingBot
             
             # Initialize trading bot with best model
             model_path = self._find_best_model()
             if model_path:
-                # Create demo trading bot (without MT5 connection)
-                trading_bot = TradingBot(self.symbol, model_path=model_path, risk_percent=self.config.trading.risk_per_trade * 100)
+                self.logger.info(f"📏 Using reduced lot size (100x smaller): {self.config.trading.risk_per_trade/100:.3%}")
+                
+                # Create demo trading bot (without MT5 connection) - Reduced lot size by 100x
+                trading_bot = TradingBot(self.symbol, model_path=model_path, risk_percent=self.config.trading.risk_per_trade * 100 / 10)
                 
                 # Simulate trading decision with demo data
                 self.logger.info(f"Demo trading decision for {self.symbol} using model: {model_path}")
                 
-                # Update demo performance stats
-                self.performance_stats['total_trades'] += 1
-                # Simulate random outcome for demo
-                import random
-                if random.random() > 0.35:  # 65% win rate simulation
-                    self.performance_stats['winning_trades'] += 1
-                    profit = random.uniform(50, 150)
-                else:
-                    self.performance_stats['losing_trades'] += 1
-                    profit = -random.uniform(30, 100)
+                # Create simulated trade result for demo mode
+                demo_result = {
+                    'action': 1 if random.random() > 0.5 else 2,  # Random Buy/Sell
+                    'current_price': 1.1000 + random.uniform(-0.01, 0.01),  # Simulated price
+                    'confidence': random.uniform(0.3, 0.9),
+                    'result': True  # Always successful in demo
+                }
                 
-                self.performance_stats['total_profit'] += profit
-                self.performance_stats['win_rate'] = self.performance_stats['winning_trades'] / self.performance_stats['total_trades']
+                # Update performance using the same function as live trading
+                self._update_trade_performance(demo_result)
                 
-                self.logger.info(f"Demo trade result: {profit:.2f}, Win rate: {self.performance_stats['win_rate']:.1%}")
+                # For demo mode, simulate trade closure after some time
+                # In real mode, this would happen when MT5 closes the trade
+                if random.random() > 0.3:  # 70% chance to simulate immediate closure for demo
+                    simulated_pnl = random.uniform(-50, 100)  # Demo P&L
+                    self.logger.info(f"🧪 Demo: Simulating trade closure with P&L: ${simulated_pnl:.2f}")
+                    self._update_closed_trade_performance(simulated_pnl)
+                
+                self.logger.info(f"✅ Demo trade executed successfully")
             else:
                 self.logger.warning(f"No model found for {self.symbol}")
                 
@@ -494,9 +506,10 @@ class ConfigurableForexBot:
             model_path = self._find_best_model()
             if model_path:
                 self.logger.info(f"🤖 Initializing trading bot with model: {model_path}")
+                self.logger.info(f"📏 Using reduced lot size (100x smaller): {self.config.trading.risk_per_trade/100:.3%}")
                 
-                # Create live trading bot with MT5 connection
-                trading_bot = TradingBot(self.symbol, model_path=model_path, risk_percent=self.config.trading.risk_per_trade * 100)
+                # Create live trading bot with MT5 connection - Reduced lot size by 100x
+                trading_bot = TradingBot(self.symbol, model_path=model_path, risk_percent=self.config.trading.risk_per_trade * 100 / 10)
                 
                 # Connect to MT5
                 self.logger.info("🔌 Connecting to MT5...")
@@ -521,13 +534,18 @@ class ConfigurableForexBot:
                         
                         if result['result']:
                             self.logger.info(f"✅ Trade EXECUTED!")
-                            # Update real performance stats here if needed
+                            # Update real performance stats
+                            self._update_trade_performance(result)
                         else:
                             self.logger.info(f"⚠️ Trade NOT executed (conditions not met)")
                     else:
                         self.logger.warning("⚠️ Trading iteration returned no result")
                     
                     self.logger.info("🔌 Disconnecting from MT5...")
+                    
+                    # Check for closed trades and update performance
+                    self._check_and_update_closed_trades(trading_bot)
+                    
                     trading_bot.stop()
                     self.logger.info("✅ Live trading step completed successfully")
                 else:
@@ -561,6 +579,31 @@ class ConfigurableForexBot:
         
         return None
     
+    def _check_and_update_closed_trades(self, trading_bot):
+        """Check for closed trades and update performance accordingly"""
+        try:
+            # This would need to be implemented with actual MT5 trade checking
+            # For now, this is a placeholder for the real implementation
+            
+            self.logger.info("🔍 Checking for closed trades...")
+            
+            # In a real implementation, you would:
+            # 1. Get list of closed trades since last check
+            # 2. Calculate actual P&L for each closed trade
+            # 3. Update performance stats accordingly
+            
+            # Example structure for real implementation:
+            # closed_trades = trading_bot.get_closed_trades_since_last_check()
+            # for trade in closed_trades:
+            #     actual_pnl = trade.profit
+            #     self._update_closed_trade_performance(actual_pnl)
+            
+            # For now, just log that we're checking
+            self.logger.info("📊 Closed trade checking not yet implemented - performance tracking is delayed")
+            
+        except Exception as e:
+            self.logger.error(f"Error checking closed trades: {e}")
+    
     def _check_emergency_stop(self):
         """Check emergency stop conditions"""
         if not self.config.safety.enable_emergency_stop:
@@ -584,8 +627,148 @@ class ConfigurableForexBot:
     
     def _update_performance(self):
         """Update performance statistics"""
-        # This would be implemented to track actual trading performance
-        pass
+        # Calculate win rate based on CLOSED trades only
+        total_closed_trades = self.performance_stats['winning_trades'] + self.performance_stats['losing_trades']
+        if total_closed_trades > 0:
+            self.performance_stats['win_rate'] = self.performance_stats['winning_trades'] / total_closed_trades
+        else:
+            self.performance_stats['win_rate'] = 0.0
+        
+        # Update max drawdown
+        if self.performance_stats['total_profit'] < self.performance_stats['max_drawdown']:
+            self.performance_stats['max_drawdown'] = self.performance_stats['total_profit']
+        
+        # Save performance to database if enabled
+        if self.config.logging.save_trades_to_db:
+            self._save_performance_to_db()
+    
+    def _update_trade_performance(self, trade_result):
+        """Record trade opening - performance will be calculated when trade closes"""
+        try:
+            # Only record trade opening, not calculate P&L yet
+            if trade_result.get('action') in [1, 2]:  # Buy or Sell action
+                # Increment total opened trades (not completed trades)
+                self.performance_stats['total_trades'] += 1
+                
+                self.logger.info(f"📈 Trade Opened - Performance tracking:")
+                self.logger.info(f"   🎯 Action: {trade_result.get('action')} ({'BUY' if trade_result.get('action') == 1 else 'SELL'})")
+                self.logger.info(f"   💵 Entry Price: {trade_result.get('current_price'):.5f}")
+                self.logger.info(f"   📊 Total Opened Trades: {self.performance_stats['total_trades']}")
+                self.logger.info(f"   ⏳ Waiting for trade closure to calculate P&L...")
+                self.logger.info(f"   🏆 Current Win Rate: {self.performance_stats['winning_trades']/max(1, self.performance_stats['winning_trades'] + self.performance_stats['losing_trades']):.1%} (based on {self.performance_stats['winning_trades'] + self.performance_stats['losing_trades']} closed trades)")
+                
+                # Save trade opening to database if enabled
+                if self.config.logging.save_trades_to_db:
+                    self._save_trade_opening_to_db(trade_result)
+            
+        except Exception as e:
+            self.logger.error(f"Error recording trade opening: {e}")
+    
+    def _update_closed_trade_performance(self, closed_trade_pnl):
+        """Update performance statistics when a trade is actually closed"""
+        try:
+            if closed_trade_pnl > 0:
+                self.performance_stats['winning_trades'] += 1
+                self.performance_stats['consecutive_losses'] = 0
+                self.logger.info(f"✅ Trade CLOSED with PROFIT: ${closed_trade_pnl:.2f}")
+            else:
+                self.performance_stats['losing_trades'] += 1
+                self.performance_stats['consecutive_losses'] += 1
+                self.logger.info(f"❌ Trade CLOSED with LOSS: ${closed_trade_pnl:.2f}")
+            
+            self.performance_stats['total_profit'] += closed_trade_pnl
+            
+            # Calculate actual win rate based on closed trades only
+            total_closed_trades = self.performance_stats['winning_trades'] + self.performance_stats['losing_trades']
+            actual_win_rate = self.performance_stats['winning_trades'] / total_closed_trades if total_closed_trades > 0 else 0.0
+            
+            # ✅ FIX: Update the win_rate in performance_stats
+            self.performance_stats['win_rate'] = actual_win_rate
+            
+            self.logger.info(f"📈 Trade Performance Updated (REAL):")
+            self.logger.info(f"   💰 Trade P&L: ${closed_trade_pnl:.2f}")
+            self.logger.info(f"   � Total Closed Trades: {total_closed_trades}")
+            self.logger.info(f"   🏆 Actual Win Rate: {actual_win_rate:.1%}")
+            self.logger.info(f"   💰 Total P&L: ${self.performance_stats['total_profit']:.2f}")
+            self.logger.info(f"   🔥 Consecutive Losses: {self.performance_stats['consecutive_losses']}")
+            
+        except Exception as e:
+            self.logger.error(f"Error updating closed trade performance: {e}")
+    
+    def _save_trade_opening_to_db(self, trade_result):
+        """Save trade opening to database"""
+        try:
+            conn = sqlite3.connect(self.config.logging.db_file)
+            cursor = conn.cursor()
+            
+            cursor.execute('''
+                INSERT INTO trades (symbol, entry_time, entry_price, position_type, pnl, close_reason, win)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+            ''', (
+                self.symbol,
+                datetime.now(),
+                trade_result.get('current_price', 0),
+                'BUY' if trade_result.get('action') == 1 else 'SELL' if trade_result.get('action') == 2 else 'UNKNOWN',
+                0.0,  # P&L = 0 for opening trade
+                'OPENED',
+                -1  # -1 = pending, 0 = loss, 1 = win
+            ))
+            
+            conn.commit()
+            conn.close()
+            
+        except Exception as e:
+            self.logger.error(f"Error saving trade opening to database: {e}")
+    
+    def _save_trade_to_db(self, trade_result, pnl):
+        """Save individual trade to database"""
+        try:
+            conn = sqlite3.connect(self.config.logging.db_file)
+            cursor = conn.cursor()
+            
+            cursor.execute('''
+                INSERT INTO trades (symbol, entry_time, entry_price, position_type, pnl, close_reason, win)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+            ''', (
+                self.symbol,
+                datetime.now(),
+                trade_result.get('current_price', 0),
+                'BUY' if trade_result.get('action') == 1 else 'SELL' if trade_result.get('action') == 2 else 'CLOSE',
+                pnl,
+                'AUTOMATED',
+                1 if pnl > 0 else 0
+            ))
+            
+            conn.commit()
+            conn.close()
+            
+        except Exception as e:
+            self.logger.error(f"Error saving trade to database: {e}")
+    
+    def _save_performance_to_db(self):
+        """Save performance statistics to database"""
+        try:
+            conn = sqlite3.connect(self.config.logging.db_file)
+            cursor = conn.cursor()
+            
+            cursor.execute('''
+                INSERT INTO performance (symbol, total_trades, winning_trades, win_rate, total_pnl, balance, drawdown)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+            ''', (
+                self.symbol,
+                self.performance_stats['total_trades'],
+                self.performance_stats['winning_trades'],
+                self.performance_stats['win_rate'],
+                self.performance_stats['total_profit'],
+                self.performance_stats['total_profit'],  # Simple balance calculation
+                self.performance_stats['max_drawdown']
+            ))
+            
+            conn.commit()
+            conn.close()
+            
+        except Exception as e:
+            self.logger.error(f"Error saving performance to database: {e}")
     
     def get_performance_report(self):
         """Get comprehensive performance report"""

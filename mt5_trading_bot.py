@@ -373,7 +373,7 @@ class TradingBot:
         
         # Trading parameters
         self.min_confidence = 0.4  # Minimum confidence for trade execution (lowered to match training behavior)
-        self.max_positions = 1     # Maximum concurrent positions
+        self.max_positions = 6     # Maximum concurrent positions
         self.lookback_window = 50  # Default, will be updated based on model
         
         # Load model
@@ -405,6 +405,262 @@ class TradingBot:
             self.obs_size = 50
             self.observation_type = '1d'
             print("⚠️ Could not detect model observation space, using 1D default")
+        
+        # Initialize debug mode and action history for monitoring
+        self._debug_mode = True  # Enable debugging by default
+        self._recent_actions = []  # Track recent actions for pattern detection
+        self._bias_counter = 0  # Count consecutive bias detections
+        self._exploration_mode = False  # Enable exploration when bias detected
+        self._emergency_mode = False  # Emergency trading mode when model fails
+        self._force_retrain = False  # Force retraining recommendation
+    
+    def enable_emergency_mode(self, enabled=True):
+        """Enable emergency trading mode when model fails"""
+        self._emergency_mode = enabled
+        if enabled:
+            print("🚨 EMERGENCY MODE ACTIVATED")
+            print("   📊 Using simplified random/rule-based trading")
+            print("   ⚠️ Model predictions ignored")
+            print("   🛑 RECOMMEND: Stop trading and retrain model")
+        else:
+            print("✅ Emergency mode deactivated")
+    
+    def enable_exploration_mode(self, enabled=True):
+        """Enable/disable exploration mode to combat bias"""
+        self._exploration_mode = enabled
+        if enabled:
+            print("🎲 Exploration mode ENABLED - Using non-deterministic predictions")
+        else:
+            print("🎯 Exploration mode DISABLED - Using deterministic predictions")
+    
+    def reset_bias_detection(self):
+        """Reset bias detection counters and history"""
+        self._recent_actions = []
+        self._recent_raw_actions = []
+        self._bias_counter = 0
+        print("🔄 Bias detection reset")
+    
+    def get_bias_report(self):
+        """Generate a comprehensive bias report"""
+        if not hasattr(self, '_recent_actions') or len(self._recent_actions) < 5:
+            return "📊 Insufficient data for bias analysis (need at least 5 predictions)"
+        
+        action_names = {0: 'HOLD', 1: 'BUY', 2: 'SELL', 3: 'CLOSE'}
+        
+        # Count actions
+        action_counts = {0: 0, 1: 0, 2: 0, 3: 0}
+        for a in self._recent_actions:
+            action_counts[a] += 1
+        
+        total_predictions = len(self._recent_actions)
+        report = []
+        report.append(f"📊 BIAS ANALYSIS REPORT ({total_predictions} recent predictions)")
+        report.append("=" * 50)
+        
+        # Action distribution
+        for action_id, count in action_counts.items():
+            percentage = (count / total_predictions) * 100
+            action_name = action_names[action_id]
+            status = "🚨" if percentage > 60 else "⚠️" if percentage > 40 else "✅"
+            report.append(f"{status} {action_name}: {count}/{total_predictions} ({percentage:.1f}%)")
+        
+        # Check for patterns
+        if len(self._recent_actions) >= 5:
+            last_5 = self._recent_actions[-5:]
+            if all(a == last_5[0] for a in last_5):
+                report.append(f"🚨 CRITICAL: Last 5 actions identical: {action_names[last_5[0]]}")
+        
+        # Raw action analysis
+        if hasattr(self, '_recent_raw_actions') and len(self._recent_raw_actions) >= 5:
+            raw_actions = self._recent_raw_actions[-10:]
+            avg_raw = np.mean(raw_actions)
+            std_raw = np.std(raw_actions)
+            report.append(f"📈 Raw actions: avg={avg_raw:.3f}, std={std_raw:.3f}")
+            if std_raw < 0.1:
+                report.append("🚨 CRITICAL: Raw action variance too low - model not exploring")
+        
+        # Bias counter
+        bias_count = getattr(self, '_bias_counter', 0)
+        if bias_count > 0:
+            report.append(f"⚠️ Consecutive bias detections: {bias_count}")
+        
+        # Exploration mode status
+        if getattr(self, '_exploration_mode', False):
+            report.append("🎲 Exploration mode: ACTIVE")
+        else:
+            report.append("🎯 Exploration mode: INACTIVE")
+        
+        return "\n".join(report)
+    
+    def force_model_retraining_mode(self, enabled=True):
+        """Force the bot to recommend model retraining"""
+        self._force_retrain = enabled
+        if enabled:
+            print("🚨 FORCE RETRAIN MODE: Bot will recommend immediate model retraining")
+            print("📋 Recommended actions:")
+            print("   1. Stop current trading immediately")
+            print("   2. Check training data quality")
+            print("   3. Retrain model with better parameters")
+            print("   4. Validate new model before deployment")
+        else:
+            print("✅ Force retrain mode disabled")
+    
+    def check_model_health(self):
+        """Comprehensive model health check"""
+        health_report = []
+        health_report.append("🏥 MODEL HEALTH CHECK")
+        health_report.append("=" * 30)
+        
+        # Check recent predictions variance
+        if hasattr(self, '_recent_raw_actions') and len(self._recent_raw_actions) >= 5:
+            recent_raw = self._recent_raw_actions[-10:]
+            variance = np.var(recent_raw)
+            mean_raw = np.mean(recent_raw)
+            
+            health_report.append(f"📊 Raw action variance: {variance:.6f}")
+            health_report.append(f"📊 Mean raw action: {mean_raw:.3f}")
+            
+            if variance < 0.001:
+                health_report.append("🚨 CRITICAL: No variance in predictions - MODEL DEAD")
+                self.force_model_retraining_mode(True)
+            elif variance < 0.01:
+                health_report.append("⚠️ WARNING: Very low variance - model may be stuck")
+            else:
+                health_report.append("✅ Variance within acceptable range")
+        
+        # Check bias counter
+        bias_count = getattr(self, '_bias_counter', 0)
+        if bias_count >= 10:
+            health_report.append("🚨 CRITICAL: Severe bias detected - STOP TRADING")
+            self.force_model_retraining_mode(True)
+        elif bias_count >= 5:
+            health_report.append("⚠️ WARNING: High bias count")
+        else:
+            health_report.append("✅ Bias count acceptable")
+        
+        # Check exploration mode necessity
+        if getattr(self, '_exploration_mode', False):
+            health_report.append("🎲 INFO: Exploration mode active (bias mitigation)")
+        
+        return "\n".join(health_report)
+    
+    def should_retrain_model(self):
+        """ตรวจสอบว่าควร retrain model หรือไม่"""
+        retrain_reasons = []
+        
+        print("🔍 CHECKING IF MODEL NEEDS RETRAINING")
+        print("=" * 40)
+        
+        # ตรวจสอบ bias counter
+        bias_count = getattr(self, '_bias_counter', 0)
+        if bias_count >= 10:
+            retrain_reasons.append("🚨 SEVERE BIAS: Bias counter >= 10")
+        elif bias_count >= 5:
+            retrain_reasons.append("⚠️ HIGH BIAS: Bias counter >= 5")
+        
+        # ตรวจสอบ variance ของ raw actions
+        if hasattr(self, '_recent_raw_actions') and len(self._recent_raw_actions) >= 10:
+            variance = np.var(self._recent_raw_actions)
+            if variance < 0.001:
+                retrain_reasons.append("🚨 MODEL DEATH: No variance in predictions")
+            elif variance < 0.01:
+                retrain_reasons.append("⚠️ LOW VARIANCE: Model may be stuck")
+        
+        # ตรวจสอบ action pattern
+        if hasattr(self, '_recent_actions') and len(self._recent_actions) >= 10:
+            action_counts = {0: 0, 1: 0, 2: 0, 3: 0}
+            for a in self._recent_actions:
+                action_counts[a] += 1
+            
+            max_count = max(action_counts.values())
+            if max_count >= 9:  # 90% of actions are the same
+                dominant_action = max(action_counts, key=action_counts.get)
+                action_names = {0: 'HOLD', 1: 'BUY', 2: 'SELL', 3: 'CLOSE'}
+                retrain_reasons.append(f"🚨 EXTREME BIAS: {action_names[dominant_action]} dominates {max_count}/10 actions")
+        
+        # ตรวจสอบ exploration mode ที่เปิดอยู่นาน
+        if getattr(self, '_exploration_mode', False):
+            retrain_reasons.append("⚠️ PERSISTENT EXPLORATION: Model requires exploration mode")
+        
+        # ตรวจสอบ emergency mode
+        if getattr(self, '_emergency_mode', False):
+            retrain_reasons.append("🚨 EMERGENCY MODE: Model completely failed")
+        
+        # สรุปผลการตรวจสอบ
+        if retrain_reasons:
+            print("❌ MODEL NEEDS RETRAINING")
+            print("📋 Reasons:")
+            for reason in retrain_reasons:
+                print(f"   {reason}")
+            
+            # แนะนำขั้นตอนต่อไป
+            print("\n📋 RECOMMENDED ACTIONS:")
+            print("   1. 🛑 STOP live trading immediately")
+            print("   2. 📦 Backup current model")
+            print("   3. 🔄 Start fresh model training")
+            print("   4. 📊 Use different hyperparameters")
+            print("   5. 🧪 Validate new model thoroughly")
+            
+            return True
+        else:
+            print("✅ MODEL APPEARS HEALTHY")
+            print("   Continue monitoring performance")
+            return False
+    
+    def get_retraining_recommendation(self):
+        """ให้คำแนะนำการ retrain แบบละเอียด"""
+        recommendation = []
+        recommendation.append("🔄 MODEL RETRAINING RECOMMENDATIONS")
+        recommendation.append("=" * 45)
+        
+        # วิเคราะห์ปัญหาปัจจุบัน
+        if hasattr(self, '_recent_raw_actions') and len(self._recent_raw_actions) >= 5:
+            variance = np.var(self._recent_raw_actions)
+            mean_action = np.mean(self._recent_raw_actions)
+            
+            recommendation.append(f"📊 Current Model Analysis:")
+            recommendation.append(f"   • Raw action variance: {variance:.6f}")
+            recommendation.append(f"   • Mean raw action: {mean_action:.3f}")
+            recommendation.append(f"   • Bias counter: {getattr(self, '_bias_counter', 0)}")
+        
+        recommendation.append("")
+        recommendation.append("🚨 DO NOT USE CURRENT MODEL FOR RETRAINING")
+        recommendation.append("   ❌ Model has collapsed/biased")
+        recommendation.append("   ❌ Weights are corrupted")
+        recommendation.append("   ❌ Will propagate existing problems")
+        
+        recommendation.append("")
+        recommendation.append("✅ RECOMMENDED APPROACH:")
+        recommendation.append("   1. 🔄 START COMPLETELY FRESH")
+        recommendation.append("      • Initialize new neural network")
+        recommendation.append("      • Use default hyperparameters")
+        recommendation.append("      • Clean training data")
+        
+        recommendation.append("")
+        recommendation.append("   2. 📊 IMPROVE TRAINING DATA")
+        recommendation.append("      • Use more diverse market conditions")
+        recommendation.append("      • Ensure balanced action distribution")
+        recommendation.append("      • Remove extreme outliers")
+        
+        recommendation.append("")
+        recommendation.append("   3. 🔧 ADJUST HYPERPARAMETERS")
+        recommendation.append("      • Lower learning rate (3e-4 → 1e-4)")
+        recommendation.append("      • Increase entropy coefficient (exploration)")
+        recommendation.append("      • Add regularization")
+        
+        recommendation.append("")
+        recommendation.append("   4. 🧪 ENHANCED VALIDATION")
+        recommendation.append("      • Longer training period")
+        recommendation.append("      • Multiple evaluation metrics")
+        recommendation.append("      • Paper trading before live deployment")
+        
+        recommendation.append("")
+        recommendation.append("📋 FILES TO CREATE:")
+        recommendation.append("   • retrain_fresh_model.py (already created)")
+        recommendation.append("   • new_training_config.json")
+        recommendation.append("   • validation_metrics.py")
+        
+        return "\n".join(recommendation)
     
     def connect_mt5(self, login=None, password=None, server=None):
         """Connect to MT5"""
@@ -480,6 +736,8 @@ class TradingBot:
     
     def prepare_observation(self, df, current_position=0):
         """Prepare observation for model (auto-detects 1D vs 2D format)"""
+        print(f"   🔧 Preparing {self.observation_type} observation (position: {current_position})")
+        
         if self.observation_type == '2d':
             return self._prepare_2d_observation(df, current_position)
         else:
@@ -556,6 +814,7 @@ class TradingBot:
         
         # Clip extreme values
         features = np.clip(features, -10, 10)
+        print(f"   📊 2D observation prepared: shape {features.shape}, mean={np.mean(features):.3f}")
         return features.astype(np.float32)
     
     def _prepare_1d_observation(self, df, current_position=0):
@@ -582,17 +841,89 @@ class TradingBot:
         # Normalize data (except position)
         obs_data[:, :-1] = (obs_data[:, :-1] - np.mean(obs_data[:, :-1], axis=0)) / (np.std(obs_data[:, :-1], axis=0) + 1e-8)
         
-        return obs_data.astype(np.float32)
+        # Flatten for 1D models if needed
+        obs_flattened = obs_data.flatten().astype(np.float32)
+        print(f"   📊 1D observation prepared: shape {obs_flattened.shape}, mean={np.mean(obs_flattened):.3f}")
+        
+        return obs_flattened
     
-    def predict_action(self, observation):
+    def predict_action(self, observation, current_position=0):
         """Get action prediction from model - EXACTLY MATCH TRAINING LOGIC"""
+        # Debug: print observation shape and some stats
+        if hasattr(observation, 'shape'):
+            print(f"   🔍 Observation shape: {observation.shape}")
+            if len(observation.shape) == 2:
+                print(f"   📊 Obs stats: mean={np.mean(observation):.3f}, std={np.std(observation):.3f}")
+                print(f"   📊 Obs range: [{np.min(observation):.3f}, {np.max(observation):.3f}]")
+            elif len(observation.shape) == 3:
+                print(f"   📊 Obs stats: mean={np.mean(observation):.3f}, std={np.std(observation):.3f}")
+        
+        # 🚨 BIAS DETECTION: Check if model is stuck by using non-deterministic first
+        action_nd, _states_nd = self.model.predict(observation, deterministic=False)
         action, _states = self.model.predict(observation, deterministic=True)
         
         # Convert continuous action to discrete
         if isinstance(action, (list, np.ndarray)):
             action_value = float(action[0])
+            action_nd_value = float(action_nd[0])
         else:
             action_value = float(action)
+            action_nd_value = float(action_nd)
+        
+        # Debug: show raw action values and detect bias
+        print(f"   🎯 Raw model output (deterministic): {action_value:.6f}")
+        print(f"   🎯 Raw model output (non-deterministic): {action_nd_value:.6f}")
+        
+        # 🚨 BIAS DETECTION: If deterministic always gives extreme values, use non-deterministic
+        bias_detected = False
+        
+        # Check for extreme bias: both deterministic and non-deterministic are identical
+        if abs(action_value - action_nd_value) < 0.001 and abs(action_value) >= 0.99:
+            print(f"   🚨 SEVERE BIAS: Both deterministic and non-deterministic identical at extreme value {action_value:.3f}")
+            print(f"   🚨 MODEL FAILURE: Model has collapsed - needs immediate retraining!")
+            bias_detected = True
+            self._bias_counter = getattr(self, '_bias_counter', 0) + 10  # Severe penalty
+            
+            # Force random action as emergency fallback
+            import random
+            emergency_actions = [0, 1, 2]  # HOLD, BUY, SELL (avoid CLOSE when no position)
+            if current_position == 0:  # No position, use any action except CLOSE
+                emergency_action = random.choice(emergency_actions)
+            else:  # Has position, include CLOSE as option
+                emergency_action = random.choice([0, 1, 2, 3])
+            
+            # Map emergency action back to continuous value
+            if emergency_action == 0:    # HOLD
+                action_value = 0.0
+            elif emergency_action == 1:  # BUY  
+                action_value = 0.5
+            elif emergency_action == 2:  # SELL
+                action_value = -0.5
+            else:                        # CLOSE
+                action_value = 0.8
+                
+            print(f"   🎲 EMERGENCY: Using random action {emergency_action} (value: {action_value:.3f})")
+            
+        elif abs(action_value) >= 0.99:  # Model stuck at extreme values
+            print(f"   ⚠️ BIAS DETECTED: Model stuck at extreme value {action_value:.3f}")
+            bias_detected = True
+            self._bias_counter = getattr(self, '_bias_counter', 0) + 1
+            
+            # Auto-enable exploration mode after 3 consecutive bias detections
+            if self._bias_counter >= 3 and not self._exploration_mode:
+                print(f"   🎲 Auto-enabling exploration mode after {self._bias_counter} bias detections")
+                self.enable_exploration_mode(True)
+            
+            # Use non-deterministic prediction instead
+            action_value = action_nd_value
+            print(f"   🔄 Using non-deterministic prediction: {action_value:.6f}")
+        else:
+            # Reset bias counter if no bias detected
+            self._bias_counter = 0
+            # If in exploration mode, still use non-deterministic occasionally
+            if self._exploration_mode:
+                action_value = action_nd_value
+                print(f"   🎲 Exploration mode: Using non-deterministic {action_value:.6f}")
         
         # 🎯 EXACT TRAINING MAPPING: 
         # [-1, -0.3): Sell (35% of action space)
@@ -622,6 +953,45 @@ class TradingBot:
         
         # Clamp confidence to [0, 1]
         confidence = max(0.0, min(1.0, confidence))
+        
+        # Track action patterns to detect if model is stuck
+        self._recent_actions.append(discrete_action)
+        self._recent_raw_actions = getattr(self, '_recent_raw_actions', [])
+        self._recent_raw_actions.append(action_value)
+        
+        if len(self._recent_actions) > 10:
+            self._recent_actions.pop(0)
+            self._recent_raw_actions.pop(0)
+        
+        # 🚨 ADVANCED BIAS DETECTION
+        if len(self._recent_actions) >= 5:
+            last_5_actions = self._recent_actions[-5:]
+            last_5_raw = self._recent_raw_actions[-5:]
+            
+            # Check for identical actions
+            if all(a == last_5_actions[0] for a in last_5_actions):
+                print(f"   🚨 BIAS ALERT: Model stuck in pattern - last 5 actions: {last_5_actions}")
+                print(f"   📊 Raw action values: {[f'{r:.3f}' for r in last_5_raw]}")
+                
+                # Check if raw values are also similar (indicating model convergence issue)
+                if all(abs(r - last_5_raw[0]) < 0.1 for r in last_5_raw):
+                    print(f"   🚨 SEVERE BIAS: Raw values also identical - Model needs retraining!")
+                    
+        # Calculate action distribution for the last 10 predictions
+        if len(self._recent_actions) >= 10:
+            action_counts = {0: 0, 1: 0, 2: 0, 3: 0}  # HOLD, BUY, SELL, CLOSE
+            for a in self._recent_actions:
+                action_counts[a] += 1
+            
+            action_names_debug = {0: 'HOLD', 1: 'BUY', 2: 'SELL', 3: 'CLOSE'}
+            distribution = {action_names_debug[k]: v for k, v in action_counts.items()}
+            print(f"   📊 Last 10 actions distribution: {distribution}")
+            
+            # Check for extreme bias (>80% of one action)
+            max_count = max(action_counts.values())
+            if max_count >= 8:
+                dominant_action = max(action_counts, key=action_counts.get)
+                print(f"   🚨 EXTREME BIAS: {action_names_debug[dominant_action]} dominates {max_count}/10 predictions!")
         
         return discrete_action, confidence, action_value
     
@@ -672,7 +1042,9 @@ class TradingBot:
         
         result = None
         
-        if action == 1 and current_position == 0:  # Buy signal
+        # 🚨 IMPROVED LOGIC: Check current position before executing actions
+        if action == 1 and current_position == 0:  # Buy signal - only if no position
+            print(f"   💹 Executing BUY order...")
             sl = current_price.ask - sl_distance
             tp = current_price.ask + tp_distance
             result = self.mt5.send_order(
@@ -684,7 +1056,8 @@ class TradingBot:
                 comment=f"RL Buy C:{confidence:.2f}"
             )
             
-        elif action == 2 and current_position == 0:  # Sell signal
+        elif action == 2 and current_position == 0:  # Sell signal - only if no position
+            print(f"   💹 Executing SELL order...")
             sl = current_price.bid + sl_distance
             tp = current_price.bid - tp_distance
             result = self.mt5.send_order(
@@ -696,9 +1069,36 @@ class TradingBot:
                 comment=f"RL Sell C:{confidence:.2f}"
             )
             
-        elif action == 3 and current_position != 0:  # Close signal
-            if positions:
+        elif action == 1 and current_position != 0:  # Buy signal but position exists
+            print(f"   ⚠️ BUY signal ignored - position already exists (current: {current_position})")
+            if current_position == -1:  # Have sell position, could close first
+                print(f"   💡 Suggestion: Close SELL position first, then BUY")
+            return None
+            
+        elif action == 2 and current_position != 0:  # Sell signal but position exists
+            print(f"   ⚠️ SELL signal ignored - position already exists (current: {current_position})")
+            if current_position == 1:  # Have buy position, could close first
+                print(f"   💡 Suggestion: Close BUY position first, then SELL")
+            return None
+            
+        elif action == 3:  # Close signal
+            if current_position != 0 and positions:
+                print(f"   🔄 Closing position {positions[0].ticket}...")
                 result = self.mt5.close_position(positions[0].ticket)
+                if result is not None:
+                    if result.retcode == mt5.TRADE_RETCODE_DONE:
+                        print(f"   ✅ Position closed successfully")
+                    else:
+                        print(f"   ❌ Position close failed: {result.retcode} - {result.comment}")
+            else:
+                print(f"   ⚠️ CLOSE action ignored - no position to close (current_position: {current_position})")
+                return None
+        else:
+            # Log unhandled action combinations
+            action_names = {0: 'HOLD', 1: 'BUY', 2: 'SELL', 3: 'CLOSE'}
+            print(f"   ⚠️ Action {action_names.get(action, action)} not executed - conditions not met")
+            print(f"      Current position: {current_position}, Action: {action}")
+            return None
         
         return result
     
@@ -738,7 +1138,7 @@ class TradingBot:
             observation = self.prepare_observation(df, current_position)
             
             # Get model prediction
-            action, confidence, raw_action = self.predict_action(observation)
+            action, confidence, raw_action = self.predict_action(observation, current_position)
             
             # Log prediction
             action_names = {0: 'HOLD', 1: 'BUY', 2: 'SELL', 3: 'CLOSE'}
@@ -756,15 +1156,40 @@ class TradingBot:
             print(f"   🤖 Prediction: {action_names[action]} (confidence: {confidence:.2f}, raw: {raw_action:.3f})")
             print(f"   📊 Position: {current_position} | Positions: {len(positions) if positions else 0}")
             
+            # Show bias report every 5 predictions
+            if len(getattr(self, '_recent_actions', [])) % 5 == 0 and len(getattr(self, '_recent_actions', [])) > 0:
+                print("\n" + self.get_bias_report() + "\n")
+                
+            # Show health check every 10 predictions or if severe bias detected
+            bias_count = getattr(self, '_bias_counter', 0)
+            if (len(getattr(self, '_recent_actions', [])) % 10 == 0 and len(getattr(self, '_recent_actions', [])) > 0) or bias_count >= 10:
+                print("\n" + self.check_model_health() + "\n")
+                
+                # Check if model needs retraining
+                if bias_count >= 10 or getattr(self, '_force_retrain', False):
+                    print("\n" + "🚨 CRITICAL MODEL FAILURE DETECTED" + "\n")
+                    should_retrain = self.should_retrain_model()
+                    if should_retrain:
+                        print("\n" + self.get_retraining_recommendation() + "\n")
+                        print("🛑 STOPPING TRADING - MODEL UNSAFE FOR LIVE TRADING")
+                        return None
+            
             # Execute trade if conditions are met
             result = None
             if action != 0:  # Not hold
                 print(f"   🚀 Non-HOLD action detected, calling execute_trade...")
                 result = self.execute_trade(action, confidence)
                 if result is not None:
-                    print(f"   ✅ Trade executed: {action_names[action]}")
+                    if hasattr(result, 'retcode'):
+                        if result.retcode == mt5.TRADE_RETCODE_DONE:
+                            print(f"   ✅ Trade executed successfully: {action_names[action]}")
+                            print(f"      📊 Order: {result.order}, Volume: {result.volume}, Price: {result.price:.5f}")
+                        else:
+                            print(f"   ❌ Trade failed: {action_names[action]} - Code: {result.retcode}, Comment: {result.comment}")
+                    else:
+                        print(f"   ✅ Trade action completed: {action_names[action]}")
                 else:
-                    print(f"   ⚠️ Trade not executed (low confidence or conditions not met)")
+                    print(f"   ⚠️ Trade not executed: {action_names[action]} (conditions not met - see details above)")
             else:
                 print(f"   💤 HOLD action - no trade needed")
             
@@ -822,7 +1247,7 @@ class TradingBot:
                 observation = self.prepare_observation(df, current_position)
                 
                 # Get model prediction
-                action, confidence, raw_action = self.predict_action(observation)
+                action, confidence, raw_action = self.predict_action(observation, current_position)
                 
                 # Log prediction
                 action_names = {0: 'HOLD', 1: 'BUY', 2: 'SELL', 3: 'CLOSE'}
