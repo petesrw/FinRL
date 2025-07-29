@@ -260,11 +260,6 @@ def detect_and_setup_gpu():
         print("💻 No CUDA GPU detected")
         print("   Using CPU for training")
         return torch.device("cpu")
-    # else:
-    #     print("💻 Using CPU for training")
-    #     print("   💡 For faster training, consider using a GPU-enabled system")
-    #     print("   📋 GPU Requirements: NVIDIA GPU with CUDA support")
-    #     return torch.device("cpu")
 
 def get_optimal_batch_size(device, base_batch_size=64):
     """Get optimal batch size based on available memory - RTX 5060 TI 16GB GDDR7 Optimized"""
@@ -704,7 +699,7 @@ class AdvancedForexEnv(gym.Env):
             current_return = (current_price - self.entry_price) / self.entry_price * self.position
             
             # 🔍 DEBUG: แสดง SL/TP check ทุกครั้ง (เฉพาะทุกๆ 100 steps เพื่อไม่ให้ spam เยอะ)
-            if self.current_step % 500 == 0:  # Show every 500 steps
+            if self.current_step % 100 == 0:  # Show every 100 steps
                 print(f"📊 SL/TP Check: Position={self.position}, Return={current_return:.6f}, SL={self.stop_loss_pct}, TP={self.take_profit_pct}")
                 print(f"    💰 Entry Price: {self.entry_price:.5f}, Current Price: {current_price:.5f}")
                 if self.position > 0:
@@ -713,10 +708,13 @@ class AdvancedForexEnv(gym.Env):
                     print(f"    📉 SHORT: Need return >= {self.take_profit_pct:.4f} for TP, <= -{self.stop_loss_pct:.4f} for SL")
             
             # 🔍 DEBUG: แสดงเมื่อใกล้จะถึง TP threshold
-            # if self.position > 0 and current_return >= self.take_profit_pct * 0.8:  # 80% ของ TP
-            #     print(f"⚡ CLOSE TO TP! LONG return={current_return:.6f}, need={self.take_profit_pct:.4f} (80% reached)")
-            # elif self.position < 0 and current_return <= -self.take_profit_pct * 0.8:  # 80% ของ TP สำหรับ Short
-            #     print(f"⚡ CLOSE TO TP! SHORT return={current_return:.6f}, need={-self.take_profit_pct:.4f} (80% reached)")
+            if abs(current_return) >= self.take_profit_pct * 0.8:  # 80% ของ TP threshold
+                print(f"⚡ CLOSE TO SL/TP THRESHOLD! Position={self.position}, Return={current_return:.6f}")
+                print(f"   📊 TP threshold: {self.take_profit_pct:.4f}, SL threshold: -{self.stop_loss_pct:.4f}")
+                if self.position > 0:
+                    print(f"   📈 LONG: Price change from {self.entry_price:.5f} to {current_price:.5f} = {((current_price/self.entry_price - 1)*100):.3f}%")
+                else:
+                    print(f"   📉 SHORT: Price change from {self.entry_price:.5f} to {current_price:.5f} = {((self.entry_price/current_price - 1)*100):.3f}%")
             
             # 🔧 FIXED Stop Loss Check - Check actual loss conditions
             if (self.position > 0 and current_return <= -self.stop_loss_pct) or \
@@ -725,6 +723,7 @@ class AdvancedForexEnv(gym.Env):
                 auto_close_triggered = True
                 sl_triggered = True
                 print(f"🛑 STOP LOSS TRIGGERED! Position={self.position}, Return={current_return:.6f}, SL={self.stop_loss_pct}")
+                print(f"   💰 Entry: {self.entry_price:.5f}, Current: {current_price:.5f}, Loss: {(abs(current_return)*100):.2f}%")
                     
             # 🔧 FIXED Take Profit Check - Proper Short position logic
             # For Long: TP when current_return >= take_profit_pct (positive profit)
@@ -735,6 +734,8 @@ class AdvancedForexEnv(gym.Env):
                 auto_close_triggered = True
                 tp_triggered = True
                 print(f"🎯 TAKE PROFIT TRIGGERED! Position={self.position}, Return={current_return:.6f}, TP={self.take_profit_pct}")
+                print(f"   💰 Entry: {self.entry_price:.5f}, Current: {current_price:.5f}, Profit: {(current_return*100):.2f}%")
+                print(f"   🎉 *** TAKE PROFIT HIT *** - {('LONG' if self.position > 0 else 'SHORT')} position closed with profit!")
         
         # 🎯 BALANCED ANTI-HOLD SYSTEM
         # Moderate penalty for excessive holding
@@ -759,8 +760,10 @@ class AdvancedForexEnv(gym.Env):
             
             # 🚨 DEBUG: Track position opening
             self.position_opens += 1
-            # print(f"🟢 BUY POSITION OPENED: Entry={current_price:.5f}, Size={dynamic_size:.2f}, TP Target={self.take_profit_pct:.4f} ({(current_price * (1 + self.take_profit_pct)):.5f})")
-            # print(f"    🎯 Need price >= {(current_price * (1 + self.take_profit_pct)):.5f} for TP (current: {current_price:.5f})")
+            print(f"🟢 BUY POSITION OPENED: Entry={current_price:.5f}, Size={dynamic_size:.2f}")
+            print(f"   🎯 TP Target: {self.take_profit_pct:.4f} ({(current_price * (1 + self.take_profit_pct)):.5f})")
+            print(f"   🛑 SL Target: -{self.stop_loss_pct:.4f} ({(current_price * (1 - self.stop_loss_pct)):.5f})")
+            print(f"   📊 Need price >= {(current_price * (1 + self.take_profit_pct)):.5f} for TP")
             
         elif discrete_action == 1 and self.position != 0:  # Try to Buy but already have position
             self.failed_actions['buy_blocked'] += 1
@@ -782,9 +785,10 @@ class AdvancedForexEnv(gym.Env):
             
             # 🚨 DEBUG: Track position opening
             self.position_opens += 1
-            # print(f"🔴 SELL POSITION OPENED: Entry={current_price:.5f}, Size={dynamic_size:.2f}, TP Target={-self.take_profit_pct:.4f} ({(current_price * (1 - self.take_profit_pct)):.5f})")
-            # print(f"    🎯 Need price <= {(current_price * (1 - self.take_profit_pct)):.5f} for TP (current: {current_price:.5f})")
-            # print(f"🔴 POSITION OPENED: Sell at {current_price:.5f}, size: {dynamic_size:.2f}")
+            print(f"🔴 SELL POSITION OPENED: Entry={current_price:.5f}, Size={dynamic_size:.2f}")
+            print(f"   🎯 TP Target: {self.take_profit_pct:.4f} ({(current_price * (1 - self.take_profit_pct)):.5f})")
+            print(f"   🛑 SL Target: -{self.stop_loss_pct:.4f} ({(current_price * (1 + self.stop_loss_pct)):.5f})")
+            print(f"   � Need price <= {(current_price * (1 - self.take_profit_pct)):.5f} for TP")
             
         elif discrete_action == 2 and self.position != 0:  # Try to Sell but already have position
             self.failed_actions['sell_blocked'] += 1
@@ -813,13 +817,23 @@ class AdvancedForexEnv(gym.Env):
             
             self.balance += profit
             
-            # 🚨 DEBUG: Track position closing
-            # print(f"🟡 POSITION CLOSED ({close_reason}): Return={current_return:.6f}, Profit=${profit:.2f}, Entry={self.entry_price:.5f}, Exit={current_price:.5f}")
+            # 🚨 DEBUG: Track position closing with enhanced Take Profit visibility
+            if close_reason == "Take Profit":
+                print(f"🎉 TAKE PROFIT EXECUTED! ({close_reason})")
+                print(f"   📊 Return: {current_return:.6f}, Profit: ${profit:.2f}")
+                print(f"   📈 Entry: {self.entry_price:.5f}, Exit: {current_price:.5f}")
+                print(f"   💰 Position: {('LONG' if self.position > 0 else 'SHORT')}, Size: {self.position_size:.2f}")
+                print(f"   🎯 *** SUCCESSFUL TAKE PROFIT *** - Target achieved!")
+            elif close_reason == "Stop Loss":
+                print(f"� STOP LOSS EXECUTED! ({close_reason})")
+                print(f"   📊 Return: {current_return:.6f}, Loss: ${profit:.2f}")
+                print(f"   📉 Entry: {self.entry_price:.5f}, Exit: {current_price:.5f}")
+            else:
+                # Other close reasons (Manual, Auto)
+                print(f"🟡 POSITION CLOSED ({close_reason}): Return={current_return:.6f}, Profit=${profit:.2f}, Entry={self.entry_price:.5f}, Exit={current_price:.5f}")
             
             # 🚨 DEBUG: Track position closing  
             self.position_closes += 1
-            # 🔧 REMOVED: Don't use persistent counters that accumulate across multiple models
-            # print(f"🟡 POSITION CLOSED: {close_reason}, profit: {profit:.5f}, new_balance: {self.balance:.2f}")
             
             # Track trade with enhanced info
             self.trades.append({
@@ -1259,6 +1273,7 @@ class AdaptiveTrainer:
         self.training_history = []
         self.best_model = None
         self.best_score = 0
+        self.early_saves = []  # Track early saved models
         
         # Load async configuration
         self.config = get_config()
@@ -1543,6 +1558,7 @@ class AdaptiveTrainer:
             'silver': 'models/silver', 
             'gold': 'models/gold',
             'diamond': 'models/diamond',
+            'active_trader': 'models/active_traders',  # New tier for early active traders
             'none': 'models/successful'
         }
         
@@ -1582,6 +1598,18 @@ class AdaptiveTrainer:
         
         with open(info_file, 'w') as f:
             json.dump(model_info, f, indent=2)
+        
+        # Track early saves if this contains "early" or "active" in the attempt
+        if isinstance(attempt, str) and ('early' in str(attempt) or 'active' in str(attempt)):
+            early_save_record = {
+                'timestamp': timestamp,
+                'tier': tier,
+                'score': score,
+                'attempt': attempt,
+                'model_path': model_path,
+                'save_type': 'early_success' if 'early' in str(attempt) else 'active_trader'
+            }
+            self.early_saves.append(early_save_record)
         
         if is_best:
             print(f"   💾 New best {tier.upper()} model saved: {model_path}")
@@ -2137,6 +2165,8 @@ class AdaptiveTrainer:
         
         # Train in chunks with validation
         current_timesteps = 0
+        early_success_saved = False  # Flag to track if we already saved a successful model
+        
         while current_timesteps < total_timesteps:
             # Calculate chunk size (remaining or validation interval, whichever is smaller)
             chunk_size = min(validation_interval, total_timesteps - current_timesteps)
@@ -2167,9 +2197,54 @@ class AdaptiveTrainer:
                 # Validation env is fresh and doesn't have accumulated persistent counters
                 val_metrics = base_env._get_performance_metrics()
                 val_score = self.calculate_score(val_metrics)
+                val_tier, val_emoji = self.get_tier(val_metrics)
+                val_trades = val_metrics.get('total_trades', 0)
+                val_win_rate = val_metrics.get('win_rate', 0)
                 
-                print(f"   📊 Validation at {current_timesteps:,} steps: score={val_score:.1f}")
-                print(f"   🎯 Training trades: {val_metrics.get('total_trades', 0)}, win_rate: {val_metrics.get('win_rate', 0):.2f}")
+                print(f"   📊 Validation at {current_timesteps:,} steps: score={val_score:.1f}, tier={val_tier}")
+                print(f"   🎯 Training trades: {val_trades}, win_rate: {val_win_rate:.2f}")
+                
+                # 🎯 SUPER EARLY SUCCESS: Save model when it shows active trading behavior
+                if not early_success_saved and val_trades >= 20 and val_win_rate >= 0.4:
+                    try:
+                        print(f"   🎯 ACTIVE TRADER DETECTED! {val_trades} trades, {val_win_rate:.1%} win rate")
+                        print(f"   💾 Saving active trading model immediately...")
+                        
+                        super_early_path = self._save_model_by_tier(
+                            model, 'active_trader', val_score, 
+                            f"active_{current_timesteps}", 
+                            is_best=False
+                        )
+                        
+                        print(f"   ✅ Active trader model saved: {super_early_path}")
+                        
+                    except Exception as save_error:
+                        print(f"   ❌ Error saving active trader model: {save_error}")
+                
+                # 🏆 EARLY SUCCESS SAVE: Save model immediately when it reaches a good tier
+                if not early_success_saved and val_tier in ['bronze', 'silver', 'gold', 'diamond']:
+                    try:
+                        print(f"   🎉 EARLY SUCCESS! {val_emoji} {val_tier.upper()} tier achieved at {current_timesteps:,} steps")
+                        print(f"   💾 Saving successful model immediately...")
+                        
+                        early_model_path = self._save_model_by_tier(
+                            model, val_tier, val_score, 
+                            f"early_{current_timesteps}", 
+                            is_best=False
+                        )
+                        
+                        print(f"   ✅ Early success model saved: {early_model_path}")
+                        early_success_saved = True
+                        
+                        # If it's a high tier (gold/diamond), stop training immediately
+                        if val_tier in ['gold', 'diamond']:
+                            training_saved_time = (total_timesteps - current_timesteps) / total_timesteps * 100
+                            print(f"   🚀 HIGH TIER {val_tier.upper()} achieved! Stopping training early for efficiency.")
+                            print(f"   ⏱️ Training time saved: {training_saved_time:.1f}% ({total_timesteps - current_timesteps:,} timesteps)")
+                            break
+                            
+                    except Exception as save_error:
+                        print(f"   ❌ Error saving early success model: {save_error}")
                 
                 # Early stopping check
                 if val_score > best_validation_score:
@@ -2326,9 +2401,82 @@ class AdaptiveTrainer:
                     **a2c_kwargs
                 )
             
-            # Train model with reduced timesteps for faster async training
+            # Train model with early success detection and saving
             async_timesteps = hyperparameters['timesteps'] // 2  # Reduce timesteps for faster completion
-            model.learn(total_timesteps=async_timesteps)
+            
+            # Implement early success detection for async training
+            validation_interval = async_timesteps // 8  # Check every 12.5% of training for faster detection
+            current_timesteps = 0
+            early_success_saved = False
+            
+            print(f"🔄 Model {model_id}: Starting training with early success detection...")
+            
+            while current_timesteps < async_timesteps:
+                # Calculate chunk size
+                chunk_size = min(validation_interval, async_timesteps - current_timesteps)
+                
+                # Train for this chunk
+                model.learn(total_timesteps=chunk_size, reset_num_timesteps=False)
+                current_timesteps += chunk_size
+                
+                # Check for early success every chunk
+                if current_timesteps < async_timesteps or current_timesteps >= async_timesteps:  # Check on last chunk too
+                    # Get current metrics from training environment
+                    current_metrics = base_env._get_performance_metrics()
+                    current_score = self.calculate_score(current_metrics)
+                    current_tier, current_emoji = self.get_tier(current_metrics)
+                    current_trades = current_metrics.get('total_trades', 0)
+                    current_win_rate = current_metrics.get('win_rate', 0)
+                    
+                    print(f"   📊 Model {model_id} at {current_timesteps:,} steps: score={current_score:.1f}, tier={current_tier}, trades={current_trades}")
+                    
+                    # 🎯 SUPER EARLY SUCCESS: Save model when it shows active trading behavior
+                    if not early_success_saved and current_trades >= 20 and current_win_rate >= 0.4:
+                        try:
+                            print(f"   🎯 Model {model_id} ACTIVE TRADER DETECTED! {current_trades} trades, {current_win_rate:.1%} win rate")
+                            print(f"   💾 Saving active trading model immediately...")
+                            
+                            super_early_path = self._save_model_by_tier(
+                                model, 'active_trader', current_score, 
+                                f"{model_id}_active_{current_timesteps}", 
+                                is_best=False
+                            )
+                            
+                            print(f"   ✅ Model {model_id} active trader saved: {super_early_path}")
+                            
+                        except Exception as save_error:
+                            print(f"   ❌ Model {model_id} error saving active trader: {save_error}")
+                    
+                    # 🏆 EARLY SUCCESS SAVE: Save model immediately when it reaches a good tier
+                    if not early_success_saved and current_tier in ['bronze', 'silver', 'gold', 'diamond']:
+                        try:
+                            print(f"   🎉 Model {model_id} EARLY SUCCESS! {current_emoji} {current_tier.upper()} tier at {current_timesteps:,} steps")
+                            print(f"   💾 Saving successful model immediately...")
+                            
+                            early_model_path = self._save_model_by_tier(
+                                model, current_tier, current_score, 
+                                f"{model_id}_early_{current_timesteps}", 
+                                is_best=False
+                            )
+                            
+                            print(f"   ✅ Model {model_id} early success saved: {early_model_path}")
+                            early_success_saved = True
+                            
+                            # If it's a high tier (gold/diamond), stop training immediately
+                            if current_tier in ['gold', 'diamond']:
+                                training_saved_time = (async_timesteps - current_timesteps) / async_timesteps * 100
+                                print(f"   🚀 Model {model_id} HIGH TIER {current_tier.upper()}! Stopping training early.")
+                                print(f"   ⏱️ Model {model_id} training time saved: {training_saved_time:.1f}% ({async_timesteps - current_timesteps:,} timesteps)")
+                                break
+                                
+                        except Exception as save_error:
+                            print(f"   ❌ Model {model_id} error saving early success: {save_error}")
+                
+                # For async training, we can be more aggressive about stopping early
+                if current_timesteps >= async_timesteps // 2 and current_score > 50:  # If we have decent score at halfway point
+                    if current_tier in ['silver', 'gold', 'diamond']:
+                        print(f"   ⚡ Model {model_id} achieving {current_tier} early, stopping for efficiency")
+                        break
             
             # Test model on validation data
             test_size = min(5000, len(data) // 4)  # Smaller test set for faster evaluation
@@ -2888,6 +3036,28 @@ def main():
     
     if hasattr(trainer, 'async_log_file'):
         print(f"🚀 Async logs: {trainer.async_log_file}")
+    
+    # Show early saves summary
+    if trainer.early_saves:
+        print(f"\n🎉 EARLY SUCCESS SUMMARY:")
+        print(f"   💾 Total early saves: {len(trainer.early_saves)}")
+        
+        active_traders = [save for save in trainer.early_saves if save['save_type'] == 'active_trader']
+        early_successes = [save for save in trainer.early_saves if save['save_type'] == 'early_success']
+        
+        if active_traders:
+            print(f"   🎯 Active traders saved: {len(active_traders)}")
+            for save in active_traders[-3:]:  # Show last 3
+                print(f"      • {save['tier']} (Score: {save['score']:.1f}) - {save['model_path']}")
+        
+        if early_successes:
+            print(f"   🏆 Early tier achievements: {len(early_successes)}")
+            for save in early_successes[-3:]:  # Show last 3
+                print(f"      • {save['tier'].upper()} (Score: {save['score']:.1f}) - {save['model_path']}")
+        
+        print(f"   ⚡ Training efficiency improved: Models saved without full training completion!")
+    else:
+        print(f"\n📝 No early saves in this session.")
 
 if __name__ == "__main__":
     main()
