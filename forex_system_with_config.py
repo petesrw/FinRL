@@ -306,19 +306,34 @@ class ConfigurableForexBot:
             self.logger.error("No model loaded - cannot start trading")
             return False
         
+        self.logger.info("🚀 INITIALIZING LIVE TRADING SYSTEM")
+        self.logger.info(f"   📊 Symbol: {self.symbol}")
+        self.logger.info(f"   🤖 Model Type: {self.config.model.model_type}")
+        self.logger.info(f"   💰 Risk per trade: {self.config.trading.risk_per_trade:.1%}")
+        self.logger.info(f"   🎯 Target win rate: {self.config.trading.target_win_rate:.1%}")
+        
         # Connect to MT5 if not in demo mode
         if not self.config.development.demo_mode:
+            self.logger.info("🔌 Establishing MT5 connection...")
             if not self.connect_mt5():
-                self.logger.error("Failed to connect to MT5")
+                self.logger.error("❌ Failed to connect to MT5")
                 return False
-        
+            self.logger.info("✅ MT5 connection established successfully")
+        else:
+            self.logger.info("🧪 Running in DEMO mode - No MT5 connection needed")
+
         self.is_trading = True
+        self.logger.info("🚀 Starting trading thread...")
         self.trading_thread = threading.Thread(target=self._trading_loop)
         self.trading_thread.start()
-        
+
         mode = "DEMO" if self.config.development.demo_mode else "LIVE"
-        self.logger.info(f"Started {mode} trading for {self.symbol}")
-        
+        self.logger.info(f"✅ {mode} TRADING SYSTEM IS NOW ACTIVE!")
+        self.logger.info(f"   🔄 Trading Loop: RUNNING")
+        self.logger.info(f"   📈 Market Monitoring: ACTIVE")
+        self.logger.info(f"   🤖 AI Model: LOADED")
+        self.logger.info(f"   ⚡ Status: READY TO TRADE")
+
         # Send notification
         self.notification_manager.notify(
             f"🚀 Trading Started - {mode} Mode\n"
@@ -377,36 +392,62 @@ class ConfigurableForexBot:
     
     def _trading_loop(self):
         """Main trading loop with configuration-based logic"""
-        self.logger.info("Trading loop started")
+        self.logger.info("🚀 Trading loop started - System is ACTIVE")
+        loop_count = 0
         
         while self.is_trading:
             try:
+                loop_count += 1
+                current_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                
+                # Log system status every iteration
+                self.logger.info(f"🔄 Trading Loop #{loop_count} | {current_time}")
+                self.logger.info(f"   ✅ System Status: ACTIVE")
+                self.logger.info(f"   📊 Symbol: {self.symbol}")
+                self.logger.info(f"   🤖 Model: {self.config.model.model_type}")
+                self.logger.info(f"   📈 Performance: {self.performance_stats['total_trades']} trades, {self.performance_stats['win_rate']:.1%} win rate")
+                
                 # Check trading hours
                 if not self.config.is_trading_time():
-                    self.logger.debug("Outside trading hours")
+                    self.logger.info("⏰ Outside trading hours - System waiting")
                     time.sleep(300)  # Wait 5 minutes
                     continue
                 
+                self.logger.info("✅ Trading hours active - Proceeding with analysis")
+                
                 # Check emergency conditions
                 if self._check_emergency_stop():
-                    self.logger.warning("Emergency stop triggered!")
+                    self.logger.warning("🚨 Emergency stop triggered!")
                     break
                 
                 # Get market data and make decision
                 if self.config.development.demo_mode:
+                    self.logger.info("🧪 Running in DEMO mode")
                     self._demo_trading_step()
                 else:
+                    self.logger.info("🔴 Running in LIVE mode")
                     self._live_trading_step()
                 
                 # Update performance
                 self._update_performance()
                 
-                # Wait for next decision (15 minutes for M15)
-                time.sleep(900)
+                # Log current performance
+                stats = self.performance_stats
+                self.logger.info(f"📊 Current Performance:")
+                self.logger.info(f"   💼 Total Trades: {stats['total_trades']}")
+                self.logger.info(f"   🏆 Win Rate: {stats['win_rate']:.1%}")
+                self.logger.info(f"   💰 Total P&L: ${stats['total_profit']:.2f}")
+                self.logger.info(f"   📉 Max Drawdown: ${stats['max_drawdown']:.2f}")
+                
+                # Wait for next decision (5 minutes for M5)
+                wait_minutes = 5
+                self.logger.info(f"⏰ Waiting {wait_minutes} minutes until next analysis...")
+                time.sleep(wait_minutes * 60)
                 
             except Exception as e:
-                self.logger.error(f"Error in trading loop: {e}")
+                self.logger.error(f"❌ Error in trading loop: {e}")
                 self.notification_manager.notify(f"❌ Trading Error: {str(e)}")
+                self.logger.info("🔄 Continuing after error - System still ACTIVE")
                 time.sleep(60)
     
     def _demo_trading_step(self):
@@ -452,30 +493,52 @@ class ConfigurableForexBot:
             # Initialize trading bot with best model
             model_path = self._find_best_model()
             if model_path:
+                self.logger.info(f"🤖 Initializing trading bot with model: {model_path}")
+                
                 # Create live trading bot with MT5 connection
                 trading_bot = TradingBot(self.symbol, model_path=model_path, risk_percent=self.config.trading.risk_per_trade * 100)
                 
                 # Connect to MT5
+                self.logger.info("🔌 Connecting to MT5...")
                 if trading_bot.connect_mt5(
                     login=self.config.mt5.login,
                     password=self.config.mt5.password,
                     server=self.config.mt5.server
                 ):
-                    self.logger.info(f"Live trading step for {self.symbol} using model: {model_path}")
+                    self.logger.info(f"✅ MT5 Connected - Executing live trading step for {self.symbol}")
                     
                     # Execute one trading iteration
-                    trading_bot.run_single_iteration()
+                    result = trading_bot.run_single_iteration()
                     
-                    # Get trading results and update performance
-                    # This would be implemented based on actual trade results
-                    self.logger.info("Live trading step completed")
+                    if result:
+                        action_names = {0: 'HOLD', 1: 'BUY', 2: 'SELL', 3: 'CLOSE'}
+                        action_name = action_names.get(result['action'], 'UNKNOWN')
+                        
+                        self.logger.info(f"🎯 Trading Decision: {action_name}")
+                        self.logger.info(f"   📊 Confidence: {result['confidence']:.2f}")
+                        self.logger.info(f"   💵 Current Price: {result['current_price']:.5f}")
+                        self.logger.info(f"   🔄 Raw Action: {result['raw_action']:.3f}")
+                        
+                        if result['result']:
+                            self.logger.info(f"✅ Trade EXECUTED!")
+                            # Update real performance stats here if needed
+                        else:
+                            self.logger.info(f"⚠️ Trade NOT executed (conditions not met)")
+                    else:
+                        self.logger.warning("⚠️ Trading iteration returned no result")
+                    
+                    self.logger.info("🔌 Disconnecting from MT5...")
+                    trading_bot.stop()
+                    self.logger.info("✅ Live trading step completed successfully")
                 else:
-                    self.logger.error("Failed to connect to MT5 for live trading")
+                    self.logger.error("❌ Failed to connect to MT5 for live trading")
             else:
-                self.logger.warning(f"No model found for {self.symbol}")
+                self.logger.warning(f"⚠️ No model found for {self.symbol}")
                 
         except Exception as e:
-            self.logger.error(f"Live trading error: {e}")
+            self.logger.error(f"❌ Live trading error: {e}")
+            import traceback
+            self.logger.error(f"📋 Error details: {traceback.format_exc()}")
     
     def _find_best_model(self):
         """Find the best available model for this symbol"""

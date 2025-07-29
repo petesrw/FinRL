@@ -646,6 +646,20 @@ class AdvancedForexEnv(gym.Env):
         else:
             discrete_action = 3  # Close
         
+        # # 🎯 ADD CONFIDENCE CHECK LIKE LIVE TRADING
+        # # Calculate confidence similar to mt5_trading_bot.py
+        # if discrete_action == 1 or discrete_action == 2:  # Only for Buy/Sell actions
+        #     if discrete_action == 2:  # Sell
+        #         confidence = abs(action_value + 0.65) / 0.7  # Scale confidence - MATCH mt5_trading_bot.py
+        #     elif discrete_action == 1:  # Buy
+        #         confidence = (action_value - 0.3) / 0.4  # MATCH mt5_trading_bot.py
+                
+        #     # Apply minimum confidence threshold like live trading
+        #     min_confidence = 0.4  # Match with mt5_trading_bot.py
+        #     if confidence < min_confidence and self.position == 0:
+        #         discrete_action = 0  # Force hold if confidence too low
+        #         reward -= 0.5  # Light penalty for low confidence action
+        
         # 🚨 DEBUG: Track action distribution AND position changes
         if not hasattr(self, 'action_counts'):
             self.action_counts = {'hold': 0, 'buy': 0, 'sell': 0, 'close': 0}
@@ -2778,7 +2792,7 @@ def main():
     print("🔧 Initializing GPU configuration...")
     initialize_gpu_setup()
     
-    symbol = 'EURUSD'
+    symbol = 'XAUUSD'
     
     # Load data
     data_file = f"train_data/{symbol}/{symbol}_M5_real.csv"
