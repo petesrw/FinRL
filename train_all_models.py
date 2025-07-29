@@ -704,13 +704,13 @@ class AdvancedForexEnv(gym.Env):
             current_return = (current_price - self.entry_price) / self.entry_price * self.position
             
             # 🔍 DEBUG: แสดง SL/TP check ทุกครั้ง (เฉพาะทุกๆ 100 steps เพื่อไม่ให้ spam เยอะ)
-            # if self.current_step % 100 == 0:
-            #     print(f"📊 SL/TP Check: Position={self.position}, Return={current_return:.6f}, SL={self.stop_loss_pct}, TP={self.take_profit_pct}")
-            #     print(f"    💰 Entry Price: {self.entry_price:.5f}, Current Price: {current_price:.5f}")
-            #     if self.position > 0:
-            #         print(f"    📈 LONG: Need return >= {self.take_profit_pct:.4f} for TP")
-            #     else:
-            #         print(f"    📉 SHORT: Need return <= {-self.take_profit_pct:.4f} for TP")
+            if self.current_step % 500 == 0:  # Show every 500 steps
+                print(f"📊 SL/TP Check: Position={self.position}, Return={current_return:.6f}, SL={self.stop_loss_pct}, TP={self.take_profit_pct}")
+                print(f"    💰 Entry Price: {self.entry_price:.5f}, Current Price: {current_price:.5f}")
+                if self.position > 0:
+                    print(f"    📈 LONG: Need return >= {self.take_profit_pct:.4f} for TP, <= -{self.stop_loss_pct:.4f} for SL")
+                else:
+                    print(f"    📉 SHORT: Need return >= {self.take_profit_pct:.4f} for TP, <= -{self.stop_loss_pct:.4f} for SL")
             
             # 🔍 DEBUG: แสดงเมื่อใกล้จะถึง TP threshold
             # if self.position > 0 and current_return >= self.take_profit_pct * 0.8:  # 80% ของ TP
@@ -724,17 +724,17 @@ class AdvancedForexEnv(gym.Env):
                 discrete_action = 3  # Force close position (Stop Loss)
                 auto_close_triggered = True
                 sl_triggered = True
-                # print(f"🛑 STOP LOSS TRIGGERED! Return: {current_return:.6f}, SL: {self.stop_loss_pct}")
+                print(f"🛑 STOP LOSS TRIGGERED! Position={self.position}, Return={current_return:.6f}, SL={self.stop_loss_pct}")
                     
             # 🔧 FIXED Take Profit Check - Proper Short position logic
             # For Long: TP when current_return >= take_profit_pct (positive profit)
-            # For Short: TP when current_return <= -take_profit_pct (negative return = positive profit for short)
+            # For Short: TP when current_return >= take_profit_pct (positive return for short)
             elif (self.position > 0 and current_return >= self.take_profit_pct) or \
-                 (self.position < 0 and current_return <= -self.take_profit_pct):
+                 (self.position < 0 and current_return >= self.take_profit_pct):
                 discrete_action = 3  # Force close position (Take Profit)
                 auto_close_triggered = True
                 tp_triggered = True
-                print(f"🎯 TAKE PROFIT TRIGGERED! Return: {current_return:.6f}, TP: {self.take_profit_pct}")
+                print(f"🎯 TAKE PROFIT TRIGGERED! Position={self.position}, Return={current_return:.6f}, TP={self.take_profit_pct}")
         
         # 🎯 BALANCED ANTI-HOLD SYSTEM
         # Moderate penalty for excessive holding
