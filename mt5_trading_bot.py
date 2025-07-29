@@ -372,7 +372,7 @@ class TradingBot:
         self.running = False
         
         # Trading parameters
-        self.min_confidence = 0.6  # Minimum confidence for trade execution
+        self.min_confidence = 0.4  # Minimum confidence for trade execution (lowered to match training behavior)
         self.max_positions = 1     # Maximum concurrent positions
         self.lookback_window = 50  # Default, will be updated based on model
         
@@ -420,9 +420,12 @@ class TradingBot:
         risk_amount = balance * (self.risk_percent / 100)
         
         # Get symbol info for pip value calculation
-        symbol_info = self.mt5.get_symbol_info(self.symbol)
-        if symbol_info is None:
+        symbol_info_data = self.mt5.get_symbol_info(self.symbol)
+        if symbol_info_data is None or symbol_info_data[0] is None:
             return 0.01
+        
+        # Extract symbol_info object from tuple
+        symbol_info, actual_symbol = symbol_info_data
         
         # Simplified position sizing (you may want to enhance this)
         # This assumes 1% risk with 100 pip stop loss
@@ -582,7 +585,7 @@ class TradingBot:
         return obs_data.astype(np.float32)
     
     def predict_action(self, observation):
-        """Get action prediction from model"""
+        """Get action prediction from model - EXACTLY MATCH TRAINING LOGIC"""
         action, _states = self.model.predict(observation, deterministic=True)
         
         # Convert continuous action to discrete
@@ -591,27 +594,49 @@ class TradingBot:
         else:
             action_value = float(action)
         
-        # Convert to discrete action (must match training logic)
+        # 🎯 EXACT TRAINING MAPPING: 
+        # [-1, -0.3): Sell (35% of action space)
+        # [-0.3, 0.3): Hold (30% of action space)  
+        # [0.3, 0.7): Buy (40% of action space)
+        # [0.7, 1]: Close (30% of action space)
         if action_value < -0.3:
             discrete_action = 2  # Sell
-            confidence = abs(action_value + 0.65) / 0.7  # Scale confidence
         elif action_value < 0.3:
-            discrete_action = 0  # Hold
-            confidence = 1.0 - abs(action_value) / 0.3
+            discrete_action = 0  # Hold (balanced zone)
         elif action_value < 0.7:
             discrete_action = 1  # Buy
-            confidence = (action_value - 0.3) / 0.4
         else:
             discrete_action = 3  # Close
-            confidence = (action_value - 0.7) / 0.3
+        
+        # 🎯 EXACT TRAINING CONFIDENCE CALCULATION
+        confidence = 1.0  # Default confidence
+        
+        if discrete_action == 1 or discrete_action == 2:  # Only for Buy/Sell actions
+            if discrete_action == 2:  # Sell
+                confidence = abs(action_value + 0.65) / 0.7  # Exact training formula
+            elif discrete_action == 1:  # Buy
+                confidence = (action_value - 0.3) / 0.4      # Exact training formula
+        else:
+            # For Hold and Close, use simple confidence
+            confidence = 0.5  # Neutral confidence for Hold/Close
+        
+        # Clamp confidence to [0, 1]
+        confidence = max(0.0, min(1.0, confidence))
         
         return discrete_action, confidence, action_value
     
     def execute_trade(self, action, confidence):
-        """Execute trade based on model prediction"""
-        if confidence < self.min_confidence:
+        """Execute trade based on model prediction - MATCH TRAINING LOGIC"""
+        print(f"   🎯 EXECUTING TRADE: Action={action}, Confidence={confidence:.3f}")
+        
+        # 🎯 EXACT TRAINING CONFIDENCE CHECK
+        # Apply minimum confidence threshold like training (0.4)
+        # Only check confidence for Buy/Sell actions, not Hold/Close
+        if (action == 1 or action == 2) and confidence < self.min_confidence:
             print(f"   ⚠️ Low confidence ({confidence:.2f}), skipping trade")
             return None
+        
+        print(f"   ✅ Confidence check passed ({confidence:.2f} >= {self.min_confidence})")
         
         # Check current positions
         positions = self.mt5.get_positions(self.symbol)
@@ -622,17 +647,26 @@ class TradingBot:
                 return None
             current_position = 1 if positions[0].type == mt5.POSITION_TYPE_BUY else -1
         
+        print(f"   📊 Position check: current={current_position}, max={self.max_positions}")
+        
         # Calculate position size and SL/TP
+        print(f"   💰 Calculating position size...")
         volume = self.calculate_position_size()
-        symbol_info = self.mt5.get_symbol_info(self.symbol)
-        current_price = mt5.symbol_info_tick(self.symbol)
+        print(f"   💰 Position size: {volume}")
+        
+        print(f"   📈 Getting symbol info for {self.symbol}...")
+        symbol_info, actual_symbol = self.mt5.get_symbol_info(self.symbol)
+        current_price = mt5.symbol_info_tick(actual_symbol)
         
         if symbol_info is None or current_price is None:
-            print(f"   ❌ Failed to get symbol/price info")
+            print(f"   ❌ Failed to get symbol/price info (symbol_info: {symbol_info is not None}, price: {current_price is not None})")
             return None
+        
+        print(f"   ✅ Symbol info obtained for {actual_symbol}")
         
         # Calculate SL/TP based on ATR or fixed percentage
         atr_multiplier = 2.0
+        # Fix: symbol_info is the object, not tuple
         sl_distance = symbol_info.point * 100  # Default 100 points
         tp_distance = sl_distance * 1.5  # 1:1.5 risk/reward
         
@@ -642,7 +676,7 @@ class TradingBot:
             sl = current_price.ask - sl_distance
             tp = current_price.ask + tp_distance
             result = self.mt5.send_order(
-                self.symbol, 
+                actual_symbol, 
                 mt5.ORDER_TYPE_BUY, 
                 volume, 
                 sl=sl, 
@@ -654,7 +688,7 @@ class TradingBot:
             sl = current_price.bid + sl_distance
             tp = current_price.bid - tp_distance
             result = self.mt5.send_order(
-                self.symbol, 
+                actual_symbol, 
                 mt5.ORDER_TYPE_SELL, 
                 volume,
                 sl=sl,
@@ -725,11 +759,14 @@ class TradingBot:
             # Execute trade if conditions are met
             result = None
             if action != 0:  # Not hold
+                print(f"   🚀 Non-HOLD action detected, calling execute_trade...")
                 result = self.execute_trade(action, confidence)
                 if result is not None:
                     print(f"   ✅ Trade executed: {action_names[action]}")
                 else:
                     print(f"   ⚠️ Trade not executed (low confidence or conditions not met)")
+            else:
+                print(f"   💤 HOLD action - no trade needed")
             
             return {
                 'action': action,
