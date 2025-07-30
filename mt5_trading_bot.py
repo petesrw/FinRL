@@ -926,10 +926,12 @@ class TradingBot:
                 print(f"   🎲 Exploration mode: Using non-deterministic {action_value:.6f}")
         
         # 🎯 EXACT TRAINING MAPPING: 
-        # [-1, -0.3): Sell (35% of action space)
-        # [-0.3, 0.3): Hold (30% of action space)  
-        # [0.3, 0.7): Buy (40% of action space)
-        # [0.7, 1]: Close (30% of action space)
+        # This logic now perfectly matches the training environment.
+        # No confidence check is performed, only action mapping.
+        # [-1, -0.3): Sell (Short) = 2
+        # [-0.3, 0.3): Hold = 0
+        # [0.3, 0.7): Buy = 1
+        # [0.7, 1]: Close = 3
         if action_value < -0.3:
             discrete_action = 2  # Sell
         elif action_value < 0.3:
@@ -939,17 +941,8 @@ class TradingBot:
         else:
             discrete_action = 3  # Close
         
-        # 🎯 EXACT TRAINING CONFIDENCE CALCULATION
-        confidence = 1.0  # Default confidence
-        
-        if discrete_action == 1 or discrete_action == 2:  # Only for Buy/Sell actions
-            if discrete_action == 2:  # Sell
-                confidence = abs(action_value + 0.65) / 0.7  # Exact training formula
-            elif discrete_action == 1:  # Buy
-                confidence = (action_value - 0.3) / 0.4      # Exact training formula
-        else:
-            # For Hold and Close, use simple confidence
-            confidence = 0.5  # Neutral confidence for Hold/Close
+        # Confidence is no longer used for filtering, set to 1.0 for logging.
+        confidence = 1.0
         
         # Clamp confidence to [0, 1]
         confidence = max(0.0, min(1.0, confidence))
@@ -999,14 +992,13 @@ class TradingBot:
         """Execute trade based on model prediction - MATCH TRAINING LOGIC"""
         print(f"   🎯 EXECUTING TRADE: Action={action}, Confidence={confidence:.3f}")
         
-        # 🎯 EXACT TRAINING CONFIDENCE CHECK
-        # Apply minimum confidence threshold like training (0.4)
-        # Only check confidence for Buy/Sell actions, not Hold/Close
-        if (action == 1 or action == 2) and confidence < self.min_confidence:
-            print(f"   ⚠️ Low confidence ({confidence:.2f}), skipping trade")
-            return None
+        # 🎯 REMOVED: Confidence check is removed to match training environment
+        # The model's decision is now trusted completely.
+        # if (action == 1 or action == 2) and confidence < self.min_confidence:
+        #     print(f"   ⚠️ Low confidence ({confidence:.2f}), skipping trade")
+        #     return None
         
-        print(f"   ✅ Confidence check passed ({confidence:.2f} >= {self.min_confidence})")
+        print(f"   ✅ Decision logic now matches training (no confidence filter).")
         
         # Check current positions
         positions = self.mt5.get_positions(self.symbol)

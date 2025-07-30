@@ -599,7 +599,7 @@ class ConfigurableForexBot:
                         action_name = action_names.get(result['action'], 'UNKNOWN')
                         
                         self.logger.info(f"🎯 Trading Decision: {action_name}")
-                        self.logger.info(f"   📊 Confidence: {result['confidence']:.2f}")
+                        self.logger.info(f"   ✅ Logic: Matched with training (no confidence filter)")
                         self.logger.info(f"   💵 Current Price: {result['current_price']:.5f}")
                         self.logger.info(f"   🔄 Raw Action: {result['raw_action']:.3f}")
                         
