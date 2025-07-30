@@ -346,6 +346,39 @@ class MT5Interface:
         result = mt5.order_send(request)
         return result
     
+    def modify_position_sl_tp(self, ticket, new_sl=None, new_tp=None):
+        """Modify stop loss and take profit of an existing position"""
+        position = None
+        positions = mt5.positions_get(ticket=ticket)
+        if positions:
+            position = positions[0]
+        
+        if position is None:
+            print(f"❌ Position {ticket} not found for modification")
+            return None
+        
+        # Build modification request
+        request = {
+            "action": mt5.TRADE_ACTION_SLTP,
+            "symbol": position.symbol,
+            "position": ticket,
+            "sl": new_sl if new_sl is not None else position.sl,
+            "tp": new_tp if new_tp is not None else position.tp,
+        }
+        
+        result = mt5.order_send(request)
+        
+        if result.retcode == mt5.TRADE_RETCODE_DONE:
+            print(f"✅ Position {ticket} SL/TP modified successfully")
+            if new_sl is not None:
+                print(f"   🛑 New Stop Loss: {new_sl:.5f}")
+            if new_tp is not None:
+                print(f"   🎯 New Take Profit: {new_tp:.5f}")
+        else:
+            print(f"❌ Failed to modify position {ticket}: {result.retcode} - {result.comment}")
+        
+        return result
+    
     def get_positions(self, symbol=None):
         """Get current positions with symbol format detection"""
         if symbol:
@@ -371,10 +404,16 @@ class TradingBot:
         self.model = None
         self.running = False
         
-        # Trading parameters
+        # Trading parameters - MULTI-POSITION SETUP
         self.min_confidence = 0.4  # Minimum confidence for trade execution (lowered to match training behavior)
-        self.max_positions = 6     # Maximum concurrent positions
+        self.max_positions = 6     # 🔧 Maximum concurrent positions (you can adjust this)
         self.lookback_window = 50  # Default, will be updated based on model
+        
+        print(f"🚀 MULTI-POSITION BOT INITIALIZED")
+        print(f"   📊 Max Positions: {self.max_positions}")
+        print(f"   💰 Risk per trade: {risk_percent}%")
+        print(f"   🎯 Will open new orders until limit reached")
+        print(f"   🔄 Will close oldest position first on CLOSE signal")
         
         # Load model
         if model_path:
@@ -413,6 +452,17 @@ class TradingBot:
         self._exploration_mode = False  # Enable exploration when bias detected
         self._emergency_mode = False  # Emergency trading mode when model fails
         self._force_retrain = False  # Force retraining recommendation
+        
+        # 🎯 ADVANCED RISK MANAGEMENT FEATURES
+        self.enable_trailing_stop = True  # Enable trailing stop loss
+        self.enable_breakeven_stop = True  # Enable break-even stop at $4 profit
+        self.breakeven_profit_threshold = 4.0  # $4 USD profit threshold
+        self.trailing_stop_distance_pips = 50  # Distance in pips for trailing stop
+        self.position_tracking = {}  # Track position states for advanced features
+        
+        print(f"🎯 ADVANCED RISK MANAGEMENT ENABLED")
+        print(f"   🏃 Trailing Stop: {'ON' if self.enable_trailing_stop else 'OFF'} ({self.trailing_stop_distance_pips} pips)")
+        print(f"   💰 Break-even Stop: {'ON' if self.enable_breakeven_stop else 'OFF'} (${self.breakeven_profit_threshold}+ profit)")
     
     def enable_emergency_mode(self, enabled=True):
         """Enable emergency trading mode when model fails"""
@@ -504,6 +554,42 @@ class TradingBot:
             print("   4. Validate new model before deployment")
         else:
             print("✅ Force retrain mode disabled")
+    
+    def configure_risk_management(self, trailing_stop=None, breakeven_stop=None, 
+                                 breakeven_threshold=None, trailing_distance_pips=None):
+        """🎯 Configure advanced risk management settings"""
+        if trailing_stop is not None:
+            self.enable_trailing_stop = trailing_stop
+        if breakeven_stop is not None:
+            self.enable_breakeven_stop = breakeven_stop
+        if breakeven_threshold is not None:
+            self.breakeven_profit_threshold = breakeven_threshold
+        if trailing_distance_pips is not None:
+            self.trailing_stop_distance_pips = trailing_distance_pips
+        
+        print(f"🎯 RISK MANAGEMENT UPDATED:")
+        print(f"   🏃 Trailing Stop: {'ON' if self.enable_trailing_stop else 'OFF'} ({self.trailing_stop_distance_pips} pips)")
+        print(f"   💰 Break-even Stop: {'ON' if self.enable_breakeven_stop else 'OFF'} (${self.breakeven_profit_threshold}+ profit)")
+    
+    def get_risk_management_status(self):
+        """Get current risk management status and position tracking info"""
+        status = {
+            'trailing_stop_enabled': self.enable_trailing_stop,
+            'breakeven_stop_enabled': self.enable_breakeven_stop,
+            'breakeven_threshold_usd': self.breakeven_profit_threshold,
+            'trailing_distance_pips': self.trailing_stop_distance_pips,
+            'tracked_positions': len(self.position_tracking),
+            'position_details': {}
+        }
+        
+        for ticket, data in self.position_tracking.items():
+            status['position_details'][ticket] = {
+                'breakeven_set': data.get('breakeven_set', False),
+                'highest_profit': data.get('highest_profit', 0),
+                'best_price': data.get('best_price', 0)
+            }
+        
+        return status
     
     def check_model_health(self):
         """Comprehensive model health check"""
@@ -662,6 +748,69 @@ class TradingBot:
         
         return "\n".join(recommendation)
     
+    def get_positions_summary(self):
+        """Get detailed summary of all current positions"""
+        positions = self.mt5.get_positions(self.symbol)
+        if not positions:
+            return {
+                'total_positions': 0,
+                'buy_positions': 0,
+                'sell_positions': 0,
+                'net_exposure': 0,
+                'total_volume': 0.0,
+                'oldest_position': None,
+                'newest_position': None
+            }
+        
+        buy_positions = [p for p in positions if p.type == mt5.POSITION_TYPE_BUY]
+        sell_positions = [p for p in positions if p.type == mt5.POSITION_TYPE_SELL]
+        
+        # Calculate net exposure and total volume
+        buy_volume = sum(p.volume for p in buy_positions)
+        sell_volume = sum(p.volume for p in sell_positions)
+        net_exposure = buy_volume - sell_volume
+        total_volume = buy_volume + sell_volume
+        
+        # Find oldest and newest positions
+        positions_by_time = sorted(positions, key=lambda p: p.time)
+        oldest = positions_by_time[0] if positions_by_time else None
+        newest = positions_by_time[-1] if positions_by_time else None
+        
+        return {
+            'total_positions': len(positions),
+            'buy_positions': len(buy_positions),
+            'sell_positions': len(sell_positions),
+            'net_exposure': net_exposure,
+            'total_volume': total_volume,
+            'oldest_position': oldest,
+            'newest_position': newest,
+            'positions_list': positions
+        }
+
+    def print_positions_report(self):
+        """Print detailed positions report"""
+        summary = self.get_positions_summary()
+        
+        print(f"\n📊 POSITIONS REPORT")
+        print(f"   Total Positions: {summary['total_positions']}/{self.max_positions}")
+        print(f"   BUY Positions: {summary['buy_positions']}")
+        print(f"   SELL Positions: {summary['sell_positions']}")
+        print(f"   Net Exposure: {summary['net_exposure']:.2f} lots")
+        print(f"   Total Volume: {summary['total_volume']:.2f} lots")
+        
+        if summary['oldest_position']:
+            oldest = summary['oldest_position']
+            oldest_time = datetime.fromtimestamp(oldest.time)
+            print(f"   Oldest Position: #{oldest.ticket} ({oldest_time.strftime('%H:%M:%S')})")
+        
+        if summary['total_positions'] > 0:
+            print(f"   Positions Details:")
+            for i, pos in enumerate(summary['positions_list'], 1):
+                pos_type = "BUY" if pos.type == mt5.POSITION_TYPE_BUY else "SELL"
+                pos_time = datetime.fromtimestamp(pos.time)
+                profit = pos.profit
+                print(f"     {i}. #{pos.ticket} {pos_type} {pos.volume} lots @ {pos.price_open:.5f} | P&L: ${profit:.2f} | {pos_time.strftime('%H:%M:%S')}")
+
     def connect_mt5(self, login=None, password=None, server=None):
         """Connect to MT5"""
         return self.mt5.connect(login, password, server)
@@ -989,110 +1138,102 @@ class TradingBot:
         return discrete_action, confidence, action_value
     
     def execute_trade(self, action, confidence):
-        """Execute trade based on model prediction - MATCH TRAINING LOGIC"""
-        print(f"   🎯 EXECUTING TRADE: Action={action}, Confidence={confidence:.3f}")
+        """Execute trade based on model prediction - HANDLES MULTIPLE POSITIONS"""
+        print(f"   🎯 EXECUTING TRADE (Multi-Position Logic): Action={action}, Confidence={confidence:.3f}")
         
-        # 🎯 REMOVED: Confidence check is removed to match training environment
-        # The model's decision is now trusted completely.
-        # if (action == 1 or action == 2) and confidence < self.min_confidence:
-        #     print(f"   ⚠️ Low confidence ({confidence:.2f}), skipping trade")
-        #     return None
-        
-        print(f"   ✅ Decision logic now matches training (no confidence filter).")
-        
-        # Check current positions
         positions = self.mt5.get_positions(self.symbol)
-        current_position = 0
-        if positions:
-            if len(positions) >= self.max_positions:
-                print(f"   ⚠️ Maximum positions ({self.max_positions}) reached")
-                return None
-            current_position = 1 if positions[0].type == mt5.POSITION_TYPE_BUY else -1
-        
-        print(f"   📊 Position check: current={current_position}, max={self.max_positions}")
-        
-        # Calculate position size and SL/TP
-        print(f"   💰 Calculating position size...")
-        volume = self.calculate_position_size()
-        print(f"   💰 Position size: {volume}")
-        
-        print(f"   📈 Getting symbol info for {self.symbol}...")
-        symbol_info, actual_symbol = self.mt5.get_symbol_info(self.symbol)
-        current_price = mt5.symbol_info_tick(actual_symbol)
-        
-        if symbol_info is None or current_price is None:
-            print(f"   ❌ Failed to get symbol/price info (symbol_info: {symbol_info is not None}, price: {current_price is not None})")
-            return None
-        
-        print(f"   ✅ Symbol info obtained for {actual_symbol}")
-        
-        # Calculate SL/TP based on ATR or fixed percentage
-        atr_multiplier = 2.0
-        # Fix: symbol_info is the object, not tuple
-        sl_distance = symbol_info.point * 100  # Default 100 points
-        tp_distance = sl_distance * 1.5  # 1:1.5 risk/reward
-        
-        result = None
-        
-        # 🚨 IMPROVED LOGIC: Check current position before executing actions
-        if action == 1 and current_position == 0:  # Buy signal - only if no position
-            print(f"   💹 Executing BUY order...")
-            sl = current_price.ask - sl_distance
-            tp = current_price.ask + tp_distance
-            result = self.mt5.send_order(
-                actual_symbol, 
-                mt5.ORDER_TYPE_BUY, 
-                volume, 
-                sl=sl, 
-                tp=tp,
-                comment=f"RL Buy C:{confidence:.2f}"
-            )
-            
-        elif action == 2 and current_position == 0:  # Sell signal - only if no position
-            print(f"   💹 Executing SELL order...")
-            sl = current_price.bid + sl_distance
-            tp = current_price.bid - tp_distance
-            result = self.mt5.send_order(
-                actual_symbol, 
-                mt5.ORDER_TYPE_SELL, 
-                volume,
-                sl=sl,
-                tp=tp, 
-                comment=f"RL Sell C:{confidence:.2f}"
-            )
-            
-        elif action == 1 and current_position != 0:  # Buy signal but position exists
-            print(f"   ⚠️ BUY signal ignored - position already exists (current: {current_position})")
-            if current_position == -1:  # Have sell position, could close first
-                print(f"   💡 Suggestion: Close SELL position first, then BUY")
-            return None
-            
-        elif action == 2 and current_position != 0:  # Sell signal but position exists
-            print(f"   ⚠️ SELL signal ignored - position already exists (current: {current_position})")
-            if current_position == 1:  # Have buy position, could close first
-                print(f"   💡 Suggestion: Close BUY position first, then SELL")
-            return None
-            
-        elif action == 3:  # Close signal
-            if current_position != 0 and positions:
-                print(f"   🔄 Closing position {positions[0].ticket}...")
-                result = self.mt5.close_position(positions[0].ticket)
-                if result is not None:
-                    if result.retcode == mt5.TRADE_RETCODE_DONE:
-                        print(f"   ✅ Position closed successfully")
-                    else:
-                        print(f"   ❌ Position close failed: {result.retcode} - {result.comment}")
+        num_positions = len(positions) if positions else 0
+        action_names = {0: 'HOLD', 1: 'BUY', 2: 'SELL', 3: 'CLOSE'}
+        action_name = action_names.get(action, 'UNKNOWN')
+
+        print(f"   📊 Position check: current count={num_positions}, max={self.max_positions}")
+
+        # --- Action: BUY ---
+        if action == 1:
+            if num_positions < self.max_positions:
+                print(f"   💰 Calculating position size for new BUY...")
+                volume = self.calculate_position_size()
+                symbol_info, actual_symbol = self.mt5.get_symbol_info(self.symbol)
+                current_price = mt5.symbol_info_tick(actual_symbol)
+                
+                if symbol_info and current_price:
+                    sl_distance = symbol_info.point * 100
+                    tp_distance = sl_distance * 1.5
+                    sl = current_price.ask - sl_distance
+                    tp = current_price.ask + tp_distance
+                    
+                    print(f"   💹 Executing new BUY order for {volume} lots...")
+                    result = self.mt5.send_order(
+                        actual_symbol, mt5.ORDER_TYPE_BUY, volume, sl=sl, tp=tp,
+                        comment=f"RL Buy C:{confidence:.2f}"
+                    )
+                    
+                    # 🎯 Initialize position tracking for new positions
+                    if result and result.retcode == mt5.TRADE_RETCODE_DONE:
+                        # Get the new position ticket (order number from result)
+                        if hasattr(result, 'order') and result.order:
+                            # Note: We'll track this position once it shows up in positions
+                            pass
+                    
+                    return result
+                else:
+                    print(f"   ❌ Failed to get symbol/price info for new BUY.")
             else:
-                print(f"   ⚠️ CLOSE action ignored - no position to close (current_position: {current_position})")
-                return None
-        else:
-            # Log unhandled action combinations
-            action_names = {0: 'HOLD', 1: 'BUY', 2: 'SELL', 3: 'CLOSE'}
-            print(f"   ⚠️ Action {action_names.get(action, action)} not executed - conditions not met")
-            print(f"      Current position: {current_position}, Action: {action}")
-            return None
+                print(f"   ⚠️ {action_name} signal ignored, max positions ({self.max_positions}) reached.")
+
+        # --- Action: SELL ---
+        elif action == 2:
+            if num_positions < self.max_positions:
+                print(f"   � Calculating position size for new SELL...")
+                volume = self.calculate_position_size()
+                symbol_info, actual_symbol = self.mt5.get_symbol_info(self.symbol)
+                current_price = mt5.symbol_info_tick(actual_symbol)
+
+                if symbol_info and current_price:
+                    sl_distance = symbol_info.point * 100
+                    tp_distance = sl_distance * 1.5
+                    sl = current_price.bid + sl_distance
+                    tp = current_price.bid - tp_distance
+                    
+                    print(f"   💹 Executing new SELL order for {volume} lots...")
+                    result = self.mt5.send_order(
+                        actual_symbol, mt5.ORDER_TYPE_SELL, volume, sl=sl, tp=tp,
+                        comment=f"RL Sell C:{confidence:.2f}"
+                    )
+                    
+                    # 🎯 Initialize position tracking for new positions  
+                    if result and result.retcode == mt5.TRADE_RETCODE_DONE:
+                        # Get the new position ticket (order number from result)
+                        if hasattr(result, 'order') and result.order:
+                            # Note: We'll track this position once it shows up in positions
+                            pass
+                    
+                    return result
+                else:
+                    print(f"   ❌ Failed to get symbol/price info for new SELL.")
+            else:
+                print(f"   ⚠️ {action_name} signal ignored, max positions ({self.max_positions}) reached.")
+
+        # --- Action: CLOSE ---
+        elif action == 3:
+            if positions:
+                # Strategy: Close the OLDEST position
+                positions_by_time = sorted(positions, key=lambda p: p.time)
+                oldest_position = positions_by_time[0]
+                
+                print(f"   🔄 Closing oldest position: Ticket {oldest_position.ticket}, Type: {oldest_position.type}, Time: {datetime.fromtimestamp(oldest_position.time)}")
+                return self.mt5.close_position(oldest_position.ticket)
+            else:
+                print(f"   ⚠️ {action_name} signal ignored, no position to close.")
         
-        return result
+        # --- Action: HOLD ---
+        elif action == 0:
+             print(f"   💤 HOLD signal received. No action taken.")
+
+        else:
+            print(f"   ⚠️ Unknown action {action} - conditions not met.")
+        
+        return None
     
     def run_single_iteration(self):
         """Execute one trading iteration (for integration with other systems)"""
@@ -1124,7 +1265,14 @@ class TradingBot:
             positions = self.mt5.get_positions(actual_symbol)
             current_position = 0
             if positions:
-                current_position = 1 if positions[0].type == mt5.POSITION_TYPE_BUY else -1
+                buy_positions = [p for p in positions if p.type == mt5.POSITION_TYPE_BUY]
+                sell_positions = [p for p in positions if p.type == mt5.POSITION_TYPE_SELL]
+                
+                if len(buy_positions) > 0 and len(sell_positions) == 0:
+                    current_position = 1  # Net long
+                elif len(sell_positions) > 0 and len(buy_positions) == 0:
+                    current_position = -1 # Net short
+                # If mixed, current_position remains 0 (neutral), which is a safe state for the model.
             
             # Prepare observation
             observation = self.prepare_observation(df, current_position)
@@ -1146,7 +1294,16 @@ class TradingBot:
             
             print(f"🕐 {current_time} | {actual_symbol} @ {current_price:.5f}")
             print(f"   🤖 Prediction: {action_names[action]} (confidence: {confidence:.2f}, raw: {raw_action:.3f})")
-            print(f"   📊 Position: {current_position} | Positions: {len(positions) if positions else 0}")
+            print(f"   📊 Net Position State: {current_position} | Open Positions: {len(positions) if positions else 0}")
+            
+            # Show detailed positions summary for multi-position trading
+            if len(positions) > 0:
+                summary = self.get_positions_summary()
+                print(f"   💰 Portfolio: {summary['buy_positions']} BUY, {summary['sell_positions']} SELL | Net: {summary['net_exposure']:.2f} lots")
+                
+                # 🎯 MANAGE ADVANCED RISK FEATURES (trailing stop & break-even)
+                self.manage_advanced_risk()
+                self._cleanup_closed_positions()
             
             # Show bias report every 5 predictions
             if len(getattr(self, '_recent_actions', [])) % 5 == 0 and len(getattr(self, '_recent_actions', [])) > 0:
@@ -1176,10 +1333,14 @@ class TradingBot:
                         if result.retcode == mt5.TRADE_RETCODE_DONE:
                             print(f"   ✅ Trade executed successfully: {action_names[action]}")
                             print(f"      📊 Order: {result.order}, Volume: {result.volume}, Price: {result.price:.5f}")
+                            # Show updated positions after trade
+                            self.print_positions_report()
                         else:
                             print(f"   ❌ Trade failed: {action_names[action]} - Code: {result.retcode}, Comment: {result.comment}")
                     else:
                         print(f"   ✅ Trade action completed: {action_names[action]}")
+                        # Show updated positions after trade
+                        self.print_positions_report()
                 else:
                     print(f"   ⚠️ Trade not executed: {action_names[action]} (conditions not met - see details above)")
             else:
@@ -1250,6 +1411,11 @@ class TradingBot:
                 print(f"   🤖 Prediction: {action_names[action]} (confidence: {confidence:.2f}, raw: {raw_action:.3f})")
                 print(f"   📊 Position: {current_position} | Positions: {len(positions) if positions else 0}")
                 
+                # 🎯 MANAGE ADVANCED RISK FEATURES (trailing stop & break-even)
+                if positions:  # Only manage risk if we have positions
+                    self.manage_advanced_risk()
+                    self._cleanup_closed_positions()
+                
                 # Execute trade if conditions are met
                 if action != 0:  # Not hold
                     result = self.execute_trade(action, confidence)
@@ -1273,14 +1439,144 @@ class TradingBot:
             self.running = False
             print("🔌 Trading bot shutdown")
     
+    def manage_advanced_risk(self):
+        """🎯 Manage trailing stops and break-even stops for all positions"""
+        if not (self.enable_trailing_stop or self.enable_breakeven_stop):
+            return
+        
+        positions = self.mt5.get_positions(self.symbol)
+        if not positions:
+            return
+        
+        symbol_info, actual_symbol = self.mt5.get_symbol_info(self.symbol)
+        if not symbol_info:
+            return
+        
+        current_tick = mt5.symbol_info_tick(actual_symbol)
+        if not current_tick:
+            return
+        
+        for position in positions:
+            self._manage_position_risk(position, symbol_info, current_tick)
+    
+    def _manage_position_risk(self, position, symbol_info, current_tick):
+        """Manage risk for individual position (trailing stop & break-even)"""
+        ticket = position.ticket
+        pos_type = position.type
+        open_price = position.price_open
+        current_sl = position.sl
+        current_tp = position.tp
+        profit_usd = position.profit
+        
+        # Get current market price
+        if pos_type == mt5.POSITION_TYPE_BUY:
+            current_price = current_tick.bid
+            is_profitable = current_price > open_price
+        else:  # SELL
+            current_price = current_tick.ask
+            is_profitable = current_price < open_price
+        
+        new_sl = current_sl
+        modified = False
+        
+        # 💰 BREAK-EVEN STOP: Move SL to entry when profit >= $4
+        if (self.enable_breakeven_stop and 
+            profit_usd >= self.breakeven_profit_threshold and
+            ticket not in self.position_tracking):
+            
+            # Check if we haven't already set break-even
+            tolerance = symbol_info.point * 2  # 2 pip tolerance
+            entry_distance = abs(current_sl - open_price)
+            
+            if entry_distance > tolerance:  # SL is not at break-even yet
+                new_sl = open_price
+                self.position_tracking[ticket] = {
+                    'breakeven_set': True,
+                    'highest_profit': profit_usd,
+                    'best_price': current_price
+                }
+                modified = True
+                print(f"💰 BREAK-EVEN activated for #{ticket}: Profit ${profit_usd:.2f} >= ${self.breakeven_profit_threshold}")
+        
+        # 🏃 TRAILING STOP: Move SL with favorable price movement
+        elif (self.enable_trailing_stop and 
+              is_profitable and 
+              ticket in self.position_tracking):
+            
+            tracking = self.position_tracking[ticket]
+            
+            if pos_type == mt5.POSITION_TYPE_BUY:
+                # For BUY: Trail SL upward as price rises
+                if current_price > tracking['best_price']:
+                    # Update best price
+                    tracking['best_price'] = current_price
+                    tracking['highest_profit'] = profit_usd
+                    
+                    # Calculate new trailing SL
+                    trail_distance = symbol_info.point * self.trailing_stop_distance_pips
+                    potential_sl = current_price - trail_distance
+                    
+                    # Only move SL up (never down)
+                    if potential_sl > current_sl:
+                        new_sl = potential_sl
+                        modified = True
+                        print(f"🏃 TRAILING STOP (BUY) for #{ticket}: SL {current_sl:.5f} → {new_sl:.5f}")
+            
+            else:  # SELL position
+                # For SELL: Trail SL downward as price falls
+                if current_price < tracking['best_price']:
+                    # Update best price
+                    tracking['best_price'] = current_price
+                    tracking['highest_profit'] = profit_usd
+                    
+                    # Calculate new trailing SL
+                    trail_distance = symbol_info.point * self.trailing_stop_distance_pips
+                    potential_sl = current_price + trail_distance
+                    
+                    # Only move SL down (never up) for SELL
+                    if potential_sl < current_sl or current_sl == 0:
+                        new_sl = potential_sl
+                        modified = True
+                        print(f"🏃 TRAILING STOP (SELL) for #{ticket}: SL {current_sl:.5f} → {new_sl:.5f}")
+        
+        # Apply the modification if needed
+        if modified and new_sl != current_sl:
+            result = self.mt5.modify_position_sl_tp(ticket, new_sl=new_sl)
+            if result and result.retcode == mt5.TRADE_RETCODE_DONE:
+                print(f"✅ Position #{ticket} SL updated successfully")
+            else:
+                print(f"❌ Failed to update SL for position #{ticket}")
+    
+    def _cleanup_closed_positions(self):
+        """Remove tracking data for closed positions"""
+        if not self.position_tracking:
+            return
+        
+        current_tickets = set()
+        positions = self.mt5.get_positions(self.symbol)
+        if positions:
+            current_tickets = {pos.ticket for pos in positions}
+        
+        # Remove tracking for closed positions
+        closed_tickets = set(self.position_tracking.keys()) - current_tickets
+        for ticket in closed_tickets:
+            del self.position_tracking[ticket]
+            print(f"🧹 Cleaned tracking data for closed position #{ticket}")
+
     def stop(self):
         """Stop the trading bot"""
         self.running = False
         self.mt5.disconnect()
 
 def main():
-    """Example usage"""
-    print("🤖 RL Trading Bot for MT5")
+    """Example usage - MULTI-POSITION TRADING BOT"""
+    print("🤖 RL Multi-Position Trading Bot for MT5")
+    print("=" * 50)
+    print("🚀 FEATURES:")
+    print("   • Can hold up to 6 concurrent positions")
+    print("   • AI manages each position intelligently")
+    print("   • FIFO closing strategy (oldest first)")
+    print("   • Supports hedging (BUY + SELL simultaneously)")
     print("=" * 50)
     
     # Configuration
@@ -1295,21 +1591,78 @@ def main():
     
     try:
         # Initialize bot
+        print(f"\n🔧 Initializing Multi-Position Bot...")
         bot = TradingBot(SYMBOL, risk_percent=RISK_PERCENT)
         
         # Connect to MT5
+        print(f"\n🔌 Connecting to MT5...")
         if not bot.connect_mt5(LOGIN, PASSWORD, SERVER):
             print("❌ Failed to connect to MT5")
             return
         
-        # Start trading
-        bot.run_trading_loop(CHECK_INTERVAL)
+        # Show initial positions (if any)
+        bot.print_positions_report()
+        
+        print(f"\n🚀 Choose your mode:")
+        print(f"   1. Single iteration (testing)")
+        print(f"   2. Continuous trading loop")
+        
+        # For demo purposes, let's run single iteration
+        # You can modify this to run continuous loop
+        
+        print(f"\n🧪 Running single iteration for testing...")
+        result = bot.run_single_iteration()
+        
+        if result:
+            print(f"\n✅ Iteration completed!")
+            print(f"   Action: {result['action']}")
+            print(f"   Price: {result['current_price']:.5f}")
+            if result['result']:
+                print(f"   Trade Result: {result['result']}")
+        
+        # Uncomment this to run continuous trading:
+        # print(f"\n🔄 Starting continuous trading...")
+        # bot.run_trading_loop(CHECK_INTERVAL)
         
     except Exception as e:
         print(f"❌ Bot error: {e}")
+        import traceback
+        traceback.print_exc()
     finally:
         if 'bot' in locals():
             bot.stop()
 
+# Example of how to run the bot for specific scenarios
+def example_multi_position_usage():
+    """Example of advanced multi-position usage"""
+    bot = TradingBot("EURUSDm", risk_percent=0.5)  # Lower risk per trade
+    
+    # Connect
+    if bot.connect_mt5():
+        print("🔍 Testing multi-position capabilities...")
+        
+        # Show current status
+        bot.print_positions_report()
+        
+        # Run a few iterations to see how it handles multiple positions
+        for i in range(5):
+            print(f"\n--- Iteration {i+1} ---")
+            result = bot.run_single_iteration()
+            if result:
+                print(f"Action taken: {result['action']}")
+            
+            # Small delay between iterations
+            import time
+            time.sleep(2)
+        
+        # Final report
+        print(f"\n🏁 Final Positions Report:")
+        bot.print_positions_report()
+        
+    bot.stop()
+
 if __name__ == "__main__":
     main()
+    
+    # Uncomment to run advanced example:
+    # example_multi_position_usage()
