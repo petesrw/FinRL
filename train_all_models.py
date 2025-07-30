@@ -857,16 +857,14 @@ class AdvancedForexEnv(gym.Env):
                 profit_pct = profit / (self.entry_price * self.position_size)
                 
                 # Much more generous rewards to encourage trading
-                if profit_pct >= 0.025:  # 2.5%+ profit (Excellent!)
-                    self._last_action_reward = 20 if close_reason in ["Stop Loss", "Take Profit"] else 15  # Extra bonus for TP hits
-                elif profit_pct >= 0.015:  # 1.5%+ profit (Very Good)
-                    self._last_action_reward = 15 if close_reason in ["Stop Loss", "Take Profit"] else 12
-                elif profit_pct >= 0.01:  # 1%+ profit (Good)
-                    self._last_action_reward = 10 if close_reason in ["Stop Loss", "Take Profit"] else 8
-                elif profit_pct >= 0.005:  # 0.5%+ profit (Okay)
-                    self._last_action_reward = 6
+                if profit_pct >= 0.015:  # 1.5%+ profit (Excellent!)
+                    self._last_action_reward = 30 if tp_triggered else 25
+                elif profit_pct >= 0.01:  # 1.0%+ profit (Very Good)
+                    self._last_action_reward = 20 if tp_triggered else 15
+                elif profit_pct >= 0.005:  # 0.5%+ profit (Good)
+                    self._last_action_reward = 12
                 elif profit_pct > 0:  # ANY profit (Encourage even small profits)
-                    self._last_action_reward = 3
+                    self._last_action_reward = 5
                     
             else:
                 self.total_loss += abs(profit)
@@ -877,16 +875,16 @@ class AdvancedForexEnv(gym.Env):
                 loss_pct = abs(profit) / (self.entry_price * self.position_size)
                 
                 # Very gentle penalties to encourage trading attempts
-                if close_reason == "Stop Loss" and loss_pct <= 0.02:  # SL hit with <2% loss - GOOD Risk Management!
-                    self._last_action_reward = 1  # REWARD for using SL properly!
-                elif loss_pct <= 0.01:  # <1% loss - not bad
+                if sl_triggered and loss_pct <= self.stop_loss_pct * 1.1:  # SL hit within 10% tolerance - GOOD Risk Management!
+                    self._last_action_reward = 2  # REWARD for using SL properly!
+                elif loss_pct <= 0.005:  # <0.5% loss - not bad
                     self._last_action_reward = 0  # Neutral
-                elif loss_pct <= 0.02:  # <2% loss - acceptable
-                    self._last_action_reward = -1  # Small penalty
-                elif loss_pct <= 0.03:  # <3% loss - okay for learning
-                    self._last_action_reward = -3  # Mild penalty
-                else:  # >3% loss
-                    self._last_action_reward = -6  # Moderate penalty
+                elif loss_pct <= 0.01:  # <1% loss - acceptable
+                    self._last_action_reward = -2  # Small penalty
+                elif loss_pct <= 0.015:  # <1.5% loss - okay for learning
+                    self._last_action_reward = -4  # Mild penalty
+                else:  # >1.5% loss
+                    self._last_action_reward = -8  # Moderate penalty
             
             self.total_trades += 1
             # print(f"🎯 TRADE COMPLETED! Total trades now: {self.total_trades}")
@@ -1766,29 +1764,29 @@ class AdaptiveTrainer:
             #     algorithm = random.choice(['DDPG', 'TD3'])
             algorithm = 'PPO'
             
-            # 🚀 OPTIMIZED PROFITABILITY LEARNING RATES
+            # 🚀 AGGRESSIVE PROFITABILITY LEARNING RATES (Based on successful configs)
             if algorithm == 'PPO':
-                learning_rate = random.choice([0.0004, 0.0005, 0.0006, 0.0007, 0.0008])  # เพิ่มสำหรับ exploration
+                learning_rate = random.choice([0.0005, 0.0006, 0.0007, 0.0008, 0.0009, 0.001])  # เพิ่มช่วงสูงขึ้น based on successful configs
             elif algorithm == 'SAC':
-                learning_rate = random.choice([0.0005, 0.0007, 0.0008, 0.001, 0.0012])  # เพิ่มสำหรับ SAC exploration
+                learning_rate = random.choice([0.0007, 0.0008, 0.001, 0.0012, 0.0015])  # เน้นค่าสูงสำหรับ SAC exploration
             else:  # A2C, DDPG, etc.
-                learning_rate = random.choice([0.0004, 0.0005, 0.0007, 0.0008])
+                learning_rate = random.choice([0.0005, 0.0007, 0.0008, 0.001])
             
             # 📊 OPTIMIZED GAMMA for Better Profitability (เน้น short-term rewards มากขึ้น)
             gamma = random.choice([0.94, 0.95, 0.96, 0.97, 0.98])  # ลด long-term focus เล็กน้อย
             
-            # ⚡ OPTIMIZED PROFITABILITY BATCH SIZES
+            # ⚡ ENHANCED PROFITABILITY BATCH SIZES (Based on top performers)
             if algorithm == 'PPO':
-                base_batch_size = random.choice([1536, 2048, 3072, 4096])  # เพิ่ม intermediate sizes
+                base_batch_size = random.choice([1536, 2048, 3072, 4096, 8192])  # เพิ่ม large batch sizes
             elif algorithm == 'SAC':
-                base_batch_size = random.choice([512, 768, 1024, 1536])   # เพิ่ม sizes สำหรับ SAC
+                base_batch_size = random.choice([768, 1024, 1536, 2048])   # เพิ่ม medium-large sizes สำหรับ SAC
             else:
-                base_batch_size = random.choice([1024, 1536, 2048, 3072])
+                base_batch_size = random.choice([1536, 2048, 3072, 4096])
                 
             optimal_batch_size = get_optimal_batch_size(DEVICE, base_batch_size)
             
-            # 🕰️ EXTENDED TRAINING TIME (Key for Active Trading)
-            base_timesteps = random.choice([2500000, 3000000, 3500000, 4000000])  # ลดลงเล็กน้อยแต่เพิ่ม variety
+            # 🕰️ EXTENDED TRAINING TIME (Key for Active Trading - Based on successful models)
+            base_timesteps = random.choice([3000000, 3500000, 4000000, 4500000])  # เพิ่มให้สูงขึ้น based on successful configs
             optimal_timesteps = get_optimal_timesteps(DEVICE, base_timesteps)
             
             
@@ -1804,16 +1802,16 @@ class AdaptiveTrainer:
                 'timesteps': optimal_timesteps
             }
             
-            # 🎁 ALGORITHM-SPECIFIC ACTIVE TRADING PARAMETERS
+            # 🎁 ALGORITHM-SPECIFIC AGGRESSIVE PROFITABILITY PARAMETERS (Based on successful configs)
             if algorithm == 'PPO':
                 config.update({
                     'n_steps': random.choice([3072, 4096, 6144, 8192]),  # เพิ่ม options และ higher values
                     'batch_size': optimal_batch_size,
-                    'n_epochs': random.choice([10, 12, 15]),  # เพิ่ม minimum epochs
-                    'clip_range': random.choice([0.15, 0.17, 0.18, 0.2]),  # เพิ่ม range สำหรับ exploration
-                    'ent_coef': random.choice([0.02, 0.03, 0.04, 0.05, 0.06]),   # เพิ่ม exploration มากขึ้น
-                    'vf_coef': random.choice([0.5, 0.6]),  # เพิ่ม value function weight
-                    'max_grad_norm': random.choice([0.5, 0.6])  # เพิ่มความยืดหยุ่น
+                    'n_epochs': random.choice([12, 15, 18]),  # เพิ่มให้สูงขึ้น based on successful models
+                    'clip_range': random.choice([0.17, 0.18, 0.2, 0.22]),  # ขยายช่วงขึ้น based on top performers
+                    'ent_coef': random.choice([0.03, 0.04, 0.05, 0.06, 0.07]),   # เน้นค่าสูงจาก successful configs
+                    'vf_coef': random.choice([0.5, 0.6, 0.7]),  # เพิ่ม value function weight สูงขึ้น
+                    'max_grad_norm': random.choice([0.5, 0.6, 0.7])  # เพิ่มความยืดหยุ่นมากขึ้น
                 })
             elif algorithm == 'SAC':
                 config.update({
@@ -1864,36 +1862,38 @@ class AdaptiveTrainer:
                 
                 return config
         
-        # 🏆 ULTIMATE ACTIVE TRADING FALLBACK CONFIG
+        # 🏆 ULTIMATE AGGRESSIVE PROFITABILITY FALLBACK CONFIG
         print(f"   ⚠️ Could not find unique optimized config after {max_attempts} attempts")
-        print(f"   🎯 Using ULTIMATE ACTIVE TRADING fallback config (Maximum Exploration)")
+        print(f"   🎯 Using ULTIMATE AGGRESSIVE PROFITABILITY fallback config (Maximum Exploration)")
         
-        # ULTIMATE ACTIVE TRADING configuration
+        # ULTIMATE AGGRESSIVE PROFITABILITY configuration (Based on top performers)
         fallback_config = {
-            'algorithm': 'SAC',  # SAC for maximum exploration
-            'learning_rate': 0.0003,  # FIXED: Safe learning rate
-            'batch_size': get_optimal_batch_size(DEVICE, 512),
-            'buffer_size': 1000000,
-            'learning_starts': 1000,
-            'gamma': 0.95,  # Even shorter-term focus for active trading
-            'tau': 0.01,
-            'ent_coef': 0.2,  # FIXED: Safe entropy for SAC
-            'target_update_interval': 1,
-            'gradient_steps': 1,
-            'lookback_window': 100,
-            'transaction_cost': 0.00001,  # EXTREMELY low transaction cost (10x reduction)
-            'timesteps': get_optimal_timesteps(DEVICE, 5000000)  # 5M timesteps
+            'algorithm': 'PPO',  # PPO with aggressive settings based on successful configs
+            'learning_rate': 0.0008,  # High learning rate from successful configs
+            'batch_size': get_optimal_batch_size(DEVICE, 4096),  # Large batch size
+            'n_steps': 8192,  # High n_steps for better exploration
+            'n_epochs': 15,  # High epochs from successful configs
+            'clip_range': 0.18,  # Optimal clip range from successful configs
+            'ent_coef': 0.04,  # High entropy from successful configs
+            'vf_coef': 0.6,  # Value function weight from successful configs
+            'max_grad_norm': 0.6,  # Max gradient norm from successful configs
+            'gamma': 0.94,  # Short-term focus for aggressive trading
+            'lookback_window': 50,  # Optimal lookback from successful configs
+            'transaction_cost': 0,  # Zero transaction cost for maximum profitability
+            'timesteps': get_optimal_timesteps(DEVICE, 3500000)  # 3.5M timesteps from successful configs
         }
         
-        print(f"   🎯 ULTIMATE ACTIVE TRADING Fallback Settings:")
-        print(f"      🧠 Algorithm: SAC (Maximum Exploration)")
+        print(f"   🎯 ULTIMATE AGGRESSIVE PROFITABILITY Fallback Settings:")
+        print(f"      🧠 Algorithm: PPO (Based on Top Performers)")
         print(f"      ⚡ Learning Rate: {fallback_config['learning_rate']}")
         print(f"      🔥 Batch Size: {fallback_config['batch_size']}")
-        print(f"      � Transaction Cost: {fallback_config['transaction_cost']}")
-        print(f"      🎁 Entropy Coef: {fallback_config['ent_coef']} (MAXIMUM Exploration)")
+        print(f"      📊 N Steps: {fallback_config['n_steps']}")
+        print(f"      🎁 Entropy Coef: {fallback_config['ent_coef']} (High Exploration from Successful Configs)")
+        print(f"      📈 Clip Range: {fallback_config['clip_range']} (Optimal from Top Performers)")
+        print(f"      💰 Transaction Cost: {fallback_config['transaction_cost']} (Zero for Maximum Profitability)")
         print(f"      ⏱️ Timesteps: {fallback_config['timesteps']:,}")
-        print(f"      🎯 Focus: AGGRESSIVE Active Trading & Market Exploration")
-        print(f"      💰 Position Size: 3.0x (Triple Impact)")
+        print(f"      🎯 Focus: AGGRESSIVE Profitability Based on Successful Models")
+        print(f"      🏆 Settings: All parameters optimized from successful configs")
         
         return fallback_config
     

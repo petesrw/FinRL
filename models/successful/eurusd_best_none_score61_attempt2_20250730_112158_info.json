@@ -1,0 +1,9 @@
+{
+  "symbol": "EURUSD",
+  "tier": "none",
+  "score": 61.3359781863424,
+  "attempt": 2,
+  "timestamp": "20250730_112158",
+  "is_best": true,
+  "model_path": "models/successful/eurusd_best_none_score61_attempt2_20250730_112158.zip"
+}

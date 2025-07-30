@@ -1,9 +1,0 @@
-{
-  "symbol": "EURUSD",
-  "tier": "silver",
-  "score": 75.4349874175723,
-  "attempt": 3,
-  "timestamp": "20250728_215828",
-  "is_best": false,
-  "model_path": "models/silver/eurusd_silver_score75_attempt3_20250728_215828.zip"
-}

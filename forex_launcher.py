@@ -27,61 +27,150 @@ class ForexLauncher:
             '3': ('meta_learning', '🧠 Meta-Learning - AI learns best indicators')
         }
     
-    def find_best_model(self, symbol):
-        """Find the best available model for a symbol"""
+    def find_all_models(self, symbol):
+        """Find all available models for a symbol, sorted by score descending"""
         import glob
         import json
         
         # Look for models in order of preference: diamond > gold > silver > bronze > simple
         search_paths = [
             f"models/diamond/{symbol.lower()}_diamond_*.zip",
+            f"models/diamond/{symbol.lower()}_best_diamond_*.zip",
             f"models/gold/{symbol.lower()}_gold_*.zip", 
+            f"models/gold/{symbol.lower()}_best_gold_*.zip",
             f"models/silver/{symbol.lower()}_silver_*.zip",
+            f"models/silver/{symbol.lower()}_best_silver_*.zip",
             f"models/bronze/{symbol.lower()}_bronze_*.zip",
-            f"models/diamond/simple_forex_model_{symbol}_PPO.zip",
-            f"simple_forex_model_{symbol}_PPO.zip"
+            f"models/bronze/{symbol.lower()}_best_bronze_*.zip",
+            f"models/successful/{symbol.lower()}_*.zip",
+            f"simple_forex_model_{symbol}_*.zip",  # Legacy models
         ]
         
-        best_model = None
-        best_score = 0
-        best_tier = ""
+        # Collect all models with their scores
+        all_models = []
         
         for pattern in search_paths:
             files = glob.glob(pattern)
             for file_path in files:
                 try:
+                    # Extract creation time for sorting
+                    import os
+                    creation_time = os.path.getctime(file_path)
+                    
                     # Try to get score from filename
                     if "_score" in file_path:
                         score_part = file_path.split("_score")[1].split("_")[0]
-                        score = float(score_part)
+                        base_score = float(score_part)
                     else:
-                        score = 50  # Default score for simple models
+                        base_score = 50  # Default score for simple models
                     
-                    # Get tier from path
+                    # Get tier from path and calculate final score
                     if "diamond" in file_path:
                         tier = "💎 DIAMOND"
-                        score += 1000  # Bonus for diamond tier
+                        final_score = base_score + 1000  # Bonus for diamond tier
                     elif "gold" in file_path:
                         tier = "🥇 GOLD"
-                        score += 100
+                        final_score = base_score + 100
                     elif "silver" in file_path:
                         tier = "🥈 SILVER"
-                        score += 10
+                        final_score = base_score + 10
                     elif "bronze" in file_path:
                         tier = "🥉 BRONZE"
-                        score += 1
+                        final_score = base_score + 1
+                    elif "successful" in file_path:
+                        tier = "✅ SUCCESS"
+                        final_score = base_score
                     else:
                         tier = "📦 SIMPLE"
+                        final_score = base_score
                     
-                    if score > best_score:
-                        best_model = file_path
-                        best_score = score
-                        best_tier = tier
+                    # Extract timestamp or attempt number for better identification
+                    import re
+                    timestamp_match = re.search(r'(\d{8}_\d{6})', file_path)
+                    attempt_match = re.search(r'attempt(\d+)', file_path)
+                    
+                    timestamp = timestamp_match.group(1) if timestamp_match else "unknown"
+                    attempt = attempt_match.group(1) if attempt_match else "0"
+                    
+                    all_models.append({
+                        'path': file_path,
+                        'tier': tier,
+                        'base_score': base_score,
+                        'final_score': final_score,
+                        'creation_time': creation_time,
+                        'timestamp': timestamp,
+                        'attempt': attempt,
+                        'filename': os.path.basename(file_path)
+                    })
                         
                 except:
                     continue
         
-        return best_model, best_tier, best_score
+        # Sort by final score in descending order
+        all_models.sort(key=lambda x: x['final_score'], reverse=True)
+        
+        return all_models
+
+    def find_best_model(self, symbol):
+        """Find the best available model for a symbol, sorted by score descending"""
+        all_models = self.find_all_models(symbol)
+        
+        # Return the best model (first in sorted list) or None if no models found
+        if all_models:
+            best = all_models[0]
+            return best['path'], best['tier'], best['final_score']
+        else:
+            return None, "", 0
+    
+    def select_model(self, symbol):
+        """Let user select from available models for a symbol"""
+        all_models = self.find_all_models(symbol)
+        
+        if not all_models:
+            print(f"❌ No models found for {symbol}")
+            print("💡 Please train the model first!")
+            return None, "", 0
+        
+        print(f"\n📋 AVAILABLE MODELS FOR {symbol}:")
+        print("=" * 80)
+        print(f"{'#':<3} {'Tier':<12} {'Score':<8} {'Attempt':<8} {'Date':<12} {'Filename'}")
+        print("-" * 80)
+        
+        for i, model in enumerate(all_models, 1):
+            actual_score = (model['final_score'] - 1000 if model['final_score'] > 1000 
+                          else model['final_score'] - 100 if model['final_score'] > 100 
+                          else model['final_score'] - 10 if model['final_score'] > 10 
+                          else model['final_score'] - 1 if model['final_score'] > 1 
+                          else model['final_score'])
+            
+            # Format timestamp for display
+            timestamp = model['timestamp']
+            if timestamp != "unknown" and len(timestamp) == 15:  # Format: YYYYMMDD_HHMMSS
+                display_date = f"{timestamp[:8]}"  # Just the date part
+            else:
+                display_date = "unknown"
+            
+            print(f"{i:<3} {model['tier']:<12} {actual_score:<8.1f} {model['attempt']:<8} {display_date:<12} {model['filename'][:35]}")
+        
+        print("-" * 80)
+        print("0. 🔙 Go Back")
+        print("=" * 80)
+        
+        while True:
+            try:
+                choice = input(f"👉 Select model (0-{len(all_models)}): ").strip()
+                choice_num = int(choice)
+                
+                if choice_num == 0:
+                    return None, "", 0
+                elif 1 <= choice_num <= len(all_models):
+                    selected = all_models[choice_num - 1]
+                    print(f"✅ Selected: {selected['tier']} - Score {selected['base_score']:.1f}")
+                    return selected['path'], selected['tier'], selected['final_score']
+                else:
+                    print(f"❌ Invalid choice! Please enter 0-{len(all_models)}")
+            except ValueError:
+                print("❌ Invalid input! Please enter a number.")
     
     def clear_screen(self):
         """Clear terminal screen"""
@@ -335,18 +424,27 @@ class ForexLauncher:
         if not symbol:
             return
         
-        # Find best available model
-        model_file, tier, score = self.find_best_model(symbol)
+        # Let user select from available models
+        print(f"\n🤖 MODEL SELECTION FOR {symbol}")
+        print("=" * 50)
+        print("Select the model you want to use for live trading:")
+        
+        model_file, tier, score = self.select_model(symbol)
         if not model_file:
-            print(f"❌ No model found for {symbol}")
-            print("💡 Please train the model first!")
+            print("❌ No model selected!")
             input("\n👉 Press Enter to continue...")
             return
         
-        print(f"✅ Found model: {model_file}")
+        print(f"\n✅ Selected model: {model_file}")
         print(f"   🏆 Tier: {tier}")
         actual_score = score-1000 if score > 1000 else score-100 if score > 100 else score-10 if score > 10 else score-1 if score > 1 else score
         print(f"   📊 Score: {actual_score:.1f}")
+        
+        # Model confirmation
+        confirm_model = input(f"\n🤖 Use this model for live trading? (y/N): ").strip().lower()
+        if confirm_model != 'y':
+            print("❌ Model selection cancelled.")
+            return
         
         # Quick model test
         print(f"🧪 Quick model test for {symbol}...")

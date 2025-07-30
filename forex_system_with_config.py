@@ -443,9 +443,9 @@ class ConfigurableForexBot:
                 self.logger.info(f"   📉 Max Drawdown: ${stats['max_drawdown']:.2f}")
                 if total_closed_trades == 0 and stats['total_trades'] > 0:
                     self.logger.info(f"   ⏳ Waiting for trades to close to calculate accurate win rate...")
-                
-                # Wait for next decision (5 minutes for M5)
-                wait_minutes = 5
+
+                # Wait for next decision (1 minute for M5)
+                wait_minutes = 1
                 self.logger.info(f"⏰ Waiting {wait_minutes} minutes until next analysis...")
                 time.sleep(wait_minutes * 60)
                 
