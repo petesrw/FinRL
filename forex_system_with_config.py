@@ -321,6 +321,9 @@ class ConfigurableForexBot:
                 self.logger.error("❌ Failed to connect to MT5")
                 return False
             self.logger.info("✅ MT5 connection established successfully")
+            
+            # Sync with existing positions
+            self._sync_existing_positions()
         else:
             self.logger.info("🧪 Running in DEMO mode - No MT5 connection needed")
 
@@ -346,6 +349,61 @@ class ConfigurableForexBot:
         )
         
         return True
+    
+    def _sync_existing_positions(self):
+        """Sync with existing MT5 positions to update performance tracking"""
+        try:
+            self.logger.info("🔄 Syncing with existing MT5 positions...")
+            
+            # Import MT5 with error handling
+            try:
+                import MetaTrader5 as mt5  # type: ignore
+            except ImportError:
+                self.logger.warning("⚠️ MetaTrader5 module not available - skipping position sync")
+                return
+            
+            # Get existing positions for this symbol
+            symbol_to_check = self.symbol + "m" if not self.symbol.endswith("m") else self.symbol
+            positions = mt5.positions_get(symbol=symbol_to_check)
+            
+            if positions is None:
+                positions = []
+            
+            existing_count = len(positions)
+            
+            if existing_count > 0:
+                self.logger.info(f"📊 Found {existing_count} existing position(s) for {symbol_to_check}")
+                
+                # Update performance stats to reflect existing trades
+                if self.performance_stats['total_trades'] < existing_count:
+                    self.performance_stats['total_trades'] = existing_count
+                    self.logger.info(f"📈 Updated total trades count to {existing_count} to match existing positions")
+                
+                # Log details of existing positions
+                total_unrealized_pnl = 0
+                for i, pos in enumerate(positions, 1):
+                    position_type = "BUY" if pos.type == 0 else "SELL"
+                    unrealized_pnl = pos.profit
+                    total_unrealized_pnl += unrealized_pnl
+                    
+                    self.logger.info(f"💼 Existing Position #{i}: {position_type}")
+                    self.logger.info(f"   📍 Entry Price: {pos.price_open:.5f}")
+                    self.logger.info(f"   💰 Current P&L: ${unrealized_pnl:.2f}")
+                    self.logger.info(f"   📏 Volume: {pos.volume}")
+                    self.logger.info(f"   🕐 Open Time: {pos.time}")
+                
+                self.logger.info(f"💰 Total Unrealized P&L: ${total_unrealized_pnl:.2f}")
+                
+                # Note: We don't update win/loss stats until positions are actually closed
+                self.logger.info("ℹ️ Win/Loss statistics will be updated when positions are closed")
+                
+            else:
+                self.logger.info(f"📊 No existing positions found for {symbol_to_check}")
+                
+        except Exception as e:
+            self.logger.error(f"Error syncing existing positions: {e}")
+            import traceback
+            self.logger.error(f"Error details: {traceback.format_exc()}")
     
     def stop_live_trading(self):
         """Stop live trading"""
@@ -412,7 +470,7 @@ class ConfigurableForexBot:
                 # Check trading hours
                 if not self.config.is_trading_time():
                     self.logger.info("⏰ Outside trading hours - System waiting")
-                    time.sleep(30)  # Wait 5 minutes
+                    time.sleep(60)  # Wait 1 minute
                     continue
                 
                 self.logger.info("✅ Trading hours active - Proceeding with analysis")
@@ -437,16 +495,22 @@ class ConfigurableForexBot:
                 stats = self.performance_stats
                 total_closed_trades = stats['winning_trades'] + stats['losing_trades']
                 self.logger.info(f"📊 Current Performance:")
-                self.logger.info(f"   � Total Opened Trades: {stats['total_trades']}")
+                self.logger.info(f"   📈 Total Opened Trades: {stats['total_trades']} (includes open positions)")
                 self.logger.info(f"   ✅ Closed Trades: {total_closed_trades}")
-                self.logger.info(f"   🏆 Win Rate: {stats['win_rate']:.1%} (based on closed trades)")
+                if total_closed_trades > 0:
+                    self.logger.info(f"   🏆 Win Rate: {stats['win_rate']:.1%} (based on {total_closed_trades} closed trades)")
+                else:
+                    self.logger.info(f"   🏆 Win Rate: {stats['win_rate']:.1%} (no closed trades yet)")
                 self.logger.info(f"   💰 Total P&L: ${stats['total_profit']:.2f}")
                 self.logger.info(f"   📉 Max Drawdown: ${stats['max_drawdown']:.2f}")
+                if stats['total_trades'] > total_closed_trades:
+                    open_positions = stats['total_trades'] - total_closed_trades
+                    self.logger.info(f"   ⏳ Open Positions: {open_positions} (waiting for closure)")
                 if total_closed_trades == 0 and stats['total_trades'] > 0:
-                    self.logger.info(f"   ⏳ Waiting for trades to close to calculate accurate win rate...")
+                    self.logger.info(f"   ℹ️ Note: Win rate will show accurate results after trades close")
 
-                # Wait for next decision (1 minute for M5)
-                wait_sec = 30
+                # Wait for next decision (1 minutes for M5)
+                wait_sec = 60
                 self.logger.info(f"⏰ Waiting {wait_sec} seconds until next analysis...")
                 time.sleep(wait_sec)
                 
@@ -589,27 +653,104 @@ class ConfigurableForexBot:
     def _check_and_update_closed_trades(self, trading_bot):
         """Check for closed trades and update performance accordingly"""
         try:
-            # This would need to be implemented with actual MT5 trade checking
-            # For now, this is a placeholder for the real implementation
+            self.logger.info("🔍 Checking for open/closed trades...")
             
-            self.logger.info("🔍 Checking for closed trades...")
+            # Import MT5 here to access trade functions
+            try:
+                import MetaTrader5 as mt5  # type: ignore
+            except ImportError:
+                self.logger.warning("⚠️ MetaTrader5 module not available - skipping trade checking")
+                return
             
-            # In a real implementation, you would:
-            # 1. Get list of closed trades since last check
-            # 2. Calculate actual P&L for each closed trade
-            # 3. Update performance stats accordingly
+            # Check if MT5 is initialized
+            try:
+                if not mt5.terminal_info():
+                    self.logger.warning("⚠️ MT5 not connected - skipping trade checking")
+                    return
+            except Exception:
+                self.logger.warning("⚠️ MT5 not available - skipping trade checking")
+                return
             
-            # Example structure for real implementation:
-            # closed_trades = trading_bot.get_closed_trades_since_last_check()
-            # for trade in closed_trades:
-            #     actual_pnl = trade.profit
-            #     self._update_closed_trade_performance(actual_pnl)
+            # 1. Get current open positions
+            open_positions = mt5.positions_get(symbol=trading_bot.symbol)
+            if open_positions is None:
+                open_positions = []
             
-            # For now, just log that we're checking
-            self.logger.info("📊 Closed trade checking not yet implemented - performance tracking is delayed")
+            self.logger.info(f"📊 Current open positions: {len(open_positions)}")
+            
+            # 2. Get recent deals (closed trades) - last 24 hours
+            from datetime import datetime, timedelta
+            end_time = datetime.now()
+            start_time = end_time - timedelta(hours=24)
+            
+            deals = mt5.history_deals_get(start_time, end_time, group="*" + trading_bot.symbol + "*")
+            if deals is None:
+                deals = []
+            
+            # Filter for actual trade deals (not balance operations)
+            trade_deals = [deal for deal in deals if deal.type in [0, 1]]  # 0=buy, 1=sell
+            
+            self.logger.info(f"� Trade deals in last 24h: {len(trade_deals)}")
+            
+            # 3. Update performance based on open positions
+            total_open_trades = len(open_positions)
+            if total_open_trades > 0:
+                # Update total trades if we have open positions but haven't counted them
+                if self.performance_stats['total_trades'] < total_open_trades:
+                    new_trades = total_open_trades - self.performance_stats['total_trades']
+                    self.performance_stats['total_trades'] = total_open_trades
+                    self.logger.info(f"📈 Detected {new_trades} existing open position(s), updated total trades to {total_open_trades}")
+                
+                # Log current positions
+                for pos in open_positions:
+                    current_profit = pos.profit
+                    entry_price = pos.price_open
+                    current_price = pos.price_current
+                    position_type = "BUY" if pos.type == 0 else "SELL"
+                    
+                    self.logger.info(f"💼 Open Position: {position_type} | Entry: {entry_price:.5f} | Current: {current_price:.5f} | P&L: ${current_profit:.2f}")
+            
+            # 4. Check for completed deals and update closed trade performance
+            if trade_deals:
+                # Group deals by position ID to identify complete trades
+                completed_trades = {}
+                for deal in trade_deals:
+                    pos_id = deal.position_id
+                    if pos_id not in completed_trades:
+                        completed_trades[pos_id] = []
+                    completed_trades[pos_id].append(deal)
+                
+                # Identify closed positions (positions with both entry and exit deals)
+                for pos_id, deals_list in completed_trades.items():
+                    if len(deals_list) >= 2:  # Has both entry and exit
+                        # Calculate P&L from the deals
+                        total_profit = sum(deal.profit for deal in deals_list)
+                        
+                        # Check if this trade was already processed
+                        # (Simple check - in production you'd want a more robust tracking system)
+                        last_deal_time = max(deal.time for deal in deals_list)
+                        if hasattr(self, '_last_processed_deal_time'):
+                            if last_deal_time <= self._last_processed_deal_time:
+                                continue  # Already processed
+                        
+                        self.logger.info(f"🔄 Found completed trade (Position ID: {pos_id}) with P&L: ${total_profit:.2f}")
+                        self._update_closed_trade_performance(total_profit)
+                        
+                        # Update last processed time
+                        if not hasattr(self, '_last_processed_deal_time') or last_deal_time > self._last_processed_deal_time:
+                            self._last_processed_deal_time = last_deal_time
+            
+            # 5. Summary log
+            total_closed = self.performance_stats['winning_trades'] + self.performance_stats['losing_trades']
+            self.logger.info(f"📊 Trade Summary:")
+            self.logger.info(f"   📈 Open Positions: {total_open_trades}")
+            self.logger.info(f"   ✅ Closed Trades: {total_closed}")
+            self.logger.info(f"   🏆 Current Win Rate: {self.performance_stats['win_rate']:.1%}")
             
         except Exception as e:
-            self.logger.error(f"Error checking closed trades: {e}")
+            self.logger.error(f"Error checking trades: {e}")
+            import traceback
+            self.logger.error(f"Error details: {traceback.format_exc()}")
     
     def _check_emergency_stop(self):
         """Check emergency stop conditions"""
