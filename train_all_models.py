@@ -425,8 +425,8 @@ class AdvancedForexEnv(gym.Env):
     Advanced Forex Environment with comprehensive metrics
     """
     
-    def __init__(self, data, symbol='EURUSD', initial_balance=10000, lookback_window=50, 
-                 transaction_cost=0.0, max_position_size=5.0,  # ลด transaction cost เป็น 0 เพื่อการเรียนรู้
+    def __init__(self, data, symbol='GBPUSD', initial_balance=10000, lookback_window=50, 
+                 transaction_cost=0.0001, max_position_size=5.0,  # 🔧 FIXED: ตั้งค่า default transaction cost ที่สมจริง (0.01%)
                  stop_loss_pct=0.010, take_profit_pct=0.015):  # ลด SL/TP มากขึ้นให้เหมาะกับ FOREX: 1%, 1.5% (Risk:Reward = 1:1.5)
         super().__init__()
         
@@ -606,6 +606,15 @@ class AdvancedForexEnv(gym.Env):
             
         current_price = self.data.iloc[self.current_step]['close']
         reward = 0
+        self._last_action_reward = 0 # Reset last action reward
+
+        # 🎯 PROFIT SHAPING REWARD (NEW!)
+        # Encourage holding profitable positions and cutting losses
+        if self.position != 0:
+            unrealized_return = (current_price - self.entry_price) / self.entry_price * self.position
+            # Give a small reward proportional to unrealized profit
+            # The factor 100 is a hyperparameter to scale the reward (Increased from 20)
+            reward += unrealized_return * 100
         
         # Convert continuous action to discrete action
         # Action is Box(-1, 1) - convert to discrete actions
@@ -858,13 +867,13 @@ class AdvancedForexEnv(gym.Env):
                 
                 # Much more generous rewards to encourage trading
                 if profit_pct >= 0.015:  # 1.5%+ profit (Excellent!)
-                    self._last_action_reward = 30 if tp_triggered else 25
+                    self._last_action_reward = 60 if tp_triggered else 50 # Increased from 30/25
                 elif profit_pct >= 0.01:  # 1.0%+ profit (Very Good)
-                    self._last_action_reward = 20 if tp_triggered else 15
+                    self._last_action_reward = 40 if tp_triggered else 30 # Increased from 20/15
                 elif profit_pct >= 0.005:  # 0.5%+ profit (Good)
-                    self._last_action_reward = 12
+                    self._last_action_reward = 25 # Increased from 12
                 elif profit_pct > 0:  # ANY profit (Encourage even small profits)
-                    self._last_action_reward = 5
+                    self._last_action_reward = 10 # Increased from 5
                     
             else:
                 self.total_loss += abs(profit)
@@ -876,15 +885,15 @@ class AdvancedForexEnv(gym.Env):
                 
                 # Very gentle penalties to encourage trading attempts
                 if sl_triggered and loss_pct <= self.stop_loss_pct * 1.1:  # SL hit within 10% tolerance - GOOD Risk Management!
-                    self._last_action_reward = 2  # REWARD for using SL properly!
+                    self._last_action_reward = 5  # REWARD for using SL properly! (Increased from 2)
                 elif loss_pct <= 0.005:  # <0.5% loss - not bad
                     self._last_action_reward = 0  # Neutral
                 elif loss_pct <= 0.01:  # <1% loss - acceptable
-                    self._last_action_reward = -2  # Small penalty
+                    self._last_action_reward = -4  # Small penalty (Increased from -2)
                 elif loss_pct <= 0.015:  # <1.5% loss - okay for learning
-                    self._last_action_reward = -4  # Mild penalty
+                    self._last_action_reward = -8  # Mild penalty (Increased from -4)
                 else:  # >1.5% loss
-                    self._last_action_reward = -8  # Moderate penalty
+                    self._last_action_reward = -15  # Moderate penalty (Increased from -8)
             
             self.total_trades += 1
             # print(f"🎯 TRADE COMPLETED! Total trades now: {self.total_trades}")
@@ -924,7 +933,7 @@ class AdvancedForexEnv(gym.Env):
         
         # 1. ULTRA MASSIVE immediate reward weight (encourage ANY trading action)
         if hasattr(self, '_last_action_reward'):
-            reward += self._last_action_reward * 2.0  # เพิ่มจาก 0.4 เป็น 2.0 (5เท่า!)
+            reward += self._last_action_reward * 3.0  # เพิ่มจาก 2.0 เป็น 3.0 (เพิ่มขึ้นอีก 50%!)
         
         # 2. � ENHANCED TRADING ACTIVITY INCENTIVE (Stricter Penalties)
         if self.current_step > self.lookback_window + 50:  # After warm-up
@@ -986,31 +995,31 @@ class AdvancedForexEnv(gym.Env):
                 
                 # Reward excellent risk-reward management
                 if risk_reward_ratio >= 3.0:  # 1:3 or better risk-reward
-                    reward += 15  # Massive bonus for excellent R:R
+                    reward += 30  # Massive bonus for excellent R:R (Increased from 15)
                 elif risk_reward_ratio >= 2.0:  # 1:2 risk-reward
-                    reward += 10  # Strong bonus
+                    reward += 20  # Strong bonus (Increased from 10)
                 elif risk_reward_ratio >= 1.5:  # 1:1.5 risk-reward
-                    reward += 6   # Good bonus
+                    reward += 12   # Good bonus (Increased from 6)
                 elif risk_reward_ratio >= 1.0:  # Break-even R:R
-                    reward += 2   # Small bonus
+                    reward += 4   # Small bonus (Increased from 2)
                 else:  # Poor R:R
-                    reward -= 5   # Penalty for poor risk management
+                    reward -= 10   # Penalty for poor risk management (Increased from -5)
             
             # Traditional profit factor (reduced weight)
             if current_profit_factor > 2.0:
-                reward += 4   # Reduced from 8
+                reward += 8   # Increased from 4
             elif current_profit_factor > 1.5:
-                reward += 3   # Reduced from 6
+                reward += 6   # Increased from 3
             elif current_profit_factor > 1.2:
-                reward += 2   # Reduced from 4
+                reward += 4   # Increased from 2
             elif current_profit_factor > 1.0:
-                reward += 1   # Reduced from 2
+                reward += 2   # Increased from 1
             elif current_profit_factor > 0.8:
                 reward += 0   # Neutral zone
             elif current_profit_factor > 0.6:
-                reward -= 1   # Reduced penalty
+                reward -= 2   # Increased penalty from -1
             else:  # < 0.6
-                reward -= 3   # Reduced penalty
+                reward -= 6   # Increased penalty from -3
         
         # 6. ENHANCED Win Rate (balanced)
         if self.total_trades > 5:
@@ -1094,29 +1103,29 @@ class AdvancedForexEnv(gym.Env):
             else:  # 5-9 trades
                 final_reward += 8   # รางวัลสำหรับการเทรดเล็กน้อย
             
-            # 2. BALANCED Profit Factor (reduced importance)
+            # 2. BALANCED Profit Factor (increased importance)
             if final_profit_factor > 1.8:
-                final_reward += 25  # Reduced from 40
+                final_reward += 50  # Increased from 25
             elif final_profit_factor > 1.5:
-                final_reward += 18  # Reduced from 25
+                final_reward += 35  # Increased from 18
             elif final_profit_factor > 1.2:
-                final_reward += 10  # Reduced from 12
+                final_reward += 20  # Increased from 10
             elif final_profit_factor > 1.0:
-                final_reward += 6   # Reduced from 8
+                final_reward += 12   # Increased from 6
             elif final_profit_factor > 0.8:
                 final_reward += 0   # Neutral
             elif final_profit_factor > 0.6:
-                final_reward -= 3   # Reduced penalty
+                final_reward -= 6   # Increased penalty from -3
             else:  # < 0.6
-                final_reward -= 8   # Reduced from -15
+                final_reward -= 15   # Increased penalty from -8
             
             # 3. SCALED Total return (moderate weight)
-            final_reward += total_return * 10  # Reduced from 15
+            final_reward += total_return * 20  # Increased from 10
             
             # 4. RELAXED Risk-adjusted return
             if self.max_drawdown > 0:
                 risk_adjusted_return = total_return / max(self.max_drawdown, 0.01)
-                final_reward += risk_adjusted_return * 5  # Reduced from 8
+                final_reward += risk_adjusted_return * 10  # Increased from 5
             
             # 5. 📊 TRADING QUALITY SCORE (Enhanced)
             if self.total_trades >= 5:  # Lower threshold
@@ -1266,7 +1275,7 @@ class AdaptiveTrainer:
     Adaptive trainer that learns from previous attempts with Async Multi-Model Training
     """
     
-    def __init__(self, symbol='EURUSD'):
+    def __init__(self, symbol='GBPUSD'):
         self.symbol = symbol
         self.training_history = []
         self.best_model = None
@@ -1548,8 +1557,54 @@ class AdaptiveTrainer:
         sorted_algos = sorted(algo_scores.items(), key=lambda x: x[1], reverse=True)
         return [algo for algo, score in sorted_algos] + ['SAC', 'A2C','PPO']  # Always include SAC and A2C
 
-    def _save_model_by_tier(self, model, tier, score, attempt, is_best=True):
-        """Save model in organized folder structure by tier"""
+    def _save_model_by_tier(self, model, tier, score, attempt, is_best=True, env=None):
+        """Save model in organized folder structure by tier with SEVERE BIAS verification"""
+        
+        # 🚨 SEVERE BIAS VERIFICATION BEFORE SAVING
+        if env is not None:
+            print("🔍 PERFORMING SEVERE BIAS VERIFICATION BEFORE SAVING...")
+            bias_result = self.detect_severe_bias(env, model, num_test_episodes=3)
+            
+            if bias_result['has_severe_bias']:
+                print("🚨 SEVERE BIAS DETECTED - MODEL SAVE BLOCKED!")
+                print(f"   Bias count: {bias_result['severe_bias_count']}/4")
+                print(f"   Hold percentage: {bias_result['action_percentages']['hold']:.1f}%")
+                print(f"   Trading frequency: {bias_result['trading_frequency']*100:.2f}%")
+                print(f"   Total trades: {bias_result['total_trades']}")
+                
+                # Create blocked save record
+                blocked_save_record = {
+                    'timestamp': datetime.now().strftime('%Y%m%d_%H%M%S'),
+                    'tier': tier,
+                    'score': score,
+                    'attempt': attempt,
+                    'blocked_reason': 'severe_bias',
+                    'bias_details': bias_result,
+                    'save_blocked': True
+                }
+                
+                # Track blocked saves
+                if not hasattr(self, 'blocked_saves'):
+                    self.blocked_saves = []
+                self.blocked_saves.append(blocked_save_record)
+                
+                # Save blocked save info to file
+                blocked_dir = 'models/blocked_saves'
+                os.makedirs(blocked_dir, exist_ok=True)
+                blocked_file = f"{blocked_dir}/blocked_save_{blocked_save_record['timestamp']}.json"
+                with open(blocked_file, 'w') as f:
+                    json.dump(blocked_save_record, f, indent=2)
+                
+                print(f"🚫 Model save BLOCKED due to severe bias. Details saved to: {blocked_file}")
+                return None
+            else:
+                print("✅ BIAS VERIFICATION PASSED - Proceeding with model save")
+                print(f"   Hold percentage: {bias_result['action_percentages']['hold']:.1f}%")
+                print(f"   Trading frequency: {bias_result['trading_frequency']*100:.2f}%")
+                print(f"   Total trades: {bias_result['total_trades']}")
+        else:
+            print("⚠️ No environment provided - Skipping bias verification")
+        
         # Create tier-specific directories
         tier_dirs = {
             'bronze': 'models/bronze',
@@ -1580,9 +1635,9 @@ class AdaptiveTrainer:
             print(f"✅ Model saved successfully to: {model_path}")
         except Exception as e:
             print(f"❌ Error saving model: {e}")
-            return
+            return None
         
-        # Create model info file
+        # Create model info file with bias verification results
         info_file = model_path.replace('.zip', '_info.json')
         model_info = {
             'symbol': self.symbol,
@@ -1591,8 +1646,14 @@ class AdaptiveTrainer:
             'attempt': attempt,
             'timestamp': timestamp,
             'is_best': is_best,
-            'model_path': model_path
+            'model_path': model_path,
+            'bias_verified': env is not None,
+            'bias_verification_passed': True  # If we reach here, it passed
         }
+        
+        # Add bias verification details if available
+        if env is not None:
+            model_info['bias_details'] = bias_result
         
         with open(info_file, 'w') as f:
             json.dump(model_info, f, indent=2)
@@ -1605,7 +1666,8 @@ class AdaptiveTrainer:
                 'score': score,
                 'attempt': attempt,
                 'model_path': model_path,
-                'save_type': 'early_success' if 'early' in str(attempt) else 'active_trader'
+                'save_type': 'early_success' if 'early' in str(attempt) else 'active_trader',
+                'bias_verified': env is not None
             }
             self.early_saves.append(early_save_record)
         
@@ -1687,6 +1749,132 @@ class AdaptiveTrainer:
         
         return max(-50, min(final_score, 100))  # Allow negative scores for non-traders
     
+    def detect_severe_bias(self, env, model, num_test_episodes=3):
+        """
+        🚨 SEVERE BIAS DETECTOR: ตรวจสอบ model ที่มี bias รุนแรง
+        ป้องกันการ save model ที่มีพฤติกรรม hold/inactive อย่างรุนแรง
+        """
+        print("🔍 SEVERE BIAS DETECTION: Testing model behavior...")
+        
+        bias_flags = {
+            'severe_hold_bias': False,
+            'zero_trading_bias': False,
+            'action_concentration_bias': False,
+            'poor_exploration_bias': False
+        }
+        
+        total_actions = {'hold': 0, 'buy': 0, 'sell': 0, 'close': 0}
+        total_trades = 0
+        total_steps = 0
+        
+        for episode in range(num_test_episodes):
+            obs, _ = env.reset()
+            done = False
+            episode_actions = {'hold': 0, 'buy': 0, 'sell': 0, 'close': 0}
+            episode_trades = 0
+            episode_steps = 0
+            
+            while not done and episode_steps < 500:  # Limit steps per episode
+                action, _ = model.predict(obs, deterministic=True)
+                obs, reward, done, truncated, info = env.step(action)
+                
+                # Convert action to discrete for tracking
+                if isinstance(action, (list, np.ndarray)):
+                    action_value = float(action[0])
+                else:
+                    action_value = float(action)
+                
+                # Same conversion logic as in environment
+                if action_value < -0.3:
+                    discrete_action = 2  # Sell
+                    episode_actions['sell'] += 1
+                elif action_value < 0.3:
+                    discrete_action = 0  # Hold
+                    episode_actions['hold'] += 1
+                elif action_value < 0.7:
+                    discrete_action = 1  # Buy
+                    episode_actions['buy'] += 1
+                else:
+                    discrete_action = 3  # Close
+                    episode_actions['close'] += 1
+                
+                episode_steps += 1
+                
+                if done or truncated:
+                    break
+            
+            # Count trades from environment
+            episode_trades = info.get('total_trades', 0)
+            
+            # Accumulate statistics
+            for action_type in total_actions:
+                total_actions[action_type] += episode_actions[action_type]
+            total_trades += episode_trades
+            total_steps += episode_steps
+            
+            print(f"   Episode {episode+1}: {episode_steps} steps, {episode_trades} trades")
+            print(f"   Actions: Hold={episode_actions['hold']}, Buy={episode_actions['buy']}, Sell={episode_actions['sell']}, Close={episode_actions['close']}")
+        
+        # Calculate action percentages
+        if total_steps > 0:
+            action_percentages = {action: (count / total_steps) * 100 
+                                for action, count in total_actions.items()}
+        else:
+            action_percentages = {action: 0 for action in total_actions}
+        
+        # 🚨 BIAS DETECTION CRITERIA
+        # 1. Severe Hold Bias: >85% hold actions
+        if action_percentages['hold'] > 85.0:
+            bias_flags['severe_hold_bias'] = True
+            print(f"🚨 SEVERE HOLD BIAS DETECTED: {action_percentages['hold']:.1f}% hold actions")
+        
+        # 2. Zero Trading Bias: No trades at all
+        if total_trades == 0:
+            bias_flags['zero_trading_bias'] = True
+            print(f"🚨 ZERO TRADING BIAS DETECTED: 0 trades in {total_steps} steps")
+        
+        # 3. Action Concentration Bias: >90% of one type of action
+        max_action_pct = max(action_percentages.values())
+        if max_action_pct > 90.0:
+            bias_flags['action_concentration_bias'] = True
+            dominant_action = max(action_percentages, key=action_percentages.get)
+            print(f"🚨 ACTION CONCENTRATION BIAS DETECTED: {max_action_pct:.1f}% {dominant_action} actions")
+        
+        # 4. Poor Exploration Bias: Trading frequency < 0.5%
+        trading_frequency = total_trades / max(total_steps, 1)
+        if trading_frequency < 0.005:  # Less than 0.5% trading frequency
+            bias_flags['poor_exploration_bias'] = True
+            print(f"🚨 POOR EXPLORATION BIAS DETECTED: Trading frequency {trading_frequency*100:.2f}%")
+        
+        # Calculate overall bias score
+        severe_bias_count = sum(bias_flags.values())
+        has_severe_bias = severe_bias_count >= 2  # 2 or more severe biases
+        
+        print(f"\n📊 BIAS DETECTION SUMMARY:")
+        print(f"   Total steps: {total_steps}, Total trades: {total_trades}")
+        print(f"   Action distribution: Hold={action_percentages['hold']:.1f}%, Buy={action_percentages['buy']:.1f}%, Sell={action_percentages['sell']:.1f}%, Close={action_percentages['close']:.1f}%")
+        print(f"   Trading frequency: {trading_frequency*100:.2f}%")
+        print(f"   Severe bias flags: {severe_bias_count}/4")
+        
+        for bias_type, detected in bias_flags.items():
+            status = "🚨 DETECTED" if detected else "✅ OK"
+            print(f"   {bias_type}: {status}")
+        
+        if has_severe_bias:
+            print(f"🚨 VERDICT: SEVERE BIAS DETECTED - Model should NOT be saved!")
+        else:
+            print(f"✅ VERDICT: Model behavior is acceptable for saving")
+        
+        return {
+            'has_severe_bias': has_severe_bias,
+            'bias_flags': bias_flags,
+            'action_percentages': action_percentages,
+            'total_trades': total_trades,
+            'total_steps': total_steps,
+            'trading_frequency': trading_frequency,
+            'severe_bias_count': severe_bias_count
+        }
+
     def get_tier(self, metrics):
         """🎯 ACTIVE TRADING Enhanced Tier System"""
         win_rate = metrics.get('win_rate', 0)
@@ -2213,7 +2401,8 @@ class AdaptiveTrainer:
                         super_early_path = self._save_model_by_tier(
                             model, 'active_trader', val_score, 
                             f"active_{current_timesteps}", 
-                            is_best=False
+                            is_best=False,
+                            env=val_env
                         )
                         
                         print(f"   ✅ Active trader model saved: {super_early_path}")
@@ -2230,7 +2419,8 @@ class AdaptiveTrainer:
                         early_model_path = self._save_model_by_tier(
                             model, val_tier, val_score, 
                             f"early_{current_timesteps}", 
-                            is_best=False
+                            is_best=False,
+                            env=val_env
                         )
                         
                         print(f"   ✅ Early success model saved: {early_model_path}")
@@ -2439,7 +2629,8 @@ class AdaptiveTrainer:
                             super_early_path = self._save_model_by_tier(
                                 model, 'active_trader', current_score, 
                                 f"{model_id}_active_{current_timesteps}", 
-                                is_best=False
+                                is_best=False,
+                                env=env
                             )
                             
                             print(f"   ✅ Model {model_id} active trader saved: {super_early_path}")
@@ -2456,7 +2647,8 @@ class AdaptiveTrainer:
                             early_model_path = self._save_model_by_tier(
                                 model, current_tier, current_score, 
                                 f"{model_id}_early_{current_timesteps}", 
-                                is_best=False
+                                is_best=False,
+                                env=env
                             )
                             
                             print(f"   ✅ Model {model_id} early success saved: {early_model_path}")
@@ -2507,7 +2699,7 @@ class AdaptiveTrainer:
             if tier in ['bronze', 'silver', 'gold', 'diamond']:
                 try:
                     print(f"💾 Saving {tier.upper()} tier model...")
-                    model_path = self._save_model_by_tier(model, tier, score, model_id, is_best=False)
+                    model_path = self._save_model_by_tier(model, tier, score, model_id, is_best=False, env=env)
                     print(f"✅ Model saved successfully: {model_path}")
                 except Exception as save_error:
                     print(f"❌ Error saving model: {save_error}")
@@ -2872,12 +3064,17 @@ class AdaptiveTrainer:
                     self.best_score = score
                     best_attempt = attempt_record
                     
+                    # Create environment for bias detection
+                    temp_env = AdvancedForexEnv(data, symbol=self.symbol)
+                    
                     # Save best model in organized folder structure
-                    self._save_model_by_tier(model, tier, score, attempt)
+                    self._save_model_by_tier(model, tier, score, attempt, env=temp_env)
                 
                 # Also save any model that reaches a tier (not just best)
                 if tier in ['bronze', 'silver', 'gold', 'diamond']:
-                    self._save_model_by_tier(model, tier, score, attempt, is_best=False)
+                    # Create environment for bias detection
+                    temp_env = AdvancedForexEnv(data, symbol=self.symbol)
+                    self._save_model_by_tier(model, tier, score, attempt, is_best=False, env=temp_env)
                 
                 # Check if target reached
                 if tier == target_tier or (target_tier == 'gold' and tier == 'diamond'):
@@ -2940,7 +3137,7 @@ def main():
     print("🔧 Initializing GPU configuration...")
     initialize_gpu_setup()
     
-    symbol = 'EURUSD'
+    symbol = 'GBPUSD'
     
     # Load data
     data_file = f"train_data/{symbol}/{symbol}_M5_real.csv"

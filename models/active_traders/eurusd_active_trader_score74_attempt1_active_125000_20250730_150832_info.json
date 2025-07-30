@@ -1,0 +1,9 @@
+{
+  "symbol": "EURUSD",
+  "tier": "active_trader",
+  "score": 74.25251567135149,
+  "attempt": "1_active_125000",
+  "timestamp": "20250730_150832",
+  "is_best": false,
+  "model_path": "models/active_traders/eurusd_active_trader_score74_attempt1_active_125000_20250730_150832.zip"
+}

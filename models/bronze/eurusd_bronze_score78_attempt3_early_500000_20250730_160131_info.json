@@ -1,0 +1,9 @@
+{
+  "symbol": "EURUSD",
+  "tier": "bronze",
+  "score": 77.63527187934739,
+  "attempt": "3_early_500000",
+  "timestamp": "20250730_160131",
+  "is_best": false,
+  "model_path": "models/bronze/eurusd_bronze_score78_attempt3_early_500000_20250730_160131.zip"
+}
