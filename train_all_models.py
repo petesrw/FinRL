@@ -2980,7 +2980,7 @@ def main():
         print(f"   🎯 Target GPU utilization: 80-95%")
         
         # Optimal batch size for RTX 5060 Ti based on bottleneck analysis
-        batch_size = min(trainer.max_concurrent_models, 4)  # FIXED: ใช้ 2 models สำหรับ memory balance
+        batch_size = min(trainer.max_concurrent_models, 4)  # FIXED: ใช้ 4 models สำหรับ memory balance
         
         print(f"   🔧 CORRECTED batch size: {batch_size} (Memory conflict fix)")
         print(f"   🚀 Training {batch_size} models simultaneously")
@@ -2996,7 +2996,7 @@ def main():
     else:
         print(f"   💻 CPU-only training")
         print(f"\n📈 Starting CPU Training (Sequential mode only)...")
-        best_result = trainer.adaptive_train(df, max_attempts=50, target_tier='bronze')
+        best_result = trainer.adaptive_train(df, max_attempts=50, target_tier='gold')
     
     # Results summary
     if best_result:

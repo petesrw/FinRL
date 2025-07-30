@@ -32,26 +32,34 @@ class ForexLauncher:
         import glob
         import json
         
-        # Look for models in order of preference: diamond > gold > silver > bronze > simple
-        search_paths = [
-            f"models/diamond/{symbol.lower()}_diamond_*.zip",
-            f"models/diamond/{symbol.lower()}_best_diamond_*.zip",
-            f"models/gold/{symbol.lower()}_gold_*.zip", 
-            f"models/gold/{symbol.lower()}_best_gold_*.zip",
-            f"models/silver/{symbol.lower()}_silver_*.zip",
-            f"models/silver/{symbol.lower()}_best_silver_*.zip",
-            f"models/bronze/{symbol.lower()}_bronze_*.zip",
-            f"models/bronze/{symbol.lower()}_best_bronze_*.zip",
-            f"models/successful/{symbol.lower()}_*.zip",
+        # Look for models with more flexible patterns
+        search_patterns = [
+            f"models/**/{symbol.lower()}_diamond_*.zip",
+            f"models/**/{symbol.lower()}_*diamond*.zip",
+            f"models/**/{symbol.lower()}_gold_*.zip",
+            f"models/**/{symbol.lower()}_*gold*.zip", 
+            f"models/**/{symbol.lower()}_silver_*.zip",
+            f"models/**/{symbol.lower()}_*silver*.zip",
+            f"models/**/{symbol.lower()}_bronze_*.zip",
+            f"models/**/{symbol.lower()}_*bronze*.zip",
+            f"models/**/{symbol.lower()}_successful_*.zip",
+            f"models/**/{symbol.lower()}_*successful*.zip",
+            f"models/**/{symbol.lower()}_active_trader_*.zip",  # New pattern for active trader models
+            f"models/**/{symbol.lower()}_best_*.zip",
             f"simple_forex_model_{symbol}_*.zip",  # Legacy models
         ]
         
         # Collect all models with their scores
         all_models = []
+        found_files = set()  # To avoid duplicates
         
-        for pattern in search_paths:
-            files = glob.glob(pattern)
+        for pattern in search_patterns:
+            files = glob.glob(pattern, recursive=True)
             for file_path in files:
+                if file_path in found_files:
+                    continue
+                found_files.add(file_path)
+                
                 try:
                     # Extract creation time for sorting
                     import os
@@ -64,22 +72,34 @@ class ForexLauncher:
                     else:
                         base_score = 50  # Default score for simple models
                     
-                    # Get tier from path and calculate final score
-                    if "diamond" in file_path:
+                    # Get tier from path and filename, calculate final score
+                    file_lower = file_path.lower()
+                    if "diamond" in file_lower:
                         tier = "💎 DIAMOND"
                         final_score = base_score + 1000  # Bonus for diamond tier
-                    elif "gold" in file_path:
+                    elif "gold" in file_lower:
                         tier = "🥇 GOLD"
                         final_score = base_score + 100
-                    elif "silver" in file_path:
+                    elif "silver" in file_lower:
                         tier = "🥈 SILVER"
                         final_score = base_score + 10
-                    elif "bronze" in file_path:
+                    elif "bronze" in file_lower:
                         tier = "🥉 BRONZE"
                         final_score = base_score + 1
-                    elif "successful" in file_path:
+                    elif "successful" in file_lower:
                         tier = "✅ SUCCESS"
                         final_score = base_score
+                    elif "active_trader" in file_lower:
+                        # Classify active trader models based on score
+                        if base_score >= 70:
+                            tier = "🥇 GOLD"
+                            final_score = base_score + 100
+                        elif base_score >= 65:
+                            tier = "🥈 SILVER"
+                            final_score = base_score + 10
+                        else:
+                            tier = "🥉 BRONZE"
+                            final_score = base_score + 1
                     else:
                         tier = "📦 SIMPLE"
                         final_score = base_score
@@ -536,8 +556,8 @@ class ForexLauncher:
             # Import and run the main system with specific model
             from forex_system_with_config import ConfigurableForexBot
             
-            print(f"🤖 Creating trading bot with DIAMOND model...")
-            bot = ConfigurableForexBot(symbol=symbol)
+            print(f"🤖 Creating trading bot with selected model...")
+            bot = ConfigurableForexBot(symbol=symbol, model_path=model_file)
             
             # Load the specific model we selected
             if bot.load_model(model_file):

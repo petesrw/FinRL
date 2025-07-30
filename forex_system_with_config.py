@@ -40,10 +40,11 @@ class ConfigurableForexBot:
     Main Forex Trading Bot with full .env configuration support
     """
     
-    def __init__(self, symbol: str = None):
+    def __init__(self, symbol: str = None, model_path: str = None):
         # Load configuration
         self.config = get_config()
         self.symbol = symbol or self.config.trading.default_symbol
+        self.user_selected_model_path = model_path  # Store user-selected model path
         
         # Initialize automatic indicator manager
         self.indicator_manager = self._initialize_indicator_manager()
@@ -445,9 +446,9 @@ class ConfigurableForexBot:
                     self.logger.info(f"   ⏳ Waiting for trades to close to calculate accurate win rate...")
 
                 # Wait for next decision (1 minute for M5)
-                wait_minutes = 1
-                self.logger.info(f"⏰ Waiting {wait_minutes} minutes until next analysis...")
-                time.sleep(wait_minutes * 60)
+                wait_sec = 30
+                self.logger.info(f"⏰ Waiting {wait_sec} seconds until next analysis...")
+                time.sleep(wait_sec)
                 
             except Exception as e:
                 self.logger.error(f"❌ Error in trading loop: {e}")
@@ -502,8 +503,14 @@ class ConfigurableForexBot:
         try:
             from mt5_trading_bot import TradingBot
             
-            # Initialize trading bot with best model
-            model_path = self._find_best_model()
+            # Use user-selected model or find best model
+            if self.user_selected_model_path:
+                model_path = self.user_selected_model_path
+                self.logger.info(f"🤖 Using user-selected model: {model_path}")
+            else:
+                model_path = self._find_best_model()
+                self.logger.info(f"🤖 Auto-selected best model: {model_path}")
+            
             if model_path:
                 self.logger.info(f"🤖 Initializing trading bot with model: {model_path}")
                 self.logger.info(f"📏 Using reduced lot size (100x smaller): {self.config.trading.risk_per_trade/100:.3%}")
