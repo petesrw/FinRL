@@ -212,12 +212,13 @@ class ForexLauncher:
         print("1. 🤖 Train Model")
         print("2. 🧪 Test Model")
         print("3. 📊 Check Model Status")
-        print("4. 🚀 Start Live Trading")
-        print("5. 🔧 System Check")
-        print("6. ❌ Exit")
+        print("4. � Validate Models (Bias Check)")
+        print("5. �🚀 Start Live Trading")
+        print("6. 🔧 System Check")
+        print("7. ❌ Exit")
         print("-" * 60)
         
-        choice = input("👉 Select option (1-6): ").strip()
+        choice = input("👉 Select option (1-7): ").strip()
         return choice
     
     def select_symbol(self):

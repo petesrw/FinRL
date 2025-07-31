@@ -353,6 +353,8 @@ class SafetyConfig:
     enable_emergency_stop: bool
     max_consecutive_losses: int
     emergency_stop_loss_amount: float
+    enable_sl_cooldown: bool
+    sl_cooldown_minutes: int
     avoid_news_trading: bool
     news_buffer_minutes: int
     max_slippage_pips: int
@@ -364,6 +366,8 @@ class SafetyConfig:
             enable_emergency_stop=os.getenv('ENABLE_EMERGENCY_STOP', 'true').lower() == 'true',
             max_consecutive_losses=int(os.getenv('MAX_CONSECUTIVE_LOSSES', 5)),
             emergency_stop_loss_amount=float(os.getenv('EMERGENCY_STOP_LOSS_AMOUNT', 1000.0)),
+            enable_sl_cooldown=os.getenv('ENABLE_SL_COOLDOWN', 'true').lower() == 'true',
+            sl_cooldown_minutes=int(os.getenv('SL_COOLDOWN_MINUTES', 30)),
             avoid_news_trading=os.getenv('AVOID_NEWS_TRADING', 'true').lower() == 'true',
             news_buffer_minutes=int(os.getenv('NEWS_BUFFER_MINUTES', 30)),
             max_slippage_pips=int(os.getenv('MAX_SLIPPAGE_PIPS', 3)),

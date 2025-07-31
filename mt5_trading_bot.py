@@ -460,9 +460,21 @@ class TradingBot:
         self.trailing_stop_distance_pips = 50  # Distance in pips for trailing stop
         self.position_tracking = {}  # Track position states for advanced features
         
+        # 🛑 STOP LOSS COOLDOWN SYSTEM
+        # Load configuration for SL cooldown
+        from config import get_config
+        config = get_config()
+        
+        self.enable_sl_cooldown = config.safety.enable_sl_cooldown  # From configuration
+        self.sl_cooldown_minutes = config.safety.sl_cooldown_minutes  # From configuration
+        self.sl_cooldown_end_time = None  # When cooldown expires
+        self.recent_closed_positions = {}  # Track recently closed positions
+        self.sl_hit_count = 0  # Count of SL hits today
+        
         print(f"🎯 ADVANCED RISK MANAGEMENT ENABLED")
         print(f"   🏃 Trailing Stop: {'ON' if self.enable_trailing_stop else 'OFF'} ({self.trailing_stop_distance_pips} pips)")
         print(f"   💰 Break-even Stop: {'ON' if self.enable_breakeven_stop else 'OFF'} (${self.breakeven_profit_threshold}+ profit)")
+        print(f"   🛑 SL Cooldown: {'ON' if self.enable_sl_cooldown else 'OFF'} ({self.sl_cooldown_minutes} min pause)")
     
     def enable_emergency_mode(self, enabled=True):
         """Enable emergency trading mode when model fails"""
@@ -1141,6 +1153,15 @@ class TradingBot:
         """Execute trade based on model prediction - HANDLES MULTIPLE POSITIONS"""
         print(f"   🎯 EXECUTING TRADE (Multi-Position Logic): Action={action}, Confidence={confidence:.3f}")
         
+        # 🛑 CHECK STOP LOSS COOLDOWN FIRST
+        in_cooldown, remaining_minutes = self.is_in_cooldown()
+        if in_cooldown:
+            print(f"   🛑 TRADING PAUSED - Stop Loss Cooldown Active")
+            print(f"   ⏰ Remaining: {remaining_minutes:.1f} minutes")
+            print(f"   📊 SL hits today: {self.sl_hit_count}")
+            print(f"   💡 Reason: Protecting from consecutive losses")
+            return None  # Skip trading during cooldown
+        
         positions = self.mt5.get_positions(self.symbol)
         num_positions = len(positions) if positions else 0
         action_names = {0: 'HOLD', 1: 'BUY', 2: 'SELL', 3: 'CLOSE'}
@@ -1296,6 +1317,14 @@ class TradingBot:
             print(f"   🤖 Prediction: {action_names[action]} (confidence: {confidence:.2f}, raw: {raw_action:.3f})")
             print(f"   📊 Net Position State: {current_position} | Open Positions: {len(positions) if positions else 0}")
             
+            # 🛑 CHECK FOR STOP LOSS HITS AND MANAGE COOLDOWN
+            self.check_for_sl_hits()
+            
+            # Show cooldown status if active
+            cooldown_status = self.get_cooldown_status()
+            if cooldown_status['active']:
+                print(f"   🛑 COOLDOWN: {cooldown_status['remaining_minutes']:.1f} min remaining (SL hits: {cooldown_status['sl_hits_today']})")
+            
             # Show detailed positions summary for multi-position trading
             if len(positions) > 0:
                 summary = self.get_positions_summary()
@@ -1410,6 +1439,14 @@ class TradingBot:
                 print(f"\n🕐 {current_time} | {self.symbol} @ {current_price:.5f}")
                 print(f"   🤖 Prediction: {action_names[action]} (confidence: {confidence:.2f}, raw: {raw_action:.3f})")
                 print(f"   📊 Position: {current_position} | Positions: {len(positions) if positions else 0}")
+                
+                # 🛑 CHECK FOR STOP LOSS HITS AND MANAGE COOLDOWN
+                self.check_for_sl_hits()
+                
+                # Show cooldown status if active
+                cooldown_status = self.get_cooldown_status()
+                if cooldown_status['active']:
+                    print(f"   🛑 COOLDOWN: {cooldown_status['remaining_minutes']:.1f} min remaining (SL hits: {cooldown_status['sl_hits_today']})")
                 
                 # 🎯 MANAGE ADVANCED RISK FEATURES (trailing stop & break-even)
                 if positions:  # Only manage risk if we have positions
@@ -1675,6 +1712,91 @@ class TradingBot:
         for ticket, data in self.position_tracking.items():
             be_status = "✅ SET" if data['breakeven_set'] else "❌ NOT SET"
             print(f"   #{ticket}: Break-even {be_status}, Max profit: ${data['highest_profit']:.2f}")
+    
+    def check_for_sl_hits(self):
+        """🛑 Check for Stop Loss hits and manage cooldown"""
+        if not self.enable_sl_cooldown:
+            return
+        
+        current_positions = self.mt5.get_positions(self.symbol)
+        current_tickets = set()
+        if current_positions:
+            current_tickets = {pos.ticket for pos in current_positions}
+        
+        # Check for closed positions (potential SL hits)
+        tracked_tickets = set(self.position_tracking.keys())
+        recently_closed = tracked_tickets - current_tickets
+        
+        for ticket in recently_closed:
+            if ticket in self.position_tracking:
+                tracking_data = self.position_tracking[ticket]
+                
+                # If position was profitable but suddenly closed, likely SL hit
+                if tracking_data['highest_profit'] > 0:
+                    # Check if it was closed at a loss from highest profit
+                    # This indicates potential SL activation
+                    print(f"🛑 POTENTIAL SL HIT DETECTED: Position #{ticket}")
+                    print(f"   📊 Highest profit reached: ${tracking_data['highest_profit']:.2f}")
+                    
+                    self._handle_sl_hit(ticket, tracking_data)
+    
+    def _handle_sl_hit(self, ticket, tracking_data):
+        """Handle Stop Loss hit - activate cooldown"""
+        from datetime import datetime, timedelta
+        
+        self.sl_hit_count += 1
+        self.sl_cooldown_end_time = datetime.now() + timedelta(minutes=self.sl_cooldown_minutes)
+        
+        print(f"🛑 STOP LOSS COOLDOWN ACTIVATED!")
+        print(f"   🎫 Position: #{ticket}")
+        print(f"   📈 Max profit was: ${tracking_data['highest_profit']:.2f}")
+        print(f"   ⏰ Trading paused until: {self.sl_cooldown_end_time.strftime('%H:%M:%S')}")
+        print(f"   🕐 Duration: {self.sl_cooldown_minutes} minutes")
+        print(f"   📊 SL hits today: {self.sl_hit_count}")
+        
+        # Store the closed position data
+        self.recent_closed_positions[ticket] = {
+            'closed_time': datetime.now(),
+            'max_profit': tracking_data['highest_profit'],
+            'reason': 'potential_sl_hit'
+        }
+    
+    def is_in_cooldown(self):
+        """Check if trading is currently in cooldown period"""
+        if not self.enable_sl_cooldown or self.sl_cooldown_end_time is None:
+            return False
+        
+        from datetime import datetime
+        
+        if datetime.now() < self.sl_cooldown_end_time:
+            remaining = self.sl_cooldown_end_time - datetime.now()
+            remaining_minutes = remaining.total_seconds() / 60
+            return True, remaining_minutes
+        else:
+            # Cooldown expired
+            self.sl_cooldown_end_time = None
+            return False, 0
+    
+    def get_cooldown_status(self):
+        """Get detailed cooldown status"""
+        in_cooldown, remaining_minutes = self.is_in_cooldown()
+        
+        if in_cooldown:
+            return {
+                'active': True,
+                'remaining_minutes': remaining_minutes,
+                'end_time': self.sl_cooldown_end_time,
+                'sl_hits_today': self.sl_hit_count,
+                'reason': 'Stop Loss hit detected'
+            }
+        else:
+            return {
+                'active': False,
+                'remaining_minutes': 0,
+                'end_time': None,
+                'sl_hits_today': self.sl_hit_count,
+                'reason': None
+            }
 
     def stop(self):
         """Stop the trading bot"""
