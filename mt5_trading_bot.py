@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 🤖 MT5 Trading Bot with Trained RL Model
-Loads trained models and executes real trades on MT5
+Loads trained models and executes real trades on MT5 - Enhanced Multi-Symbol Support
 """
 
 import os
@@ -15,6 +15,7 @@ from datetime import datetime, timedelta
 import MetaTrader5 as mt5
 from stable_baselines3 import PPO, SAC, A2C
 import warnings
+from multi_symbol_config import multi_symbol_config
 
 # monkey-patch ก่อน import โมเดล
 sys.modules['numpy._core']              = np.core
@@ -398,24 +399,35 @@ class MT5Interface:
 class TradingBot:
     """Main trading bot using trained RL model"""
     
-    def __init__(self, symbol, model_path=None, risk_percent=1.0):
+    def __init__(self, symbol, model_path=None, risk_percent=None):
         self.symbol = symbol
-        self.risk_percent = risk_percent
         self.model_loader = ModelLoader()
         self.mt5 = MT5Interface()
         self.model = None
         self.running = False
         
-        # Trading parameters - MULTI-POSITION SETUP
-        self.min_confidence = 0.4  # Minimum confidence for trade execution (lowered to match training behavior)
-        self.max_positions = 3     # 🔧 Maximum concurrent positions (you can adjust this)
+        # Connect to MT5 with credentials from environment
+        print("🔗 Connecting to MT5...")
+        if not self._connect_mt5():
+            raise Exception("Failed to connect to MT5")
+        
+        # Get symbol-specific configuration
+        self.symbol_config = multi_symbol_config.get_symbol_config(symbol)
+        
+        # Use symbol-specific risk or provided risk
+        self.risk_percent = risk_percent if risk_percent is not None else self.symbol_config['risk_percent']
+        
+        # Trading parameters - MULTI-POSITION SETUP with Symbol Config
+        self.min_confidence = self.symbol_config['confidence_threshold']
+        self.max_positions = self.symbol_config['max_positions']
         self.lookback_window = 50  # Default, will be updated based on model
         
-        print(f"🚀 MULTI-POSITION BOT INITIALIZED")
+        base_symbol = symbol.replace('m', '').replace('.c', '').replace('.', '').upper()
+        print(f"🚀 MULTI-SYMBOL BOT INITIALIZED for {base_symbol}")
         print(f"   📊 Max Positions: {self.max_positions}")
-        print(f"   💰 Risk per trade: {risk_percent}%")
-        print(f"   🎯 Will open new orders until limit reached")
-        print(f"   🔄 Will close oldest position first on CLOSE signal")
+        print(f"   💰 Risk per trade: {self.risk_percent}%")
+        print(f"   🎯 Confidence Threshold: {self.min_confidence}")
+        print(f"   � Description: {self.symbol_config['description']}")
         
         # Load model
         if model_path:
@@ -478,6 +490,31 @@ class TradingBot:
         print(f"   💰 Break-even Stop: {'ON' if self.enable_breakeven_stop else 'OFF'} (${self.breakeven_profit_threshold}+ profit)")
         print(f"   🛑 SL Cooldown: {'ON' if self.enable_sl_cooldown else 'OFF'} ({self.sl_cooldown_minutes} min pause)")
     
+    def _connect_mt5(self):
+        """Connect to MT5 with credentials from environment"""
+        import os
+        from dotenv import load_dotenv
+        
+        # Load environment variables
+        load_dotenv()
+        
+        # Get credentials
+        login = os.getenv('MT5_LOGIN')
+        password = os.getenv('MT5_PASSWORD')
+        server = os.getenv('MT5_SERVER')
+        
+        if login and password and server:
+            try:
+                login_int = int(login)
+                return self.mt5.connect(login=login_int, password=password, server=server)
+            except ValueError:
+                print(f"❌ Invalid login format: {login}")
+                return False
+        else:
+            print("⚠️ Missing MT5 credentials in .env file")
+            # Try basic connection without credentials
+            return self.mt5.connect()
+
     def enable_emergency_mode(self, enabled=True):
         """Enable emergency trading mode when model fails"""
         self._emergency_mode = enabled
@@ -830,35 +867,63 @@ class TradingBot:
         return self.mt5.connect(login, password, server)
     
     def calculate_position_size(self):
-        """Calculate position size based on risk management"""
+        """Calculate position size based on risk management - Enhanced for multiple symbols"""
         account_info = mt5.account_info()
         if account_info is None:
-            return 0.01  # Minimum lot size
+            return 0.01
         
         balance = account_info.equity
-        risk_amount = balance * (self.risk_percent / 100)
         
-        # Get symbol info for pip value calculation
+        # Get symbol info
         symbol_info_data = self.mt5.get_symbol_info(self.symbol)
         if symbol_info_data is None or symbol_info_data[0] is None:
             return 0.01
         
-        # Extract symbol_info object from tuple
         symbol_info, actual_symbol = symbol_info_data
         
-        # Simplified position sizing (you may want to enhance this)
-        # This assumes 1% risk with 100 pip stop loss
-        pip_value = symbol_info.trade_tick_value
-        lot_size = risk_amount / (100 * pip_value)
+        # Get symbol-specific configuration
+        symbol_config = multi_symbol_config.get_symbol_config(actual_symbol)
         
-        # Ensure minimum lot size and step
+        # Calculate risk amount based on symbol configuration
+        risk_amount = balance * (symbol_config['risk_percent'] / 100)
+        
+        # Calculate lot size based on account balance tiers
+        if balance >= 10000:
+            lot_multiplier = 2.0
+        elif balance >= 5000:
+            lot_multiplier = 1.5
+        elif balance >= 1000:
+            lot_multiplier = 1.0
+        else:
+            lot_multiplier = 0.5
+        
+        # Base lot size calculation using config
+        calculated_lot = symbol_config['base_lot'] * lot_multiplier
+        
+        # Apply risk-based adjustment
+        if balance > 0:
+            risk_ratio = min(risk_amount / (balance * 0.01), 3.0)  # Cap at 3x
+            calculated_lot *= risk_ratio
+        
+        # Ensure compliance with broker requirements
         min_lot = symbol_info.volume_min
+        max_lot = min(symbol_info.volume_max, symbol_config['max_lot'])
         lot_step = symbol_info.volume_step
         
-        lot_size = max(min_lot, round(lot_size / lot_step) * lot_step)
-        lot_size = min(lot_size, symbol_info.volume_max)
+        # Round to step size
+        calculated_lot = max(min_lot, round(calculated_lot / lot_step) * lot_step)
+        calculated_lot = min(calculated_lot, max_lot)
         
-        return lot_size
+        base_symbol = actual_symbol.replace('m', '').replace('.c', '').replace('.', '').upper()
+        print(f"   💰 Position Sizing for {base_symbol}:")
+        print(f"      Balance: ${balance:.2f}")
+        print(f"      Risk: {symbol_config['risk_percent']}% = ${risk_amount:.2f}")
+        print(f"      Base Lot: {symbol_config['base_lot']}")
+        print(f"      Multiplier: {lot_multiplier}x")
+        print(f"      Final Lot: {calculated_lot}")
+        print(f"      Limits: {min_lot} - {max_lot}")
+        
+        return calculated_lot
     
     def calculate_indicators(self, df):
         """Calculate technical indicators (must match training)"""
@@ -1151,8 +1216,42 @@ class TradingBot:
         
         return discrete_action, confidence, action_value
     
+    def calculate_stop_levels(self, symbol_info, actual_symbol, current_price, is_buy=True):
+        """Calculate proper stop loss and take profit levels to avoid 'Invalid stops' error"""
+        
+        # Get symbol-specific configuration
+        symbol_config = multi_symbol_config.get_symbol_config(actual_symbol)
+        base_symbol = actual_symbol.replace('m', '').replace('.c', '').replace('.', '').upper()
+        
+        # Get minimum stop level from broker
+        stops_level = symbol_info.trade_stops_level
+        min_stop_distance = max(stops_level, symbol_config['min_stop_points']) * symbol_info.point
+        
+        # Use configured stop distance, but ensure it meets broker minimum
+        sl_distance = max(symbol_config['sl_points'] * symbol_info.point, min_stop_distance)
+        tp_distance = sl_distance * symbol_config['tp_ratio']
+        
+        if is_buy:
+            sl = current_price.ask - sl_distance
+            tp = current_price.ask + tp_distance
+            entry_price = current_price.ask
+        else:
+            sl = current_price.bid + sl_distance  
+            tp = current_price.bid - tp_distance
+            entry_price = current_price.bid
+        
+        print(f"   📏 Stop Levels for {base_symbol}:")
+        print(f"      Entry: {entry_price:.5f}")
+        print(f"      Stop Distance: {sl_distance/symbol_info.point:.0f} points")
+        print(f"      SL: {sl:.5f} (Distance: {abs(entry_price-sl)/symbol_info.point:.0f} points)")
+        print(f"      TP: {tp:.5f} (Distance: {abs(tp-entry_price)/symbol_info.point:.0f} points)")
+        print(f"      Broker Min: {stops_level} points")
+        print(f"      Config Min: {symbol_config['min_stop_points']} points")
+        
+        return sl, tp
+
     def execute_trade(self, action, confidence):
-        """Execute trade based on model prediction - HANDLES MULTIPLE POSITIONS"""
+        """Execute trade based on model prediction - HANDLES MULTIPLE POSITIONS WITH PROPER STOPS"""
         print(f"   🎯 EXECUTING TRADE (Multi-Position Logic): Action={action}, Confidence={confidence:.3f}")
         
         # 🛑 CHECK STOP LOSS COOLDOWN FIRST
@@ -1180,10 +1279,8 @@ class TradingBot:
                 current_price = mt5.symbol_info_tick(actual_symbol)
                 
                 if symbol_info and current_price:
-                    sl_distance = symbol_info.point * 100
-                    tp_distance = sl_distance * 1.5
-                    sl = current_price.ask - sl_distance
-                    tp = current_price.ask + tp_distance
+                    # Calculate proper stop levels
+                    sl, tp = self.calculate_stop_levels(symbol_info, actual_symbol, current_price, is_buy=True)
                     
                     print(f"   💹 Executing new BUY order for {volume} lots...")
                     result = self.mt5.send_order(
@@ -1209,16 +1306,14 @@ class TradingBot:
         # --- Action: SELL ---
         elif action == 2:
             if num_positions < self.max_positions:
-                print(f"   � Calculating position size for new SELL...")
+                print(f"   📉 Calculating position size for new SELL...")
                 volume = self.calculate_position_size()
                 symbol_info, actual_symbol = self.mt5.get_symbol_info(self.symbol)
                 current_price = mt5.symbol_info_tick(actual_symbol)
 
                 if symbol_info and current_price:
-                    sl_distance = symbol_info.point * 100
-                    tp_distance = sl_distance * 1.5
-                    sl = current_price.bid + sl_distance
-                    tp = current_price.bid - tp_distance
+                    # Calculate proper stop levels
+                    sl, tp = self.calculate_stop_levels(symbol_info, actual_symbol, current_price, is_buy=False)
                     
                     print(f"   💹 Executing new SELL order for {volume} lots...")
                     result = self.mt5.send_order(
