@@ -16,6 +16,7 @@ import MetaTrader5 as mt5
 from stable_baselines3 import PPO, SAC, A2C
 import warnings
 from multi_symbol_config import multi_symbol_config
+from multi_account_mt5 import multi_mt5
 
 # monkey-patch ก่อน import โมเดล
 sys.modules['numpy._core']              = np.core
@@ -145,36 +146,59 @@ class ModelLoader:
         return self.model
 
 class MT5Interface:
-    """Interface for MetaTrader 5 operations"""
+    """Enhanced Interface for MetaTrader 5 operations with Multi-Account Support"""
     
     def __init__(self):
         self.connected = False
         self.account_info = None
+        self.current_symbol = None
+        self.multi_account = multi_mt5  # Use global multi-account manager
         
-    def connect(self, login=None, password=None, server=None):
-        """Connect to MT5"""
-        if not mt5.initialize():
-            print(f"❌ MT5 initialization failed: {mt5.last_error()}")
-            return False
-        
-        if login and password and server:
-            if not mt5.login(login, password=password, server=server):
-                print(f"❌ MT5 login failed: {mt5.last_error()}")
+    def connect(self, login=None, password=None, server=None, symbol=None):
+        """Connect to MT5 - now uses multi-account system based on symbol"""
+        if symbol:
+            self.current_symbol = symbol
+            success, config = self.multi_account.get_connection_for_symbol(symbol)
+            if success:
+                self.connected = True
+                self.account_info = self.multi_account.get_account_info_for_symbol(symbol)
+                if self.account_info:
+                    print(f"✅ Connected to MT5 for {symbol}")
+                    print(f"   💰 Account: {self.account_info.login}")
+                    print(f"   💳 Balance: ${self.account_info.balance:.2f}")
+                    print(f"   📊 Equity: ${self.account_info.equity:.2f}")
+                    print(f"   🏢 Server: {self.account_info.server}")
+                    return True
+                else:
+                    print(f"❌ Failed to get account info for {symbol}")
+                    return False
+            else:
+                print(f"❌ Failed to connect to MT5 for {symbol}")
                 return False
-        
-        self.account_info = mt5.account_info()
-        if self.account_info is None:
-            print(f"❌ Failed to get account info: {mt5.last_error()}")
-            return False
-        
-        self.connected = True
-        print(f"✅ Connected to MT5")
-        print(f"   💰 Account: {self.account_info.login}")
-        print(f"   💳 Balance: ${self.account_info.balance:.2f}")
-        print(f"   📊 Equity: ${self.account_info.equity:.2f}")
-        print(f"   🏢 Server: {self.account_info.server}")
-        
-        return True
+        else:
+            # Fallback to original method for backward compatibility
+            if not mt5.initialize():
+                print(f"❌ MT5 initialization failed: {mt5.last_error()}")
+                return False
+            
+            if login and password and server:
+                if not mt5.login(login, password=password, server=server):
+                    print(f"❌ MT5 login failed: {mt5.last_error()}")
+                    return False
+            
+            self.account_info = mt5.account_info()
+            if self.account_info is None:
+                print(f"❌ Failed to get account info: {mt5.last_error()}")
+                return False
+            
+            self.connected = True
+            print(f"✅ Connected to MT5 (default)")
+            print(f"   💰 Account: {self.account_info.login}")
+            print(f"   💳 Balance: ${self.account_info.balance:.2f}")
+            print(f"   📊 Equity: ${self.account_info.equity:.2f}")
+            print(f"   🏢 Server: {self.account_info.server}")
+            
+            return True
     
     def disconnect(self):
         """Disconnect from MT5"""
@@ -284,7 +308,31 @@ class MT5Interface:
         return df
     
     def send_order(self, symbol, order_type, volume, price=None, sl=None, tp=None, comment="RL Bot"):
-        """Send trading order with symbol format detection"""
+        """Send trading order using multi-account system"""
+        # Use multi-account system to send order
+        if hasattr(self, 'multi_account') and self.multi_account:
+            print(f"🏦 Using multi-account system for {symbol}")
+            result = self.multi_account.send_order_for_symbol(
+                symbol=symbol,
+                order_type=order_type,
+                volume=volume,
+                sl=sl,
+                tp=tp,
+                comment=comment
+            )
+            if result:
+                if result.retcode == mt5.TRADE_RETCODE_DONE:
+                    print(f"✅ Order sent via multi-account system for {symbol}: Order #{result.order}")
+                    return result
+                else:
+                    print(f"❌ Order failed via multi-account system for {symbol}: {result.retcode}")
+                    return result
+            else:
+                print(f"❌ Failed to send order via multi-account system for {symbol}")
+                # Fall back to old method
+        
+        # Fallback to original method
+        print(f"🔄 Using fallback method for {symbol}")
         symbol_info, actual_symbol = self.get_symbol_info(symbol)
         if symbol_info is None:
             print(f"❌ Cannot get symbol info for {symbol}")
@@ -491,29 +539,17 @@ class TradingBot:
         print(f"   🛑 SL Cooldown: {'ON' if self.enable_sl_cooldown else 'OFF'} ({self.sl_cooldown_minutes} min pause)")
     
     def _connect_mt5(self):
-        """Connect to MT5 with credentials from environment"""
+        """Connect to MT5 using multi-account system based on symbol"""
         import os
         from dotenv import load_dotenv
         
         # Load environment variables
         load_dotenv()
         
-        # Get credentials
-        login = os.getenv('MT5_LOGIN')
-        password = os.getenv('MT5_PASSWORD')
-        server = os.getenv('MT5_SERVER')
+        print(f"🏦 Connecting to MT5 for symbol: {self.symbol}")
         
-        if login and password and server:
-            try:
-                login_int = int(login)
-                return self.mt5.connect(login=login_int, password=password, server=server)
-            except ValueError:
-                print(f"❌ Invalid login format: {login}")
-                return False
-        else:
-            print("⚠️ Missing MT5 credentials in .env file")
-            # Try basic connection without credentials
-            return self.mt5.connect()
+        # Use multi-account system to connect based on symbol
+        return self.mt5.connect(symbol=self.symbol)
 
     def enable_emergency_mode(self, enabled=True):
         """Enable emergency trading mode when model fails"""
@@ -542,9 +578,15 @@ class TradingBot:
         print("🔄 Bias detection reset")
     
     def get_bias_report(self):
-        """Generate a comprehensive bias report"""
-        if not hasattr(self, '_recent_actions') or len(self._recent_actions) < 5:
-            return "📊 Insufficient data for bias analysis (need at least 5 predictions)"
+        """Generate comprehensive bias report with enhanced sample size requirements"""
+        sample_count = len(getattr(self, '_recent_actions', []))
+        
+        # Enhanced minimum requirements
+        MIN_SAMPLES_FOR_ANALYSIS = 50   # เพิ่มจาก 10
+        MIN_SAMPLES_FOR_CRITICAL = 100  # เพิ่มจาก 20
+        
+        if sample_count < MIN_SAMPLES_FOR_ANALYSIS:
+            return f"📊 INSUFFICIENT DATA: Need at least {MIN_SAMPLES_FOR_ANALYSIS} samples for reliable analysis (have {sample_count})\n💡 Continue trading to collect more data...\n⏳ Early data collection stage"
         
         action_names = {0: 'HOLD', 1: 'BUY', 2: 'SELL', 3: 'CLOSE'}
         
@@ -555,41 +597,279 @@ class TradingBot:
         
         total_predictions = len(self._recent_actions)
         report = []
-        report.append(f"📊 BIAS ANALYSIS REPORT ({total_predictions} recent predictions)")
+        report.append(f"📊 BIAS ANALYSIS REPORT ({total_predictions} samples)")
         report.append("=" * 50)
         
-        # Action distribution
+        # Enhanced confidence levels
+        if total_predictions < MIN_SAMPLES_FOR_CRITICAL:
+            confidence = "MEDIUM"
+            confidence_icon = "⚠️"
+            confidence_msg = f"Need {MIN_SAMPLES_FOR_CRITICAL}+ samples for critical decisions"
+        else:
+            confidence = "HIGH"
+            confidence_icon = "✅"
+            confidence_msg = "Sufficient samples for reliable analysis"
+        
+        report.append(f"{confidence_icon} CONFIDENCE: {confidence} ({confidence_msg})")
+        report.append("")
+        
+        # Action distribution with enhanced sample-size-aware analysis
         for action_id, count in action_counts.items():
             percentage = (count / total_predictions) * 100
             action_name = action_names[action_id]
-            status = "🚨" if percentage > 60 else "⚠️" if percentage > 40 else "✅"
+            
+            # Enhanced thresholds based on sample size and confidence
+            if confidence == "MEDIUM":
+                # Medium confidence - more conservative detection
+                if action_id == 0:  # HOLD
+                    if percentage == 100.0 and count >= MIN_SAMPLES_FOR_ANALYSIS:
+                        # Check raw action variance for 100% HOLD
+                        if hasattr(self, '_recent_raw_actions') and len(self._recent_raw_actions) >= MIN_SAMPLES_FOR_ANALYSIS:
+                            raw_variance = np.var(self._recent_raw_actions[-min(100, count):])
+                            if raw_variance < 0.000001:
+                                status = "🚨"  # Extremely low variance - likely stuck
+                            elif raw_variance < 0.00001:
+                                status = "⚠️"   # Low variance - early warning
+                            else:
+                                status = "�"   # Conservative but with variance - monitor
+                        else:
+                            status = "⚠️"  # 100% HOLD without enough raw data
+                    elif percentage > 95:
+                        status = "⚠️"  # High HOLD percentage - monitor
+                    else:
+                        status = "📊"  # Normal
+                else:  # Trading actions
+                    status = "🚨" if percentage > 85 else "⚠️" if percentage > 70 else "📊"
+            else:
+                # High confidence - normal detection thresholds
+                if action_id == 0:  # HOLD action
+                    if percentage == 100.0:
+                        # Check raw action variance for 100% HOLD
+                        if hasattr(self, '_recent_raw_actions') and len(self._recent_raw_actions) >= MIN_SAMPLES_FOR_CRITICAL:
+                            raw_variance = np.var(self._recent_raw_actions[-min(100, count):])
+                            if raw_variance < 0.000001:
+                                status = "🚨"  # Model truly stuck
+                            elif raw_variance < 0.00001:
+                                status = "⚠️"   # Low variance - monitor
+                            else:
+                                status = "💤"   # Conservative trading - may be appropriate
+                        else:
+                            status = "⚠️"  # Need more raw data for variance analysis
+                    elif percentage > 90:
+                        status = "⚠️"  # High HOLD - monitor
+                    else:
+                        status = "📊"  # Normal HOLD levels
+                else:  # Trading actions (BUY, SELL, CLOSE)
+                    status = "🚨" if percentage > 80 else "⚠️" if percentage > 60 else "📊"
+            
             report.append(f"{status} {action_name}: {count}/{total_predictions} ({percentage:.1f}%)")
         
-        # Check for patterns
-        if len(self._recent_actions) >= 5:
-            last_5 = self._recent_actions[-5:]
-            if all(a == last_5[0] for a in last_5):
-                report.append(f"🚨 CRITICAL: Last 5 actions identical: {action_names[last_5[0]]}")
-        
-        # Raw action analysis
-        if hasattr(self, '_recent_raw_actions') and len(self._recent_raw_actions) >= 5:
-            raw_actions = self._recent_raw_actions[-10:]
+        # Enhanced raw action analysis
+        if hasattr(self, '_recent_raw_actions') and len(self._recent_raw_actions) >= MIN_SAMPLES_FOR_ANALYSIS:
+            raw_actions = self._recent_raw_actions[-min(100, len(self._recent_raw_actions)):]
             avg_raw = np.mean(raw_actions)
             std_raw = np.std(raw_actions)
-            report.append(f"📈 Raw actions: avg={avg_raw:.3f}, std={std_raw:.3f}")
-            if std_raw < 0.1:
-                report.append("🚨 CRITICAL: Raw action variance too low - model not exploring")
+            
+            # Determine if model is stuck based on confidence level
+            if confidence == "HIGH" and std_raw < 0.00001:
+                status_icon = "🚨"
+                status_msg = "CRITICAL: Model stuck with no variance"
+            elif confidence == "HIGH" and std_raw < 0.0001:
+                status_icon = "⚠️"
+                status_msg = "LOW VARIANCE: Model in conservative mode"
+            elif confidence == "MEDIUM" and std_raw < 0.000001:
+                status_icon = "⚠️"
+                status_msg = "EARLY WARNING: Very low variance detected"
+            elif confidence == "MEDIUM" and std_raw < 0.00001:
+                status_icon = "💤"
+                status_msg = "LOW VARIANCE: Model consistently in HOLD zone - may be market conditions"
+            else:
+                status_icon = "✅"
+                status_msg = "HEALTHY: Good variance in predictions"
+            
+            report.append(f"{status_icon} Raw actions: avg={avg_raw:.3f}, std={std_raw:.6f}")
+            report.append(f"💡 {status_msg}")
+        else:
+            report.append("⚠️ Insufficient raw action data for variance analysis")
         
-        # Bias counter
+        # Exploration mode status
+        exploration_status = "ACTIVE" if getattr(self, '_exploration_mode', False) else "INACTIVE"
+        report.append(f"🎯 Exploration mode: {exploration_status}")
+        
+        return "\n".join(report)
+
+        # Bias counter with improved context
         bias_count = getattr(self, '_bias_counter', 0)
         if bias_count > 0:
-            report.append(f"⚠️ Consecutive bias detections: {bias_count}")
+            if bias_count >= 10:
+                report.append(f"🚨 SEVERE: {bias_count} bias detections - STOP TRADING")
+            elif bias_count >= 5:
+                report.append(f"⚠️ ELEVATED: {bias_count} bias detections - increased monitoring")
+            else:
+                report.append(f"📊 MINOR: {bias_count} bias detections - within acceptable range")
         
         # Exploration mode status
         if getattr(self, '_exploration_mode', False):
-            report.append("🎲 Exploration mode: ACTIVE")
+            report.append("🎲 Exploration mode: ACTIVE (bias mitigation)")
         else:
             report.append("🎯 Exploration mode: INACTIVE")
+        
+        # 💡 TRADING CONTEXT SUGGESTIONS
+        hold_percentage = (action_counts[0] / total_predictions) * 100
+        if hold_percentage >= 80:
+            report.append("")
+            report.append("💡 HIGH HOLD FREQUENCY SUGGESTIONS:")
+            if hasattr(self, '_recent_raw_actions'):
+                raw_var = np.var(self._recent_raw_actions[-10:]) if len(self._recent_raw_actions) >= 10 else 0
+                if raw_var < 0.001:
+                    report.append("   🔄 Consider model retraining - may be stuck")
+                else:
+                    report.append("   📊 May indicate unfavorable market conditions")
+                    report.append("   💤 Conservative approach is often profitable")
+                    report.append("   🎯 Monitor for market volatility changes")
+        
+    def get_bias_report(self):
+        """Generate comprehensive bias report with enhanced sample size requirements"""
+        sample_count = len(getattr(self, '_recent_actions', []))
+        
+        # Enhanced minimum requirements (50/100 instead of 20/50)
+        MIN_SAMPLES_FOR_ANALYSIS = 50   # เพิ่มจาก 20
+        MIN_SAMPLES_FOR_CRITICAL = 100  # เพิ่มจาก 50
+        
+        if sample_count < MIN_SAMPLES_FOR_ANALYSIS:
+            return f"📊 INSUFFICIENT DATA: Need at least {MIN_SAMPLES_FOR_ANALYSIS} samples for reliable analysis (have {sample_count})\n💡 Continue trading to collect more data...\n⏳ Early data collection stage"
+        
+        action_names = {0: 'HOLD', 1: 'BUY', 2: 'SELL', 3: 'CLOSE'}
+        
+        # Count actions
+        action_counts = {0: 0, 1: 0, 2: 0, 3: 0}
+        for a in self._recent_actions:
+            action_counts[a] += 1
+        
+        total_predictions = len(self._recent_actions)
+        report = []
+        report.append(f"📊 BIAS ANALYSIS REPORT ({total_predictions} samples)")
+        report.append("=" * 50)
+        
+        # Enhanced confidence levels based on new thresholds
+        if total_predictions < MIN_SAMPLES_FOR_CRITICAL:
+            confidence = "MEDIUM"
+            confidence_icon = "⚡"
+            confidence_msg = f"Need {MIN_SAMPLES_FOR_CRITICAL}+ samples for critical decisions"
+        else:
+            confidence = "HIGH"
+            confidence_icon = "🔥"
+            confidence_msg = "Sufficient samples for highly reliable analysis"
+        
+        report.append(f"{confidence_icon} CONFIDENCE: {confidence} ({confidence_msg})")
+        report.append("")
+        
+        # Action distribution with enhanced sample-size-aware analysis
+        for action_id, count in action_counts.items():
+            percentage = (count / total_predictions) * 100
+            action_name = action_names[action_id]
+            
+            # Enhanced thresholds based on sample size and confidence
+            if confidence == "MEDIUM":
+                # Medium confidence (50-99 samples) - more conservative detection
+                if action_id == 0:  # HOLD
+                    if percentage == 100.0 and count >= MIN_SAMPLES_FOR_ANALYSIS:
+                        # Check raw action variance for 100% HOLD
+                        if hasattr(self, '_recent_raw_actions') and len(self._recent_raw_actions) >= MIN_SAMPLES_FOR_ANALYSIS:
+                            raw_variance = np.var(self._recent_raw_actions[-min(100, count):])
+                            if raw_variance < 0.000001:
+                                status = "🚨"  # Extremely low variance - likely stuck
+                            elif raw_variance < 0.00001:
+                                status = "⚠️"   # Low variance - early warning
+                            else:
+                                status = "💤"   # Conservative but with variance - monitor
+                        else:
+                            status = "⚠️"  # 100% HOLD without enough raw data
+                    elif percentage > 95:
+                        status = "⚠️"  # High HOLD percentage - monitor
+                    else:
+                        status = "📊"  # Normal
+                else:  # Trading actions
+                    status = "🚨" if percentage > 85 else "⚠️" if percentage > 70 else "📊"
+            else:
+                # High confidence (100+ samples) - reliable detection thresholds
+                if action_id == 0:  # HOLD action
+                    if percentage == 100.0:
+                        # Check raw action variance for 100% HOLD
+                        if hasattr(self, '_recent_raw_actions') and len(self._recent_raw_actions) >= MIN_SAMPLES_FOR_CRITICAL:
+                            raw_variance = np.var(self._recent_raw_actions[-min(100, count):])
+                            if raw_variance < 0.000001:
+                                status = "🚨"  # Model truly stuck
+                            elif raw_variance < 0.00001:
+                                status = "⚠️"   # Low variance - monitor
+                            else:
+                                status = "💤"   # Conservative trading - may be appropriate
+                        else:
+                            status = "⚠️"  # Need more raw data for variance analysis
+                    elif percentage > 90:
+                        status = "⚠️"  # High HOLD - monitor
+                    else:
+                        status = "📊"  # Normal HOLD levels
+                else:  # Trading actions (BUY, SELL, CLOSE)
+                    status = "🚨" if percentage > 80 else "⚠️" if percentage > 60 else "📊"
+            
+            report.append(f"{status} {action_name}: {count}/{total_predictions} ({percentage:.1f}%)")
+        
+        # Enhanced raw action analysis
+        if hasattr(self, '_recent_raw_actions') and len(self._recent_raw_actions) >= MIN_SAMPLES_FOR_ANALYSIS:
+            raw_actions = self._recent_raw_actions[-min(100, len(self._recent_raw_actions)):]
+            avg_raw = np.mean(raw_actions)
+            std_raw = np.std(raw_actions)
+            
+            # Determine if model is stuck based on confidence level
+            if confidence == "HIGH" and std_raw < 0.00001:
+                status_icon = "🚨"
+                status_msg = "CRITICAL: Model stuck with no variance - high confidence"
+            elif confidence == "HIGH" and std_raw < 0.0001:
+                status_icon = "⚠️"
+                status_msg = "LOW VARIANCE: Model in conservative mode - high confidence"
+            elif confidence == "MEDIUM" and std_raw < 0.000001:
+                status_icon = "⚠️"
+                status_msg = "EARLY WARNING: Very low variance detected - medium confidence"
+            elif confidence == "MEDIUM" and std_raw < 0.00001:
+                status_icon = "💤"
+                status_msg = "LOW VARIANCE: Model in HOLD zone - need more samples"
+            else:
+                status_icon = "✅"
+                status_msg = f"HEALTHY: Good variance in predictions ({confidence} confidence)"
+            
+            report.append(f"{status_icon} Raw actions: avg={avg_raw:.3f}, std={std_raw:.6f}")
+            report.append(f"💡 {status_msg}")
+        else:
+            report.append("⚠️ Insufficient raw action data for variance analysis")
+        
+        # Bias counter with improved context
+        bias_count = getattr(self, '_bias_counter', 0)
+        if bias_count > 0:
+            if bias_count >= 10:
+                report.append(f"🚨 SEVERE: {bias_count} bias detections - STOP TRADING")
+            elif bias_count >= 5:
+                report.append(f"⚠️ ELEVATED: {bias_count} bias detections - increased monitoring")
+            else:
+                report.append(f"📊 MINOR: {bias_count} bias detections - within acceptable range")
+        
+        # Exploration mode status
+        exploration_status = "ACTIVE" if getattr(self, '_exploration_mode', False) else "INACTIVE"
+        report.append(f"🎯 Exploration mode: {exploration_status}")
+        
+        # Trading context suggestions
+        hold_percentage = (action_counts[0] / total_predictions) * 100
+        if hold_percentage >= 80:
+            report.append("")
+            report.append("💡 HIGH HOLD FREQUENCY SUGGESTIONS:")
+            if hasattr(self, '_recent_raw_actions'):
+                raw_var = np.var(self._recent_raw_actions[-10:]) if len(self._recent_raw_actions) >= 10 else 0
+                if raw_var < 0.001:
+                    report.append("   🔄 Consider model retraining - may be stuck")
+                else:
+                    report.append("   📊 May indicate unfavorable market conditions")
+                    report.append("   💤 Conservative approach is often profitable")
+                    report.append("   🎯 Monitor for market volatility changes")
         
         return "\n".join(report)
     
@@ -642,66 +922,204 @@ class TradingBot:
         
         return status
     
+    def detect_model_bias(self):
+        """ตรวจสอบ bias ของ model ด้วยเกณฑ์ที่เหมาะสม - Enhanced Sample Size Requirements"""
+        min_samples_for_analysis = 50   # เพิ่มจาก 20 เป็น 50
+        min_samples_for_critical = 100  # เพิ่มจาก 50 เป็น 100
+        
+        if not hasattr(self, '_recent_raw_actions') or len(self._recent_raw_actions) < 10:
+            return "INSUFFICIENT_DATA", f"Need at least 10 samples for basic monitoring (have {len(getattr(self, '_recent_raw_actions', []))})"
+        
+        sample_count = len(self._recent_raw_actions)
+        
+        # ถ้ายังไม่ถึง min_samples_for_analysis ให้แสดงข้อความว่าต้องรอ
+        if sample_count < min_samples_for_analysis:
+            bias_report = []
+            bias_report.append(f"📊 INSUFFICIENT DATA: Need at least {min_samples_for_analysis} samples for reliable analysis (have {sample_count})")
+            bias_report.append("💡 Continue trading to collect more data...")
+            bias_report.append("⏳ Early data collection stage")
+            return "INSUFFICIENT_DATA", "\n".join(bias_report)
+        
+        # ใช้ samples ล่าสุดสำหรับการวิเคราะห์
+        recent_raw = self._recent_raw_actions[-min(100, sample_count):]
+        variance = np.var(recent_raw)
+        mean_raw = np.mean(recent_raw)
+        
+        # กำหนดเกณฑ์ที่สมเหตุสมผล
+        DEAD_THRESHOLD = 0.0000001    # Model completely dead (no variation at all)
+        CRITICAL_THRESHOLD = 0.00001  # Model likely stuck (extremely low variation)
+        SEVERE_THRESHOLD = 0.0001     # Low variation but may be legitimate
+        MODERATE_THRESHOLD = 0.001    # Somewhat low variation
+        
+        bias_report = []
+        bias_report.append(f"📊 Sample Count: {sample_count}, Analyzing: {len(recent_raw)}")
+        bias_report.append(f"📊 Variance: {variance:.8f}, Mean: {mean_raw:.4f}")
+        
+        # กำหนดระดับความมั่นใจ
+        if sample_count < min_samples_for_critical:
+            confidence = "MEDIUM"
+            bias_report.append(f"⚠️ CONFIDENCE: MEDIUM (Need {min_samples_for_critical}+ samples for critical decisions)")
+        else:
+            confidence = "HIGH"
+            bias_report.append(f"✅ CONFIDENCE: HIGH (Sufficient samples for reliable analysis)")
+        
+        # วิเคราะห์ bias ตามระดับความมั่นใจ
+        if variance < DEAD_THRESHOLD:
+            bias_report.append("🚨 MODEL DEAD: Zero variance - complete system failure")
+            return "DEAD", "\n".join(bias_report)
+        
+        elif variance < CRITICAL_THRESHOLD:
+            # Check if consistently in reasonable HOLD zone
+            if -0.2 <= mean_raw <= 0.2:
+                if confidence == "MEDIUM":
+                    bias_report.append("⚠️ EARLY WARNING: Extremely low variance in HOLD zone")
+                    bias_report.append("💡 Monitor closely - may indicate conservative market response")
+                    bias_report.append(f"🔍 Need {min_samples_for_critical - sample_count} more samples for critical decision")
+                    return "EARLY_WARNING", "\n".join(bias_report)
+                else:
+                    bias_report.append("⚠️ CRITICAL LOW VARIANCE in HOLD zone")
+                    bias_report.append("💡 May indicate conservative market response")
+                    bias_report.append("� Monitor: If market volatility increases but variance doesn't = STUCK")
+                    return "CRITICAL_WATCH", "\n".join(bias_report)
+            else:
+                if confidence == "MEDIUM":
+                    bias_report.append(f"⚠️ EARLY WARNING: Low variance outside HOLD zone")
+                    bias_report.append(f"� Model trending towards stuck at mean {mean_raw:.4f}")
+                    bias_report.append(f"🔍 Need {min_samples_for_critical - sample_count} more samples to confirm")
+                    return "EARLY_WARNING", "\n".join(bias_report)
+                else:
+                    bias_report.append(f"🚨 CRITICAL BIAS: Extremely low variance outside HOLD zone")
+                    bias_report.append(f"🚨 Model stuck at mean {mean_raw:.4f}")
+                    return "CRITICAL", "\n".join(bias_report)
+        
+        elif variance < SEVERE_THRESHOLD:
+            if -0.3 <= mean_raw <= 0.3:
+                if confidence == "MEDIUM":
+                    bias_report.append("📊 MODERATE variance in HOLD zone - early monitoring")
+                    bias_report.append("💡 Conservative behavior may be appropriate")
+                    return "EARLY_MONITORING", "\n".join(bias_report)
+                else:
+                    bias_report.append("⚠️ LOW VARIANCE in HOLD zone - acceptable for stable markets")
+                    bias_report.append("💡 Conservative behavior may be appropriate")
+                    return "ACCEPTABLE_LOW", "\n".join(bias_report)
+            else:
+                bias_report.append(f"⚠️ MODERATE BIAS: Low variance outside HOLD zone")
+                return "MODERATE" if confidence == "HIGH" else "EARLY_WARNING", "\n".join(bias_report)
+        
+        elif variance < MODERATE_THRESHOLD:
+            bias_report.append("📊 MODERATE variance - continue monitoring")
+            return "MODERATE", "\n".join(bias_report)
+        
+        else:
+            bias_report.append("✅ HEALTHY variance - good model exploration")
+            return "HEALTHY", "\n".join(bias_report)
+
     def check_model_health(self):
-        """Comprehensive model health check"""
+        """Comprehensive model health check with improved bias detection"""
         health_report = []
         health_report.append("🏥 MODEL HEALTH CHECK")
         health_report.append("=" * 30)
         
-        # Check recent predictions variance
-        if hasattr(self, '_recent_raw_actions') and len(self._recent_raw_actions) >= 5:
-            recent_raw = self._recent_raw_actions[-10:]
-            variance = np.var(recent_raw)
-            mean_raw = np.mean(recent_raw)
-            
-            health_report.append(f"📊 Raw action variance: {variance:.6f}")
-            health_report.append(f"📊 Mean raw action: {mean_raw:.3f}")
-            
-            if variance < 0.001:
-                health_report.append("🚨 CRITICAL: No variance in predictions - MODEL DEAD")
-                self.force_model_retraining_mode(True)
-            elif variance < 0.01:
-                health_report.append("⚠️ WARNING: Very low variance - model may be stuck")
-            else:
-                health_report.append("✅ Variance within acceptable range")
+        # ใช้ bias detection ใหม่
+        bias_status, bias_details = self.detect_model_bias()
+        health_report.append("� BIAS ANALYSIS:")
+        health_report.append(bias_details)
+        
+        # จัดการตาม bias status
+        if bias_status == "DEAD":
+            health_report.append("🚨 ACTION: IMMEDIATE MODEL REPLACEMENT REQUIRED")
+            self.force_model_retraining_mode(True)
+        elif bias_status == "CRITICAL":
+            health_report.append("🚨 ACTION: STOP TRADING - MODEL RESTART NEEDED")
+            self.force_model_retraining_mode(True)
+        elif bias_status == "CRITICAL_WATCH":
+            health_report.append("⚠️ ACTION: ENHANCED MONITORING - May be legitimate")
+        elif bias_status == "SEVERE":
+            health_report.append("⚠️ ACTION: Increased monitoring required")
+        elif bias_status == "ACCEPTABLE_LOW":
+            health_report.append("✅ ACTION: Continue with normal monitoring")
+        elif bias_status == "HEALTHY":
+            health_report.append("✅ ACTION: Model performing well")
         
         # Check bias counter
         bias_count = getattr(self, '_bias_counter', 0)
         if bias_count >= 10:
-            health_report.append("🚨 CRITICAL: Severe bias detected - STOP TRADING")
+            health_report.append("🚨 BIAS COUNTER: Critical level reached - STOP TRADING")
             self.force_model_retraining_mode(True)
         elif bias_count >= 5:
-            health_report.append("⚠️ WARNING: High bias count")
+            health_report.append("⚠️ BIAS COUNTER: Elevated - increased monitoring")
+        elif bias_count > 0:
+            health_report.append(f"📊 BIAS COUNTER: {bias_count} - within acceptable range")
         else:
-            health_report.append("✅ Bias count acceptable")
+            health_report.append("✅ BIAS COUNTER: No bias detected")
         
-        # Check exploration mode necessity
+        # Check recent action patterns
+        if hasattr(self, '_recent_actions') and len(self._recent_actions) >= 10:
+            action_counts = {0: 0, 1: 0, 2: 0, 3: 0}
+            for a in self._recent_actions:
+                action_counts[a] += 1
+            
+            hold_percentage = (action_counts[0] / len(self._recent_actions)) * 100
+            
+            health_report.append(f"📊 ACTION DISTRIBUTION:")
+            health_report.append(f"   HOLD: {action_counts[0]} ({hold_percentage:.1f}%)")
+            health_report.append(f"   BUY: {action_counts[1]} ({action_counts[1]*10:.1f}%)")
+            health_report.append(f"   SELL: {action_counts[2]} ({action_counts[2]*10:.1f}%)")
+            health_report.append(f"   CLOSE: {action_counts[3]} ({action_counts[3]*10:.1f}%)")
+            
+            if hold_percentage >= 90:
+                if bias_status in ["ACCEPTABLE_LOW", "HEALTHY"]:
+                    health_report.append("💤 PATTERN: High HOLD - Conservative/waiting behavior")
+                    health_report.append("💡 CONTEXT: May indicate unfavorable market conditions")
+                else:
+                    health_report.append("� PATTERN: High HOLD with problematic bias")
+            elif hold_percentage <= 20:
+                health_report.append("⚡ PATTERN: High activity - frequent trading")
+            else:
+                health_report.append("✅ PATTERN: Balanced action distribution")
+        
+        # Check special modes
         if getattr(self, '_exploration_mode', False):
-            health_report.append("🎲 INFO: Exploration mode active (bias mitigation)")
+            health_report.append("🎲 STATUS: Exploration mode active (bias mitigation)")
+        
+        if getattr(self, '_emergency_mode', False):
+            health_report.append("🚨 EMERGENCY: Model in emergency mode - manual intervention required")
         
         return "\n".join(health_report)
     
     def should_retrain_model(self):
-        """ตรวจสอบว่าควร retrain model หรือไม่"""
+        """ตรวจสอบว่าควร retrain model หรือไม่ - with improved bias detection"""
         retrain_reasons = []
         
         print("🔍 CHECKING IF MODEL NEEDS RETRAINING")
         print("=" * 40)
         
+        # ใช้ bias detection ใหม่
+        bias_status, bias_details = self.detect_model_bias()
+        print(f"🔍 BIAS STATUS: {bias_status}")
+        print(f"📊 DETAILS: {bias_details}")
+        
+        # จัดการตาม bias status
+        if bias_status == "DEAD":
+            retrain_reasons.append("🚨 MODEL DEATH: Complete system failure")
+        elif bias_status == "CRITICAL":
+            retrain_reasons.append("🚨 CRITICAL BIAS: Model stuck outside HOLD zone")
+        elif bias_status == "CRITICAL_WATCH":
+            print("   💤 INFO: Low variance in HOLD zone - may be legitimate market response")
+            print("   💡 Continuing monitoring before retraining decision")
+        elif bias_status == "SEVERE":
+            retrain_reasons.append("⚠️ SEVERE BIAS: Low variance outside acceptable range")
+        elif bias_status == "ACCEPTABLE_LOW":
+            print("   ✅ INFO: Low variance but within acceptable HOLD behavior")
+        elif bias_status == "HEALTHY":
+            print("   ✅ INFO: Healthy variance - good model exploration")
+        
         # ตรวจสอบ bias counter
         bias_count = getattr(self, '_bias_counter', 0)
         if bias_count >= 10:
             retrain_reasons.append("🚨 SEVERE BIAS: Bias counter >= 10")
-        elif bias_count >= 5:
-            retrain_reasons.append("⚠️ HIGH BIAS: Bias counter >= 5")
-        
-        # ตรวจสอบ variance ของ raw actions
-        if hasattr(self, '_recent_raw_actions') and len(self._recent_raw_actions) >= 10:
-            variance = np.var(self._recent_raw_actions)
-            if variance < 0.001:
-                retrain_reasons.append("🚨 MODEL DEATH: No variance in predictions")
-            elif variance < 0.01:
-                retrain_reasons.append("⚠️ LOW VARIANCE: Model may be stuck")
+        elif bias_count >= 7:
+            retrain_reasons.append("⚠️ HIGH BIAS: Bias counter >= 7")
         
         # ตรวจสอบ action pattern
         if hasattr(self, '_recent_actions') and len(self._recent_actions) >= 10:
@@ -710,16 +1128,22 @@ class TradingBot:
                 action_counts[a] += 1
             
             max_count = max(action_counts.values())
-            if max_count >= 9:  # 90% of actions are the same
-                dominant_action = max(action_counts, key=action_counts.get)
-                action_names = {0: 'HOLD', 1: 'BUY', 2: 'SELL', 3: 'CLOSE'}
-                retrain_reasons.append(f"🚨 EXTREME BIAS: {action_names[dominant_action]} dominates {max_count}/10 actions")
+            dominant_action = max(action_counts, key=action_counts.get)
+            action_names = {0: 'HOLD', 1: 'BUY', 2: 'SELL', 3: 'CLOSE'}
+            
+            if dominant_action == 0:  # HOLD is dominant
+                if max_count >= 10 and bias_status in ["CRITICAL", "DEAD"]:
+                    retrain_reasons.append(f"🚨 MODEL STUCK: 100% HOLD with {bias_status} bias")
+                elif max_count >= 10:
+                    print(f"   💤 INFO: 100% HOLD with {bias_status} bias - may be appropriate")
+            else:  # Non-HOLD action is dominant
+                if max_count >= 8:  # 80%+ of one trading action
+                    retrain_reasons.append(f"🚨 EXTREME BIAS: {action_names[dominant_action]} dominates {max_count}/10 actions")
         
-        # ตรวจสอบ exploration mode ที่เปิดอยู่นาน
+        # ตรวจสอบ special modes
         if getattr(self, '_exploration_mode', False):
             retrain_reasons.append("⚠️ PERSISTENT EXPLORATION: Model requires exploration mode")
         
-        # ตรวจสอบ emergency mode
         if getattr(self, '_emergency_mode', False):
             retrain_reasons.append("🚨 EMERGENCY MODE: Model completely failed")
         
@@ -730,18 +1154,20 @@ class TradingBot:
             for reason in retrain_reasons:
                 print(f"   {reason}")
             
-            # แนะนำขั้นตอนต่อไป
             print("\n📋 RECOMMENDED ACTIONS:")
             print("   1. 🛑 STOP live trading immediately")
             print("   2. 📦 Backup current model")
             print("   3. 🔄 Start fresh model training")
             print("   4. 📊 Use different hyperparameters")
             print("   5. 🧪 Validate new model thoroughly")
+            print("   6. 📈 Consider market conditions in evaluation")
             
             return True
         else:
             print("✅ MODEL APPEARS HEALTHY")
-            print("   Continue monitoring performance")
+            print("   📊 Conservative behavior may be appropriate for current market")
+            print("   💡 HOLD-heavy patterns can indicate smart risk management")
+            print("   🔍 Continue monitoring performance")
             return False
     
     def get_retraining_recommendation(self):
@@ -1137,8 +1563,8 @@ class TradingBot:
             bias_detected = True
             self._bias_counter = getattr(self, '_bias_counter', 0) + 1
             
-            # Auto-enable exploration mode after 3 consecutive bias detections
-            if self._bias_counter >= 3 and not self._exploration_mode:
+            # Auto-enable exploration mode after 5 consecutive bias detections (increased from 3)
+            if self._bias_counter >= 5 and not self._exploration_mode:
                 print(f"   🎲 Auto-enabling exploration mode after {self._bias_counter} bias detections")
                 self.enable_exploration_mode(True)
             
@@ -1146,8 +1572,14 @@ class TradingBot:
             action_value = action_nd_value
             print(f"   🔄 Using non-deterministic prediction: {action_value:.6f}")
         else:
-            # Reset bias counter if no bias detected
-            self._bias_counter = 0
+            # 🎯 CONTEXTUAL BIAS DETECTION: Only reset bias counter for non-HOLD actions
+            # If action is in HOLD zone (-0.3 to 0.3), don't reset bias counter immediately
+            if abs(action_value) > 0.3:  # Non-HOLD action
+                self._bias_counter = 0  # Reset bias counter for active trading decisions
+            # For HOLD actions, bias counter decays slowly instead of immediate reset
+            elif self._bias_counter > 0:
+                self._bias_counter = max(0, self._bias_counter - 0.1)  # Slow decay for HOLD
+            
             # If in exploration mode, still use non-deterministic occasionally
             if self._exploration_mode:
                 action_value = action_nd_value
@@ -1184,21 +1616,36 @@ class TradingBot:
             self._recent_actions.pop(0)
             self._recent_raw_actions.pop(0)
         
-        # 🚨 ADVANCED BIAS DETECTION
+        # 🚨 IMPROVED ADVANCED BIAS DETECTION
         if len(self._recent_actions) >= 5:
             last_5_actions = self._recent_actions[-5:]
             last_5_raw = self._recent_raw_actions[-5:]
             
-            # Check for identical actions
+            # Check for identical actions with improved HOLD handling
             if all(a == last_5_actions[0] for a in last_5_actions):
-                print(f"   🚨 BIAS ALERT: Model stuck in pattern - last 5 actions: {last_5_actions}")
-                print(f"   📊 Raw action values: {[f'{r:.3f}' for r in last_5_raw]}")
+                action_names = {0: 'HOLD', 1: 'BUY', 2: 'SELL', 3: 'CLOSE'}
                 
-                # Check if raw values are also similar (indicating model convergence issue)
-                if all(abs(r - last_5_raw[0]) < 0.1 for r in last_5_raw):
-                    print(f"   🚨 SEVERE BIAS: Raw values also identical - Model needs retraining!")
+                if last_5_actions[0] == 0:  # All HOLD
+                    # For HOLD, check raw variance to distinguish legitimate from stuck
+                    raw_variance = np.var(last_5_raw)
+                    raw_mean = np.mean(last_5_raw)
                     
-        # Calculate action distribution for the last 10 predictions
+                    if raw_variance < 0.001:
+                        print(f"   🚨 MODEL STUCK: HOLD pattern with no variance - raw: {raw_mean:.3f}±{raw_variance:.6f}")
+                    elif raw_variance < 0.01:
+                        print(f"   ⚠️ CONSERVATIVE: Consistent HOLD decisions - raw: {raw_mean:.3f}±{raw_variance:.6f}")
+                    else:
+                        print(f"   💤 PATIENT: Legitimate waiting pattern - raw: {raw_mean:.3f}±{raw_variance:.6f}")
+                else:
+                    # Non-HOLD patterns are concerning
+                    print(f"   🚨 BIAS ALERT: Model stuck in pattern - last 5 actions: {last_5_actions}")
+                    print(f"   📊 Raw action values: {[f'{r:.3f}' for r in last_5_raw]}")
+                    
+                    # Check if raw values are also similar (indicating model convergence issue)
+                    if all(abs(r - last_5_raw[0]) < 0.1 for r in last_5_raw):
+                        print(f"   🚨 SEVERE BIAS: Raw values also identical - Model needs retraining!")
+                    
+        # Calculate action distribution for the last 10 predictions with improved analysis
         if len(self._recent_actions) >= 10:
             action_counts = {0: 0, 1: 0, 2: 0, 3: 0}  # HOLD, BUY, SELL, CLOSE
             for a in self._recent_actions:
@@ -1208,11 +1655,20 @@ class TradingBot:
             distribution = {action_names_debug[k]: v for k, v in action_counts.items()}
             print(f"   📊 Last 10 actions distribution: {distribution}")
             
-            # Check for extreme bias (>80% of one action)
+            # 🎯 IMPROVED BIAS DETECTION: Different thresholds for HOLD vs trading actions
             max_count = max(action_counts.values())
-            if max_count >= 8:
-                dominant_action = max(action_counts, key=action_counts.get)
-                print(f"   🚨 EXTREME BIAS: {action_names_debug[dominant_action]} dominates {max_count}/10 predictions!")
+            dominant_action = max(action_counts, key=action_counts.get)
+            
+            if dominant_action == 0:  # HOLD is dominant
+                if max_count >= 9:  # 90%+ HOLD - check if it's legitimate
+                    raw_variance = np.var(self._recent_raw_actions[-10:])
+                    if raw_variance < 0.001:
+                        print(f"   🚨 EXTREME BIAS: HOLD dominates {max_count}/10 + no variance - MODEL STUCK!")
+                    else:
+                        print(f"   💤 CONSERVATIVE: HOLD dominates {max_count}/10 - may be market conditions")
+            else:  # Trading action is dominant
+                if max_count >= 7:  # 70%+ of one trading action is concerning
+                    print(f"   🚨 EXTREME BIAS: {action_names_debug[dominant_action]} dominates {max_count}/10 predictions!")
         
         return discrete_action, confidence, action_value
     
