@@ -190,8 +190,8 @@ class ModelBiasValidator:
         all_models = []
         
         # ค้นหาในทุก tier directories
-        tier_dirs = ['diamond', 'gold', 'silver', 'bronze', 'successful']
-        
+        tier_dirs = ['diamond', 'gold', 'silver', 'bronze', 'successful','active_trader']
+
         for tier in tier_dirs:
             tier_path = os.path.join(self.models_dir, tier)
             if os.path.exists(tier_path):
@@ -243,7 +243,7 @@ class ModelBiasValidator:
                         continue
         
         # เรียงตาม tier และ score
-        tier_order = {'diamond': 4, 'gold': 3, 'silver': 2, 'bronze': 1, 'successful': 0}
+        tier_order = {'diamond': 4, 'gold': 3, 'silver': 2, 'bronze': 1, 'successful': 0, 'active_trader': 5}
         all_models.sort(key=lambda x: (tier_order.get(x['tier'], 0), x['score']), reverse=True)
         
         return all_models

@@ -7,6 +7,8 @@ Loads trained models and executes real trades on MT5
 import os
 import json
 import time
+import random
+import warnings
 import pandas as pd
 import numpy as np,sys
 from datetime import datetime, timedelta
@@ -1199,8 +1201,10 @@ class TradingBot:
                     return result
                 else:
                     print(f"   ❌ Failed to get symbol/price info for new BUY.")
+                    return False  # Return False instead of None
             else:
                 print(f"   ⚠️ {action_name} signal ignored, max positions ({self.max_positions}) reached.")
+                return False  # Return False instead of None
 
         # --- Action: SELL ---
         elif action == 2:
@@ -1232,8 +1236,10 @@ class TradingBot:
                     return result
                 else:
                     print(f"   ❌ Failed to get symbol/price info for new SELL.")
+                    return False  # Return False instead of None
             else:
                 print(f"   ⚠️ {action_name} signal ignored, max positions ({self.max_positions}) reached.")
+                return False  # Return False instead of None
 
         # --- Action: CLOSE ---
         elif action == 3:
@@ -1246,15 +1252,16 @@ class TradingBot:
                 return self.mt5.close_position(oldest_position.ticket)
             else:
                 print(f"   ⚠️ {action_name} signal ignored, no position to close.")
+                return False  # Return False instead of None
         
         # --- Action: HOLD ---
         elif action == 0:
              print(f"   💤 HOLD signal received. No action taken.")
+             return True  # Return True for successful HOLD
 
         else:
             print(f"   ⚠️ Unknown action {action} - conditions not met.")
-        
-        return None
+            return False  # Return False instead of None
     
     def run_single_iteration(self):
         """Execute one trading iteration (for integration with other systems)"""
@@ -1354,33 +1361,49 @@ class TradingBot:
             
             # Execute trade if conditions are met
             result = None
+            executed = False
             if action != 0:  # Not hold
                 print(f"   🚀 Non-HOLD action detected, calling execute_trade...")
                 result = self.execute_trade(action, confidence)
+                print(f"   🔍 DEBUG: execute_trade returned: {type(result)} - {result}")
                 if result is not None:
-                    if hasattr(result, 'retcode'):
+                    if isinstance(result, bool):
+                        # Handle boolean result (success/failure)
+                        if result:
+                            print(f"   ✅ Trade action completed: {action_names[action]}")
+                            executed = True
+                        else:
+                            print(f"   ❌ Trade not executed: {action_names[action]} (conditions not met)")
+                        # Show updated positions after trade
+                        self.print_positions_report()
+                    elif hasattr(result, 'retcode'):
+                        # Handle MT5 trade result object
                         if result.retcode == mt5.TRADE_RETCODE_DONE:
                             print(f"   ✅ Trade executed successfully: {action_names[action]}")
                             print(f"      📊 Order: {result.order}, Volume: {result.volume}, Price: {result.price:.5f}")
-                            # Show updated positions after trade
-                            self.print_positions_report()
+                            executed = True
                         else:
                             print(f"   ❌ Trade failed: {action_names[action]} - Code: {result.retcode}, Comment: {result.comment}")
+                        # Show updated positions after trade
+                        self.print_positions_report()
                     else:
                         print(f"   ✅ Trade action completed: {action_names[action]}")
+                        executed = True
                         # Show updated positions after trade
                         self.print_positions_report()
                 else:
                     print(f"   ⚠️ Trade not executed: {action_names[action]} (conditions not met - see details above)")
             else:
                 print(f"   💤 HOLD action - no trade needed")
+                result = True  # HOLD is always successful
+                executed = True
             
             return {
                 'action': action,
                 'confidence': confidence,
                 'raw_action': raw_action,
                 'current_price': current_price,
-                'result': result
+                'result': executed  # Return boolean result instead of complex object
             }
             
         except Exception as e:
@@ -1764,7 +1787,7 @@ class TradingBot:
     def is_in_cooldown(self):
         """Check if trading is currently in cooldown period"""
         if not self.enable_sl_cooldown or self.sl_cooldown_end_time is None:
-            return False
+            return False, 0  # Always return tuple
         
         from datetime import datetime
         
