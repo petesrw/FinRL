@@ -7,8 +7,27 @@ Interactive launcher for training and testing models
 import os
 import sys
 import time
-from datetime import datetime
+import json
+import shutil
+from datetime import datetime, timedelta
+from pathlib import Path
+from model_validator import ModelBiasValidator
 from forex_rl_simple import SimpleForexBot
+
+def show_main_menu():
+    """Display main menu options"""
+    print("\n" + "="*50)
+    print("🚀 FOREX TRADING AI LAUNCHER")
+    print("="*50)
+    
+    print("\n📋 MAIN MENU:")
+    print("1. 🤖 Train Model")
+    print("2. 🧪 Test Model")
+    print("3. 📊 Check Model Status")
+    print("4. 🔍 Validate Models (Bias Check)")
+    print("5. 🚀 Start Live Trading")
+    print("6. 🔧 System Check")
+    print("7. ❌ Exit")
 
 class ForexLauncher:
     def __init__(self):
@@ -680,6 +699,101 @@ class ForexLauncher:
         
         input("\n👉 Press Enter to continue...")
     
+    def validate_models(self):
+        """Validate models for bias and move biased ones"""
+        print("\n🔍 MODEL BIAS VALIDATION")
+        print("=" * 50)
+        
+        # Initialize validator
+        try:
+            validator = ModelBiasValidator()
+            print("✅ Model validator initialized")
+        except Exception as e:
+            print(f"❌ Failed to initialize validator: {e}")
+            input("\n👉 Press Enter to continue...")
+            return
+        
+        # Check if models directory exists
+        models_dir = Path("models")
+        if not models_dir.exists():
+            print("❌ Models directory not found!")
+            print("💡 Please train some models first")
+            input("\n👉 Press Enter to continue...")
+            return
+        
+        # Get list of model files from all subdirectories
+        model_files = list(models_dir.rglob("*.zip"))  # Recursive search
+        if not model_files:
+            print("❌ No model files found in models/ directory or subdirectories!")
+            print("💡 Please train some models first")
+            input("\n👉 Press Enter to continue...")
+            return
+        
+        print(f"📊 Found {len(model_files)} model(s) to validate...")
+        print("⏳ Starting validation process...\n")
+        
+        # Show validation options
+        print("📋 VALIDATION OPTIONS:")
+        print("1. Validate ALL models")
+        print("2. Validate top 10 models only")
+        print("3. Validate top 5 models only")
+        print("4. Quick test (top 3 models)")
+        print("0. Cancel")
+        
+        choice = input("👉 Select option (0-4): ").strip()
+        
+        if choice == '0':
+            print("❌ Validation cancelled")
+            input("\n👉 Press Enter to continue...")
+            return
+        
+        # Determine max models based on choice
+        max_models = None
+        if choice == '2':
+            max_models = 10
+        elif choice == '3':
+            max_models = 5
+        elif choice == '4':
+            max_models = 3
+        elif choice != '1':
+            print("❌ Invalid choice! Using default (all models)")
+        
+        # Run validation
+        try:
+            print(f"\n🚀 Starting model validation...")
+            results = validator.validate_all_models(max_models)
+            
+            # Generate summary report
+            validator.generate_summary_report(results)
+            
+            # Additional summary for launcher
+            if results:
+                completed_results = [r for r in results if r['status'] == 'COMPLETED' and r['bias_report']]
+                
+                if completed_results:
+                    biased_count = sum(1 for r in completed_results if r['bias_report']['has_severe_bias'])
+                    acceptable_count = len(completed_results) - biased_count
+                    moved_count = sum(1 for r in completed_results if r.get('moved_to_bias', False))
+                    
+                    print(f"\n🎯 LAUNCHER SUMMARY:")
+                    print(f"   ✅ Acceptable models: {acceptable_count}")
+                    print(f"   🚨 Biased models: {biased_count}")
+                    print(f"   🗂️ Moved to bias folder: {moved_count}")
+                    
+                    if moved_count > 0:
+                        print(f"\n� TIP: Check 'biasmodel/' folder for moved models")
+                        print(f"        You can delete them or retrain them")
+            else:
+                print("❌ No validation results returned")
+                
+        except Exception as e:
+            print(f"❌ Validation failed: {e}")
+            import traceback
+            traceback.print_exc()
+            print("💡 Please check model files and try again")
+        
+        input("\n👉 Press Enter to continue...")
+    
     def run(self):
         """Main application loop"""
         while True:
@@ -692,10 +806,12 @@ class ForexLauncher:
             elif choice == '3':
                 self.check_model_status()
             elif choice == '4':
-                self.start_live_trading()
+                self.validate_models()  # Fixed: Call validate_models instead
             elif choice == '5':
-                self.system_check()
+                self.start_live_trading()  # Fixed: Moved to correct position
             elif choice == '6':
+                self.system_check()
+            elif choice == '7':
                 print("\n👋 Goodbye! Happy Trading! 📈")
                 break
             else:
