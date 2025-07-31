@@ -470,7 +470,7 @@ class ConfigurableForexBot:
                 # Check trading hours
                 if not self.config.is_trading_time():
                     self.logger.info("⏰ Outside trading hours - System waiting")
-                    time.sleep(60)  # Wait 1 minute
+                    time.sleep(30)  # Wait 30 sec
                     continue
                 
                 self.logger.info("✅ Trading hours active - Proceeding with analysis")

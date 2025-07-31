@@ -406,7 +406,7 @@ class TradingBot:
         
         # Trading parameters - MULTI-POSITION SETUP
         self.min_confidence = 0.4  # Minimum confidence for trade execution (lowered to match training behavior)
-        self.max_positions = 6     # 🔧 Maximum concurrent positions (you can adjust this)
+        self.max_positions = 3     # 🔧 Maximum concurrent positions (you can adjust this)
         self.lookback_window = 50  # Default, will be updated based on model
         
         print(f"🚀 MULTI-POSITION BOT INITIALIZED")
@@ -1475,69 +1475,86 @@ class TradingBot:
         else:  # SELL
             current_price = current_tick.ask
             is_profitable = current_price < open_price
+            
+        # 🎯 Initialize tracking for new positions
+        if ticket not in self.position_tracking:
+            self.position_tracking[ticket] = {
+                'breakeven_set': False,
+                'highest_profit': profit_usd,
+                'best_price': current_price,
+                'created_time': position.time
+            }
+            print(f"🆕 Started tracking position #{ticket} (${profit_usd:.2f} profit)")
         
+        tracking = self.position_tracking[ticket]
         new_sl = current_sl
         modified = False
+        
+        # Always update the highest profit and best price for tracking
+        if profit_usd > tracking['highest_profit']:
+            tracking['highest_profit'] = profit_usd
+            
+        if pos_type == mt5.POSITION_TYPE_BUY and current_price > tracking['best_price']:
+            tracking['best_price'] = current_price
+        elif pos_type == mt5.POSITION_TYPE_SELL and current_price < tracking['best_price']:
+            tracking['best_price'] = current_price
         
         # 💰 BREAK-EVEN STOP: Move SL to entry when profit >= $4
         if (self.enable_breakeven_stop and 
             profit_usd >= self.breakeven_profit_threshold and
-            ticket not in self.position_tracking):
+            not tracking['breakeven_set']):
             
             # Check if we haven't already set break-even
-            tolerance = symbol_info.point * 2  # 2 pip tolerance
-            entry_distance = abs(current_sl - open_price)
+            tolerance = symbol_info.point * 5  # 5 pip tolerance for break-even check
+            entry_distance = abs(current_sl - open_price) if current_sl != 0 else float('inf')
             
             if entry_distance > tolerance:  # SL is not at break-even yet
                 new_sl = open_price
-                self.position_tracking[ticket] = {
-                    'breakeven_set': True,
-                    'highest_profit': profit_usd,
-                    'best_price': current_price
-                }
+                tracking['breakeven_set'] = True
                 modified = True
                 print(f"💰 BREAK-EVEN activated for #{ticket}: Profit ${profit_usd:.2f} >= ${self.breakeven_profit_threshold}")
+                print(f"   🛑 Moving SL from {current_sl:.5f} to break-even {new_sl:.5f}")
         
-        # 🏃 TRAILING STOP: Move SL with favorable price movement
+        # 🏃 TRAILING STOP: Move SL with favorable price movement (after break-even is set)
         elif (self.enable_trailing_stop and 
               is_profitable and 
-              ticket in self.position_tracking):
-            
-            tracking = self.position_tracking[ticket]
+              tracking['breakeven_set'] and
+              profit_usd > self.breakeven_profit_threshold):  # Continue trailing above break-even threshold
             
             if pos_type == mt5.POSITION_TYPE_BUY:
                 # For BUY: Trail SL upward as price rises
-                if current_price > tracking['best_price']:
-                    # Update best price
-                    tracking['best_price'] = current_price
-                    tracking['highest_profit'] = profit_usd
-                    
-                    # Calculate new trailing SL
-                    trail_distance = symbol_info.point * self.trailing_stop_distance_pips
-                    potential_sl = current_price - trail_distance
-                    
-                    # Only move SL up (never down)
-                    if potential_sl > current_sl:
-                        new_sl = potential_sl
-                        modified = True
-                        print(f"🏃 TRAILING STOP (BUY) for #{ticket}: SL {current_sl:.5f} → {new_sl:.5f}")
+                # Calculate new trailing SL
+                trail_distance = symbol_info.point * self.trailing_stop_distance_pips
+                potential_sl = current_price - trail_distance
+                
+                # Only move SL up (never down) and must be above current SL and entry price
+                if potential_sl > current_sl and potential_sl >= open_price:
+                    new_sl = potential_sl
+                    modified = True
+                    print(f"🏃 TRAILING STOP (BUY) for #{ticket}: SL {current_sl:.5f} → {new_sl:.5f}")
+                    print(f"   📈 Price: {current_price:.5f}, Profit: ${profit_usd:.2f}")
             
             else:  # SELL position
                 # For SELL: Trail SL downward as price falls
-                if current_price < tracking['best_price']:
-                    # Update best price
-                    tracking['best_price'] = current_price
-                    tracking['highest_profit'] = profit_usd
-                    
-                    # Calculate new trailing SL
-                    trail_distance = symbol_info.point * self.trailing_stop_distance_pips
-                    potential_sl = current_price + trail_distance
-                    
-                    # Only move SL down (never up) for SELL
-                    if potential_sl < current_sl or current_sl == 0:
-                        new_sl = potential_sl
-                        modified = True
-                        print(f"🏃 TRAILING STOP (SELL) for #{ticket}: SL {current_sl:.5f} → {new_sl:.5f}")
+                # Calculate new trailing SL
+                trail_distance = symbol_info.point * self.trailing_stop_distance_pips
+                potential_sl = current_price + trail_distance
+                
+                # Only move SL down (never up) for SELL and must be below current SL and entry price
+                if (current_sl == 0 or potential_sl < current_sl) and potential_sl <= open_price:
+                    new_sl = potential_sl
+                    modified = True
+                    print(f"🏃 TRAILING STOP (SELL) for #{ticket}: SL {current_sl:.5f} → {new_sl:.5f}")
+                    print(f"   📉 Price: {current_price:.5f}, Profit: ${profit_usd:.2f}")
+        
+        # 📊 Debug info for positions with significant profit
+        if profit_usd >= self.breakeven_profit_threshold:
+            be_status = "✅ SET" if tracking['breakeven_set'] else "⏳ PENDING"
+            trail_status = "🏃 ACTIVE" if tracking['breakeven_set'] else "⏸️ WAITING"
+            print(f"💰 Position #{ticket}: ${profit_usd:.2f} profit | Break-even: {be_status} | Trailing: {trail_status}")
+            print(f"   📊 Current: {current_price:.5f} | SL: {current_sl:.5f} | Entry: {open_price:.5f}")
+        elif ticket in self.position_tracking:
+            print(f"📊 Position #{ticket}: ${profit_usd:.2f} profit (need ${self.breakeven_profit_threshold:.2f} for break-even)")
         
         # Apply the modification if needed
         if modified and new_sl != current_sl:
@@ -1545,7 +1562,17 @@ class TradingBot:
             if result and result.retcode == mt5.TRADE_RETCODE_DONE:
                 print(f"✅ Position #{ticket} SL updated successfully")
             else:
-                print(f"❌ Failed to update SL for position #{ticket}")
+                print(f"❌ Failed to update SL for position #{ticket}: {result.retcode if result else 'No result'}")
+                if result:
+                    print(f"   Error: {result.comment}")
+        elif not modified and profit_usd >= self.breakeven_profit_threshold:
+            # Show why no modification was made
+            if not self.enable_breakeven_stop and not self.enable_trailing_stop:
+                print(f"⚠️ Risk management disabled for position #{ticket}")
+            elif not tracking['breakeven_set']:
+                print(f"⏳ Position #{ticket} waiting for break-even activation")
+            else:
+                print(f"👀 Position #{ticket} being monitored for trailing opportunities")
     
     def _cleanup_closed_positions(self):
         """Remove tracking data for closed positions"""
@@ -1562,6 +1589,92 @@ class TradingBot:
         for ticket in closed_tickets:
             del self.position_tracking[ticket]
             print(f"🧹 Cleaned tracking data for closed position #{ticket}")
+    
+    def get_risk_management_report(self):
+        """📊 Get detailed risk management report"""
+        if not self.position_tracking:
+            return "📊 No positions currently being tracked"
+        
+        report = []
+        report.append("🎯 ADVANCED RISK MANAGEMENT REPORT")
+        report.append("=" * 60)
+        report.append(f"💰 Break-even threshold: ${self.breakeven_profit_threshold} USD")
+        report.append(f"🏃 Trailing stop distance: {self.trailing_stop_distance_pips} pips")
+        report.append(f"✅ Break-even stop: {'ENABLED' if self.enable_breakeven_stop else 'DISABLED'}")
+        report.append(f"🏃 Trailing stop: {'ENABLED' if self.enable_trailing_stop else 'DISABLED'}")
+        report.append("")
+        
+        # Get current positions
+        positions = self.mt5.get_positions(self.symbol)
+        if not positions:
+            report.append("📭 No open positions")
+            return "\n".join(report)
+            
+        report.append("📊 POSITION TRACKING STATUS:")
+        report.append("-" * 60)
+        
+        for position in positions:
+            ticket = position.ticket
+            profit = position.profit
+            
+            if ticket in self.position_tracking:
+                tracking = self.position_tracking[ticket]
+                be_status = "✅ SET" if tracking['breakeven_set'] else "⏳ PENDING"
+                
+                pos_type = "BUY" if position.type == 0 else "SELL"
+                entry_price = position.price_open
+                current_sl = position.sl if position.sl != 0 else "None"
+                
+                report.append(f"#{ticket} | {pos_type} | Entry: {entry_price:.5f} | SL: {current_sl}")
+                report.append(f"   💰 Profit: ${profit:.2f} | Break-even: {be_status}")
+                report.append(f"   📈 Best Price: {tracking['best_price']:.5f} | Max Profit: ${tracking['highest_profit']:.2f}")
+                
+                if profit >= self.breakeven_profit_threshold:
+                    if not tracking['breakeven_set']:
+                        report.append(f"   🚨 ACTION REQUIRED: Position should trigger break-even!")
+                    else:
+                        report.append(f"   ✅ Break-even protection active")
+                
+                report.append("")
+            else:
+                report.append(f"#{ticket} | ⚠️ NOT TRACKED (New position detected)")
+                report.append("")
+        
+        return "\n".join(report)
+    
+    def force_risk_management_check(self):
+        """🔧 Force immediate risk management check (for debugging)"""
+        print("🔧 FORCING RISK MANAGEMENT CHECK...")
+        print("=" * 50)
+        
+        positions = self.mt5.get_positions(self.symbol)
+        if not positions:
+            print("📭 No positions to manage")
+            return
+            
+        print(f"📊 Found {len(positions)} positions to check")
+        
+        # Force check each position
+        for i, position in enumerate(positions, 1):
+            print(f"\n🔍 Checking position {i}/{len(positions)}: #{position.ticket}")
+            print(f"   💰 Current profit: ${position.profit:.2f}")
+            print(f"   🎯 Break-even threshold: ${self.breakeven_profit_threshold}")
+            
+            if position.profit >= self.breakeven_profit_threshold:
+                print(f"   ✅ Position qualifies for break-even stop!")
+            else:
+                needed = self.breakeven_profit_threshold - position.profit
+                print(f"   ⏳ Needs ${needed:.2f} more profit for break-even")
+        
+        # Run the actual management
+        print(f"\n🎯 Running risk management...")
+        self.manage_advanced_risk()
+        
+        # Show final status
+        print(f"\n📊 Final tracking status:")
+        for ticket, data in self.position_tracking.items():
+            be_status = "✅ SET" if data['breakeven_set'] else "❌ NOT SET"
+            print(f"   #{ticket}: Break-even {be_status}, Max profit: ${data['highest_profit']:.2f}")
 
     def stop(self):
         """Stop the trading bot"""

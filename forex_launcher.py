@@ -582,7 +582,7 @@ class ForexLauncher:
                         
                         import time
                         while True:
-                            time.sleep(60)  # Check every minute
+                            time.sleep(30)  # Check every 30 seconds
                             report = bot.get_performance_report()
                             if report and 'performance' in report:
                                 stats = report['performance']

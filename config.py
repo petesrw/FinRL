@@ -166,7 +166,7 @@ class TradingConfig:
             risk_per_trade=float(os.getenv('RISK_PER_TRADE', 0.02)),
             max_drawdown=float(os.getenv('MAX_DRAWDOWN', 0.20)),
             max_daily_trades=int(os.getenv('MAX_DAILY_TRADES', 100)),
-            max_concurrent_positions=int(os.getenv('MAX_CONCURRENT_POSITIONS', 6)),
+            max_concurrent_positions=int(os.getenv('MAX_CONCURRENT_POSITIONS', 3)),
             target_win_rate=float(os.getenv('TARGET_WIN_RATE', 0.65)),
             target_profit_factor=float(os.getenv('TARGET_PROFIT_FACTOR', 1.5)),
             target_sharpe_ratio=float(os.getenv('TARGET_SHARPE_RATIO', 1.2))
